@@ -615,6 +615,7 @@ void SGDSolver<Dtype>::Regularize(int param_id) {
   string regularization_type = this->param_.regularization_type();
   Dtype local_decay = weight_decay * net_params_weight_decay[param_id];
   switch (Caffe::mode()) {
+<<<<<<< HEAD
   case Caffe::CPU: {
     if (local_decay) {
       if (regularization_type == "L2") {
@@ -633,12 +634,40 @@ void SGDSolver<Dtype>::Regularize(int param_id) {
             net_params[param_id]->mutable_cpu_diff());
       } else {
         LOG(FATAL) << "Unknown regularization type: " << regularization_type;
+=======
+  case Caffe::CPU:
+    for (int param_id = 0; param_id < net_params.size(); ++param_id) {
+      // Compute the value to history, and then copy them to the blob's diff.
+      Dtype local_rate = rate * net_params_lr[param_id]
+                              / this->param_.iter_size();
+      Dtype local_decay = weight_decay * net_params_weight_decay[param_id];
+
+      if (local_decay) {
+        if (regularization_type == "L2") {
+          // add weight decay
+          caffe_axpy(net_params[param_id]->count(),
+              local_decay,
+              net_params[param_id]->cpu_data(),
+              net_params[param_id]->mutable_cpu_diff());
+        } else if (regularization_type == "L1") {
+          caffe_cpu_sign(net_params[param_id]->count(),
+              net_params[param_id]->cpu_data(),
+              temp_[param_id]->mutable_cpu_data());
+          caffe_axpy(net_params[param_id]->count(),
+              local_decay,
+              temp_[param_id]->cpu_data(),
+              net_params[param_id]->mutable_cpu_diff());
+        } else {
+          LOG(FATAL) << "Unknown regularization type: " << regularization_type;
+        }
+>>>>>>> zero-init param diffs and accumulate gradients
       }
     }
     break;
   }
   case Caffe::GPU: {
 #ifndef CPU_ONLY
+<<<<<<< HEAD
     if (local_decay) {
       if (regularization_type == "L2") {
         // add weight decay
@@ -656,6 +685,32 @@ void SGDSolver<Dtype>::Regularize(int param_id) {
             net_params[param_id]->mutable_gpu_diff());
       } else {
         LOG(FATAL) << "Unknown regularization type: " << regularization_type;
+=======
+    for (int param_id = 0; param_id < net_params.size(); ++param_id) {
+      // Compute the value to history, and then copy them to the blob's diff.
+      Dtype local_rate = rate * net_params_lr[param_id]
+                              / this->param_.iter_size();
+      Dtype local_decay = weight_decay * net_params_weight_decay[param_id];
+
+      if (local_decay) {
+        if (regularization_type == "L2") {
+          // add weight decay
+          caffe_gpu_axpy(net_params[param_id]->count(),
+              local_decay,
+              net_params[param_id]->gpu_data(),
+              net_params[param_id]->mutable_gpu_diff());
+        } else if (regularization_type == "L1") {
+          caffe_gpu_sign(net_params[param_id]->count(),
+              net_params[param_id]->gpu_data(),
+              temp_[param_id]->mutable_gpu_data());
+          caffe_gpu_axpy(net_params[param_id]->count(),
+              local_decay,
+              temp_[param_id]->gpu_data(),
+              net_params[param_id]->mutable_gpu_diff());
+        } else {
+          LOG(FATAL) << "Unknown regularization type: " << regularization_type;
+        }
+>>>>>>> zero-init param diffs and accumulate gradients
       }
     }
 #else
