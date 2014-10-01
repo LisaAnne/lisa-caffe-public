@@ -589,20 +589,6 @@ message EmbedParameter {
 
 }
 
-// Message that stores parameters used by EmbedLayer
-message EmbedParameter {
-  optional uint32 num_output = 1; // The number of outputs for the layer
-  // The input is given as integers to be interpreted as one-hot
-  // vector indices with dimension num_input.  Hence num_input should be
-  // 1 greater than the maximum possible input value.
-  optional uint32 input_dim = 2;
-
-  optional bool bias_term = 3 [default = true]; // Whether to use a bias term
-  optional FillerParameter weight_filler = 4; // The filler for the weight
-  optional FillerParameter bias_filler = 5; // The filler for the bias
-
-}
-
 // Message that stores parameters used by ExpLayer
 message ExpParameter {
   // ExpLayer computes outputs y = base ^ (shift + scale * x), for base > 0.
