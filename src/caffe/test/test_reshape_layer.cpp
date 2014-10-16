@@ -58,11 +58,11 @@ TYPED_TEST(ReshapeLayerTest, TestFlattenOutputSizes) {
 TYPED_TEST(ReshapeLayerTest, TestFlattenValues) {
   typedef typename TypeParam::Dtype Dtype;
   LayerParameter layer_param;
-  BlobShape* blob_shape = layer_param.mutable_reshape_param()->mutable_shape();
-  blob_shape->add_dim(0);
-  blob_shape->add_dim(-1);
-  blob_shape->add_dim(1);
-  blob_shape->add_dim(1);
+  ReshapeParameter* reshape_param =
+      layer_param.mutable_reshape_param();
+  reshape_param->set_channels(-1);
+  reshape_param->set_height(1);
+  reshape_param->set_width(1);
   ReshapeLayer<Dtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   layer.Forward(this->blob_bottom_vec_, this->blob_top_vec_);
