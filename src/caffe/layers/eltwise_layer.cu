@@ -116,14 +116,6 @@ void EltwiseLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   const int num = top[0]->num();
   const int dim = count / num;
   const Dtype* top_data = top[0]->gpu_data();
-<<<<<<< HEAD
-  const Dtype* coeff_data = NULL;
-  if (coeff_blob_) {
-    coeff_data = bottom[bottom.size() - 1]->gpu_data();
-  }
-  const bool kBackward = true;
-=======
->>>>>>> EltwiseLayer can take a blob of per-num coefficients
   for (int i = 0; i < bottom.size() - coeff_blob_; ++i) {
     if (propagate_down[i]) {
       const Dtype* bottom_data = bottom[i]->gpu_data();
@@ -149,13 +141,7 @@ void EltwiseLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         caffe_gpu_mul(count, bottom_diff, top_diff, bottom_diff);
         break;
       case EltwiseParameter_EltwiseOp_SUM:
-<<<<<<< HEAD
         CoeffSum<Dtype>  // NOLINT_NEXT_LINE(whitespace/operators)
-            <<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-            count, dim, i * num, coeffs_[i], coeff_data,
-            kBackward, top_diff, bottom_diff);
-        CUDA_POST_KERNEL_CHECK;
-=======
         if (coeff_blob_) {
           const int num = bottom[i]->num();
           const int dim = bottom[i]->count() / num;
@@ -169,7 +155,6 @@ void EltwiseLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         } else {
           caffe_gpu_scale(count, coeffs_[i], top_diff, bottom_diff);
         }
->>>>>>> EltwiseLayer can take a blob of per-num coefficients
         break;
       case EltwiseParameter_EltwiseOp_MAX:
         mask = max_idx_.gpu_data();
