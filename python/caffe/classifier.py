@@ -15,7 +15,7 @@ class Classifier(caffe.Net):
     """
     def __init__(self, model_file, pretrained_file, image_dims=None,
                  gpu=False, mean=None, input_scale=None, raw_scale=None,
-                 channel_swap=None):
+                 channel_swap=None, is_flow=False):
         """
         Take
         image_dims: dimensions to scale input for cropping/sampling.
@@ -32,7 +32,7 @@ class Classifier(caffe.Net):
             self.set_mode_cpu()
 
         if mean is not None:
-            self.set_mean(self.inputs[0], mean)
+            self.set_mean(self.inputs[0], mean, 'channel')
         if input_scale is not None:
             self.set_input_scale(self.inputs[0], input_scale)
         if raw_scale is not None:
@@ -41,9 +41,11 @@ class Classifier(caffe.Net):
             self.set_channel_swap(self.inputs[0], channel_swap)
 
         self.crop_dims = np.array(self.blobs[self.inputs[0]].data.shape[2:])
-        if not image_dims:
+        if not image_dims.all():
             image_dims = self.crop_dims
         self.image_dims = image_dims
+
+        self.is_flow = is_flow
 
 
     def predict(self, inputs, oversample=True):
@@ -68,7 +70,7 @@ class Classifier(caffe.Net):
 
         if oversample:
             # Generate center, corner, and mirrored crops.
-            input_ = caffe.io.oversample(input_, self.crop_dims)
+            input_ = caffe.io.oversample(input_, self.crop_dims, self.is_flow)
         else:
             # Take center crop.
             center = np.array(self.image_dims) / 2.0

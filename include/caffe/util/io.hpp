@@ -146,7 +146,8 @@ inline cv::Mat ReadImageToCVMat(const string& filename) {
 }
 
 cv::Mat DecodeDatumToCVMat(const Datum& datum,
-    const int height, const int width, const bool is_color);
+    const int height, const int width, const bool is_color, 
+    const int min_height=0, const int min_width=0);
 
 inline cv::Mat DecodeDatumToCVMat(const Datum& datum,
     const int height, const int width) {

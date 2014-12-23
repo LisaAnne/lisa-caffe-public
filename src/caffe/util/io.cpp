@@ -115,17 +115,28 @@ bool ReadFileToDatum(const string& filename, const int label,
   }
 }
 
+//Lisa added some hacky stuff
 cv::Mat DecodeDatumToCVMat(const Datum& datum,
-    const int height, const int width, const bool is_color) {
+    const int height, const int width, const bool is_color, 
+    const int min_height, const int min_width) {
   cv::Mat cv_img;
   CHECK(datum.encoded()) << "Datum not encoded";
   int cv_read_flag = (is_color ? CV_LOAD_IMAGE_COLOR :
     CV_LOAD_IMAGE_GRAYSCALE);
   const string& data = datum.data();
   std::vector<char> vec_data(data.c_str(), data.c_str() + data.size());
-  if (height > 0 && width > 0) {
     cv::Mat cv_img_origin = cv::imdecode(cv::Mat(vec_data), cv_read_flag);
+  if (height > 0 && width > 0) {
     cv::resize(cv_img_origin, cv_img, cv::Size(width, height));
+  } else if (cv_img_origin.rows < min_height || cv_img_origin.cols < min_width){
+    bool resize_width = (min_width - cv_img_origin.cols > min_height - cv_img_origin.rows);
+    if (resize_width) {
+      int height_aspect_ratio = float(min_width)*(float(cv_img_origin.rows)/float(cv_img_origin.cols)) + 0.5;
+      cv::resize(cv_img_origin, cv_img, cv::Size(min_width, height_aspect_ratio));
+    } else {
+      int width_aspect_ratio = float(min_height)*(float(cv_img_origin.cols)/float(cv_img_origin.rows)) + 0.5;
+      cv::resize(cv_img_origin, cv_img, cv::Size(width_aspect_ratio , min_height));
+    }
   } else {
     cv_img = cv::imdecode(vec_data, cv_read_flag);
   }
@@ -143,6 +154,7 @@ bool DecodeDatum(const int height, const int width, const bool is_color,
   if (datum->encoded()) {
     cv::Mat cv_img = DecodeDatumToCVMat((*datum), height, width, is_color);
     CVMatToDatum(cv_img, datum);
+    //very quickly added by Lisa to resize images on the fly in RGB flow
     return true;
   } else {
     return false;

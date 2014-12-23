@@ -55,7 +55,7 @@ def resize_image(im, new_dims, interp_order=1):
     return resized_im.astype(np.float32)
 
 
-def oversample(images, crop_dims):
+def oversample(images, crop_dims, flow):
     """
     Crop images into the four corners, center, and their mirrored versions.
 
@@ -95,6 +95,8 @@ def oversample(images, crop_dims):
             crops[ix] = im[crop[0]:crop[2], crop[1]:crop[3], :]
             ix += 1
         crops[ix-5:ix] = crops[ix-5:ix, :, ::-1, :]  # flip for mirrors
+        if flow:
+          crops[ix-5:ix,:,:,0] = 1-crops[ix-5:ix,:,:,0]
     return crops
 
 

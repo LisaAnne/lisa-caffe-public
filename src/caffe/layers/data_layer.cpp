@@ -33,6 +33,11 @@ void DataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   CHECK(dataset_->open(source, Dataset<string, Datum>::ReadOnly));
   iter_ = dataset_->begin();
 
+  if (++iter_ == dataset_->end()) {
+      iter_ = dataset_->begin();
+  }
+
+
   // Check if we would need to randomly skip a few data points
   if (this->layer_param_.data_param().rand_skip()) {
     unsigned int skip = caffe_rng_rand() %
@@ -91,6 +96,8 @@ void DataLayer<Dtype>::InternalThreadEntry() {
   CHECK(this->transformed_data_.count());
   Dtype* top_data = this->prefetch_data_.mutable_cpu_data();
   Dtype* top_label = NULL;  // suppress warnings about uninitialized variables
+  const int min_height = this->layer_param_.data_param().min_height();
+  const int min_width = this->layer_param_.data_param().min_width();
 
   if (this->output_labels_) {
     top_label = this->prefetch_label_.mutable_cpu_data();
@@ -104,7 +111,7 @@ void DataLayer<Dtype>::InternalThreadEntry() {
 
     cv::Mat cv_img;
     if (datum.encoded()) {
-       cv_img = DecodeDatumToCVMat(datum);
+       cv_img = DecodeDatumToCVMat(datum,0,0,true,min_height,min_width);
     }
     read_time += timer.MicroSeconds();
     timer.Start();
@@ -125,6 +132,7 @@ void DataLayer<Dtype>::InternalThreadEntry() {
     ++iter_;
     if (iter_ == dataset_->end()) {
       iter_ = dataset_->begin();
+      LOG(INFO) << "Going to begining of leveldb";
     }
   }
   batch_timer.Stop();
