@@ -45,7 +45,11 @@ def resize_image(im, new_dims, interp_order=1):
     if im.shape[-1] == 1 or im.shape[-1] == 3:
         # skimage is fast but only understands {1,3} channel images in [0, 1].
         im_min, im_max = im.min(), im.max()
-        im_std = (im - im_min) / (im_max - im_min)
+        div = im_max-im_min
+        if div == 0:
+          im_std = im #this avoids creating NaNs with images that are just a single color
+        else:
+          im_std = (im - im_min) / (im_max - im_min)
         resized_std = resize(im_std, new_dims, order=interp_order)
         resized_im = resized_std * (im_max - im_min) + im_min
     else:
