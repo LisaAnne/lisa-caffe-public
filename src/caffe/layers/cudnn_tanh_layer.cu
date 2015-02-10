@@ -12,6 +12,10 @@ void CuDNNTanHLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
   const Dtype* bottom_data = bottom[0]->gpu_data();
   Dtype* top_data = top[0]->mutable_gpu_data();
+
+  Dtype alpha = 1.0;
+  Dtype beta = 0.0;
+
   CUDNN_CHECK(cudnnActivationForward(this->handle_,
         CUDNN_ACTIVATION_TANH,
         cudnn::dataType<Dtype>::one,
