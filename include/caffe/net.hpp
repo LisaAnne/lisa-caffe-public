@@ -98,7 +98,6 @@ class Net {
    * called manually.
    */
   void ShareWeights();
-  void ShareWeightData();
 
   /**
    * @brief For an already initialized net, implicitly copies (i.e., using no

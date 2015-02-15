@@ -291,6 +291,7 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
   for (size_t layer_id = 0; layer_id < layer_names_.size(); ++layer_id) {
     layer_names_index_[layer_names_[layer_id]] = layer_id;
   }
+  GetLearningRateAndWeightDecay();
   ShareWeights();
   debug_info_ = param.debug_info();
   if (Caffe::root_solver()) {
@@ -1027,7 +1028,6 @@ void Net<Dtype>::ToHDF5(const string& filename, bool write_diff) const {
 
 template <typename Dtype>
 void Net<Dtype>::Update() {
-<<<<<<< HEAD
   for (int i = 0; i < learnable_params_.size(); ++i) {
     learnable_params_[i]->Update();
   }
@@ -1056,9 +1056,6 @@ void Net<Dtype>::ClearParamDiffs() {
 
 template <typename Dtype>
 void Net<Dtype>::ShareWeights() {
-=======
-  // Update only the owned parameters.
->>>>>>> Modifications to Net to facilitate unrolled recurrent networks
   for (int i = 0; i < params_.size(); ++i) {
     if (param_owners_[i] < 0) { continue; }
     params_[i]->ShareData(*params_[param_owners_[i]]);
@@ -1066,14 +1063,6 @@ void Net<Dtype>::ShareWeights() {
   }
 }
 
-template <typename Dtype>
-void Net<Dtype>::ShareWeightData() {
-  for (int i = 0; i < params_.size(); ++i) {
-    if (param_owners_[i] < 0) { continue; }
-    params_[i]->ShareData(*params_[param_owners_[i]]);
-    params_[i]->ShareDiff(*params_[param_owners_[i]]);
-  }
-}
 
 template <typename Dtype>
 bool Net<Dtype>::has_blob(const string& blob_name) const {
