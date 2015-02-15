@@ -829,6 +829,19 @@ message RecurrentParameter {
   optional bool expose_hidden_state = 5 [default = false];
 }
 
+// Message that stores parameters used by RecurrentLayer
+message RecurrentParameter {
+  // The dimension of the output (and usually hidden state) representation --
+  // must be explicitly set to non-zero.
+  optional uint32 num_output = 1 [default = 0];
+
+  optional FillerParameter weight_filler = 2; // The filler for the weight
+  optional FillerParameter bias_filler = 3; // The filler for the bias
+
+  // Whether to enable displaying debug_info in the unrolled recurrent net.
+  optional bool debug_info = 4 [default = false];
+}
+
 // Message that stores parameters used by ReLULayer
 message ReLUParameter {
   // Allow non-zero slope for negative inputs to speed up optimization
