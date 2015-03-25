@@ -15,7 +15,6 @@ home_dir = '/home/lisa/caffe-LSTM-video'
 sys.path.append(home_dir + '/python/')
 import caffe
 feature_path ='/y/lisaanne/image_captioning/coco_features/' 
-
 class Captioner():
   def __init__(self, weights_path, image_net_proto, lstm_net_proto,
                vocab_path, device_id=-1):
@@ -194,7 +193,6 @@ class Captioner():
       samples.append(sample)
       sample_probs.append(sample_prob)
     return samples, sample_probs
-
 
   def sample_caption(self, descriptor, strategy,
                      net_output='predict', max_length=50):
