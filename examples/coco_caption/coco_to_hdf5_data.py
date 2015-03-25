@@ -9,8 +9,9 @@ import sys
 
 sys.path.append('./examples/coco_caption/')
 
-COCO_PATH = './data/coco/tools'
-COCO_TOOL_PATH = '%s/pycocotools' % COCO_PATH
+COCO_PATH = './data/coco/coco'
+COCO_TOOL_PATH = '%s/PythonAPI/build/lib/pycocotools' % COCO_PATH
+COCO_IMAGE_ROOT = '%s/images' % COCO_PATH
 
 MAX_HASH = 100000
 
@@ -35,7 +36,7 @@ def split_sentence(sentence):
 MAX_WORDS = 20
 
 class CocoSequenceGenerator(SequenceGenerator):
-  def __init__(self, coco, batch_num_streams, vocab=None,
+  def __init__(self, coco, batch_num_streams, image_root, vocab=None,
                max_words=MAX_WORDS, align=True, shuffle=True, gt_captions=True,
                pad=True, truncate=True, split_ids=None):
     self.max_words = max_words
@@ -45,20 +46,18 @@ class CocoSequenceGenerator(SequenceGenerator):
     num_missing = 0
     num_captions = 0
     known_images = {}
-    image_root = '%s/%s' % (COCO_PATH, coco.image_folder)
     if split_ids is None:
-      split_ids = coco.images.keys()
+      split_ids = coco.imgs.keys()
     for image_id in split_ids:
-      image_info = coco.images[image_id]
-      image_path = '%s/%s/%s' % \
-          (image_root, image_info['file_path'], image_info['file_name'])
+      image_info = coco.imgs[image_id]
+      image_path = '%s/%s' % (image_root, image_info['file_name'])
       if os.path.isfile(image_path):
         assert image_id not in known_images  # no duplicates allowed
         known_images[image_id] = {}
         known_images[image_id]['path'] = image_path
         if gt_captions:
-          known_images[image_id]['sentences'] = [split_sentence(anno['sentence'])
-              for anno in coco.image_to_annotations[image_id]]
+          known_images[image_id]['sentences'] = [split_sentence(anno['caption'])
+              for anno in coco.imgToAnns[image_id]]
           num_captions += len(known_images[image_id]['sentences'])
         else:
           known_images[image_id]['sentences'] = []
@@ -209,7 +208,7 @@ class CocoSequenceGenerator(SequenceGenerator):
     assert image_hash == float(image_hash)
     return image_hash
 
-COCO_ANNO_PATH = '%s/annotations/sentences_%%s2014.json' % COCO_PATH
+COCO_ANNO_PATH = '%s/annotations/captions_%%s2014.json' % COCO_PATH
 COCO_IMAGE_PATTERN = '%s/images/%%s2014' % COCO_PATH
 COCO_IMAGE_ID_PATTERN = 'COCO_%s2014_%%012d.jpg'
 
@@ -229,8 +228,10 @@ def preprocess_dataset(split_name, coco_split_name, batch_stream_length,
     output_dataset_name += '_unaligned'
   output_path = OUTPUT_DIR_PATTERN % output_dataset_name
   coco = COCO(COCO_ANNO_PATH % coco_split_name)
-  sg = CocoSequenceGenerator(coco, BUFFER_SIZE, split_ids=split_image_ids,
-      vocab=vocab, align=aligned, pad=aligned, truncate=aligned)
+  image_root = COCO_IMAGE_PATTERN % coco_split_name
+  sg = CocoSequenceGenerator(coco, BUFFER_SIZE, image_root,
+      split_ids=split_image_ids, vocab=vocab, align=aligned, pad=aligned,
+      truncate=aligned)
   sg.batch_stream_length = batch_stream_length
   writer = HDF5SequenceWriter(sg, output_dir=output_path)
   writer.write_to_exhaustion()
