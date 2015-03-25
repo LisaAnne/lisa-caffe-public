@@ -16,7 +16,7 @@ COCO_IMAGE_ROOT = '%s/images' % COCO_PATH
 MAX_HASH = 100000
 
 sys.path.append(COCO_TOOL_PATH)
-from coco import COCO
+from pycocotools.coco import COCO
 
 from hdf5_sequence_generator import SequenceGenerator, HDF5SequenceWriter
 
@@ -46,11 +46,14 @@ class CocoSequenceGenerator(SequenceGenerator):
     num_missing = 0
     num_captions = 0
     known_images = {}
+    self.coco = coco
     if split_ids is None:
       split_ids = coco.imgs.keys()
+    self.image_path_to_id = {}
     for image_id in split_ids:
       image_info = coco.imgs[image_id]
       image_path = '%s/%s' % (image_root, image_info['file_name'])
+      self.image_path_to_id[image_path] = image_id
       if os.path.isfile(image_path):
         assert image_id not in known_images  # no duplicates allowed
         known_images[image_id] = {}
