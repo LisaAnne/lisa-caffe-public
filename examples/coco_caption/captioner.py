@@ -43,6 +43,14 @@ class Captioner():
       raise Exception('Invalid vocab file: contains %d words; '
           'net expects vocab with %d words' % (len(self.vocab), net_vocab_size))
 
+  def set_caption_batch_size(self, batch_size):
+    self.lstm_net.blobs['cont_sentence'].reshape(1, batch_size)
+    self.lstm_net.blobs['input_sentence'].reshape(1, batch_size)
+    new_imfeat_shape = \
+        (batch_size, ) + self.lstm_net.blobs['image_features'].data.shape[1:]
+    self.lstm_net.blobs['image_features'].reshape(*new_imfeat_shape)
+    self.lstm_net.reshape()
+
   def preprocess_image(self, image, verbose=False):
     if type(image) in (str, unicode):
       image = plt.imread(image)
