@@ -319,7 +319,9 @@ def main():
                         device_id=DEVICE_ID)
   experimenter = CaptionExperiment(captioner, dataset, CACHE_DIR, sg)
   generation_strategy = {'type': 'beam', 'beam_size': 1}
+  captioner.set_caption_batch_size(1)
   experimenter.generation_experiment(generation_strategy, should_remove_punctuation=True)
+  captioner.set_caption_batch_size(min(MAX_IMAGES * 5, 1000))
   experimenter.retrieval_experiment()
 
 if __name__ == "__main__":
