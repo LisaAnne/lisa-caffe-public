@@ -338,6 +338,8 @@ def main(model_name='',image_net='', dataset_name='val', vocab='vocabulary', fea
   #feats_bool is whether or not the images are saved as pickle feature files or if they are normal images
   MAX_IMAGES = -1  # -1 to use all images
   TAG = 'coco_2layer_factored'
+  ITER = 110000
+  MODEL_FILENAME = 'lrcn_finetune_iter_%d' % ITER
   if MAX_IMAGES >= 0:
     TAG += '_%dimages' % MAX_IMAGES
   eval_on_test = False
