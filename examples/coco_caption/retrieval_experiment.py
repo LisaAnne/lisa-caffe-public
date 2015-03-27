@@ -192,7 +192,7 @@ class CaptionExperiment():
     print 'Image-to-caption retrieval results:'
     self.print_recall_results(self.image_to_caption_recall)
 
-  def generation_experiment(self, strategy, should_remove_punctuation=True):
+  def generation_experiment(self, strategy):
     # Compute image descriptors.
     print 'Computing image descriptors'
     self.compute_descriptors()
@@ -235,11 +235,9 @@ class CaptionExperiment():
     reference_captions = [([''] * len(self.images)) for _ in xrange(num_reference_files)]
     for image_index, image in enumerate(self.images):
       caption = self.captioner.sentence(all_captions[image_index])
-      if should_remove_punctuation: caption = remove_punctuation(caption)
       model_captions[image_index] = caption
       for reference_index, (_, caption) in enumerate(self.dataset[image]):
         caption = ' '.join(caption)
-        if should_remove_punctuation: caption = remove_punctuation(caption)
         reference_captions[reference_index][image_index] = caption
 
     coco_image_ids = [self.sg.image_path_to_id[image_path]
@@ -274,12 +272,6 @@ def gen_stats(prob):
   except OverflowError:
     stats['perplex_word'] = float('inf')
   return stats
-
-EMPTY_TRANSLATE_TABLE = string.maketrans("", "")
-def remove_punctuation(caption):
-  if type(caption) == unicode:
-    caption = caption.__str__()
-  return caption.translate(EMPTY_TRANSLATE_TABLE, string.punctuation)
 
 def main():
   MAX_IMAGES = 1000
@@ -322,7 +314,7 @@ def main():
   experimenter = CaptionExperiment(captioner, dataset, CACHE_DIR, sg)
   generation_strategy = {'type': 'beam', 'beam_size': 1}
   captioner.set_caption_batch_size(1)
-  experimenter.generation_experiment(generation_strategy, should_remove_punctuation=True)
+  experimenter.generation_experiment(generation_strategy)
   captioner.set_caption_batch_size(min(MAX_IMAGES * 5, 1000))
   experimenter.retrieval_experiment()
 
