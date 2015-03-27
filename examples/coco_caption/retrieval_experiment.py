@@ -244,15 +244,15 @@ class CaptionExperiment():
 
     coco_image_ids = [self.sg.image_path_to_id[image_path]
                       for image_path in self.images]
-    coco_result = [{
+    generation_result = [{
       'image_id': self.sg.image_path_to_id[image_path],
       'caption': model_captions[image_index]
     } for (image_index, image_path) in enumerate(self.images)]
-    coco_json_filename = 'coco_result.json'
-    with open(coco_json_filename, 'w') as coco_json_file:
-      json.dump(coco_result, coco_json_file)
-    coco_result = self.sg.coco.loadRes(coco_json_filename)
-    coco_evaluator = COCOEvalCap(self.sg.coco, coco_result)
+    json_filename = '%s/generation_result.json' % self.cache_dir
+    with open(json_filename, 'w') as json_file:
+      json.dump(generation_result, json_file)
+    generation_result = self.sg.coco.loadRes(json_filename)
+    coco_evaluator = COCOEvalCap(self.sg.coco, generation_result)
     coco_evaluator.params['image_id'] = coco_image_ids
     coco_evaluator.evaluate()
 
@@ -284,13 +284,15 @@ def remove_punctuation(caption):
 def main():
   MAX_IMAGES = 1000
   TAG = 'coco_2layer_factored'
+  ITER = 110000
+  MODEL_FILENAME = 'lrcn_finetune_iter_%d' % ITER
   if MAX_IMAGES >= 0:
     TAG += '_%dimages' % MAX_IMAGES
-  ITER = 110000
-  MODEL_FILE = './examples/coco_caption/lrcn_iter_%d.caffemodel' % ITER
+  MODEL_DIR = './examples/coco_caption'
+  MODEL_FILE = '%s/%s.caffemodel' % (MODEL_DIR, MODEL_FILENAME)
   IMAGE_NET_FILE = './models/bvlc_reference_caffenet/deploy.prototxt'
   LSTM_NET_FILE = './examples/coco_caption/lrcn_word_to_preds.deploy.prototxt'
-  NET_TAG = '%s_iter_%d' % (TAG, ITER)
+  NET_TAG = '%s_%s' % (TAG, MODEL_FILENAME)
   CACHE_DIR = './retrieval_cache/%s' % NET_TAG
   VOCAB_FILE = './examples/coco_caption/h5_data/buffer_100/vocabulary.txt'
   DEVICE_ID = 0
