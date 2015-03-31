@@ -1,0 +1,19 @@
+net: "hyb2_RGBJoints_train_test.prototxt"
+test_iter: 75 
+test_state: { stage: 'test-on-test' }
+test_interval: 100
+#test_net_reset: false
+base_lr: 0.0001
+lr_policy: "step"
+gamma: 0.1
+stepsize: 2000
+display: 20
+max_iter: 200
+momentum: 0.9
+weight_decay: 0.005  #turn up if overfitting
+snapshot: 6000
+snapshot_prefix: "/mnt/y/lisaanne/JHMDB/RGB_snapshots/RGBJoints"
+solver_mode: GPU
+device_id: 3
+debug_info: true
+random_seed: 1701

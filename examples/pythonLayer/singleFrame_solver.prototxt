@@ -1,0 +1,23 @@
+net: "train_test_imageReadUPDATE.prototxt"
+#test_iter: 1 
+test_iter: 20
+test_state: { stage: 'test-on-test' }
+test_interval: 100
+#test_net_reset: false
+base_lr: 0.0001
+lr_policy: "step"
+gamma: 0.1
+stepsize: 15000
+display: 20
+max_iter: 500 
+momentum: 0.9
+weight_decay: 0.0005
+snapshot: 40000
+snapshot_prefix: "snapshots"
+solver_mode: GPU
+device_id: 6
+random_seed: 1701
+average_loss: 1000
+#clip_gradients: 10
+debug_info: false
+#snapshot_blobs_hdf5: false
