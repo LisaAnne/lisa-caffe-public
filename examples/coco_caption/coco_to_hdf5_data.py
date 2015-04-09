@@ -258,10 +258,12 @@ def preprocess_coco():
       ('train', 'train', 100000, True),
       ('val', 'val', 100000, True),
       ('test', 'val', 100000, True),
+      ('trainval', 'trainval', 100000, True),
       # Write unaligned datasets as well:
       ('train', 'train', 100000, False),
       ('val', 'val', 100000, False),
       ('test', 'val', 100000, False),
+      ('trainval', 'trainval', 100000, False),
   ]
   for split_name, coco_split_name, batch_stream_length, aligned in DATASETS:
     vocab = preprocess_dataset(split_name, coco_split_name, batch_stream_length,
