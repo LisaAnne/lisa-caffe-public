@@ -340,10 +340,12 @@ def process_coco(include_trainval=False):
       ('train', 'train', 100000, True),
       ('val', 'val', 100000, True),
       ('test', 'val', 100000, True),
+      ('trainval', 'trainval', 100000, True),
       # Write unaligned datasets as well:
       ('train', 'train', 100000, False),
       ('val', 'val', 100000, False),
       ('test', 'val', 100000, False),
+      ('trainval', 'trainval', 100000, False),
   ]
   # Also create a 'trainval' set if include_trainval is set.
   # ./data/coco/make_trainval.py must have been run for this to work.
