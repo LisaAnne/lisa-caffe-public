@@ -92,7 +92,7 @@ class RecurrentLayer : public Layer<Dtype> {
    *        Subclasses should define this -- see RNNLayer and LSTMLayer for
    *        examples.
    */
-  virtual void OutputBlobNames(vector<string>* names) const = 0;
+  virtual const char* OutputBlobName() const = 0;
 
   /**
    * @param bottom input Blob vector (length 2-3)
