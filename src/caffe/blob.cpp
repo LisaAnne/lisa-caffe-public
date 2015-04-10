@@ -399,6 +399,15 @@ bool Blob<Dtype>::ShapeEquals(const BlobProto& other) {
 }
 
 template <typename Dtype>
+bool Blob<Dtype>::ShapeEquals(const BlobShape& other) {
+  if (num_axes() != other.dim_size()) { return false; }
+  for (int i = 0; i < num_axes(); ++i) {
+    if (shape(i) != other.dim(i)) { return false; }
+  }
+  return true;
+}
+
+template <typename Dtype>
 void Blob<Dtype>::CopyFrom(const Blob& source, bool copy_diff, bool reshape) {
   if (source.count() != count_ || source.shape() != shape_) {
     if (reshape) {

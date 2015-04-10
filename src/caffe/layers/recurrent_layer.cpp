@@ -99,27 +99,30 @@ void RecurrentLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   RecurrentInputBlobNames(&recur_input_names);
   vector<string> recur_output_names;
   RecurrentOutputBlobNames(&recur_output_names);
-  const int num_recur_blobs = recur_input_names.size();
+  const int num_recur_blobs = NumRecurrentBlobs();
+  CHECK_EQ(num_recur_blobs, recur_input_names.size());
   CHECK_EQ(num_recur_blobs, recur_output_names.size());
   recur_input_blobs_.resize(num_recur_blobs);
   recur_output_blobs_.resize(num_recur_blobs);
-  for (int i = 0; i < recur_input_names.size(); ++i) {
-    recur_input_blobs_[i] =
-        CHECK_NOTNULL(unrolled_net_->blob_by_name(recur_input_names[i]).get());
-    recur_output_blobs_[i] =
-        CHECK_NOTNULL(unrolled_net_->blob_by_name(recur_output_names[i]).get());
+  const bool expose_hidden_state =
+      this->layer_param_.recurrent_param().expose_hidden_state();
+  for (int i = 0; i < num_recur_blobs; ++i) {
+    if (expose_hidden_state) {
+      const int bottom_index = bottom.size() - num_recur_blobs + i;
+      recur_input_blobs_[i] = bottom[bottom_index];
+      const int top_index = top.size() - num_recur_blobs + i;
+      recur_output_blobs_[i] = top[top_index];
+    } else {
+      recur_input_blobs_[i] = CHECK_NOTNULL(
+          unrolled_net_->blob_by_name(recur_input_names[i]).get());
+      recur_output_blobs_[i] = CHECK_NOTNULL(
+          unrolled_net_->blob_by_name(recur_output_names[i]).get());
+    }
   }
 
   // Setup pointers to outputs.
-  vector<string> output_names;
-  OutputBlobNames(&output_names);
-  CHECK_EQ(top.size(), output_names.size())
-      << "OutputBlobNames must provide an output blob name for each top.";
-  output_blobs_.resize(output_names.size());
-  for (int i = 0; i < output_names.size(); ++i) {
-    output_blobs_[i] =
-        CHECK_NOTNULL(unrolled_net_->blob_by_name(output_names[i]).get());
-  }
+  output_blob_ =
+      CHECK_NOTNULL(unrolled_net_->blob_by_name(OutputBlobName()).get());
 
   // We should have 2 inputs (x and cont), plus a number of recurrent inputs,
   // plus maybe a static input.
@@ -167,7 +170,6 @@ void RecurrentLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
       << "bottom[1] must have exactly 2 axes -- (#timesteps, #streams)";
   CHECK_EQ(T_, bottom[1]->shape(0));
   CHECK_EQ(N_, bottom[1]->shape(1));
-  CHECK_EQ(top.size(), output_blobs_.size());
   x_input_blob_->ReshapeLike(*bottom[0]);
   vector<int> cont_shape = bottom[1]->shape();
   cont_shape.insert(cont_shape.begin(), 1);
@@ -177,9 +179,18 @@ void RecurrentLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   }
   vector<BlobShape> recur_input_shapes;
   RecurrentInputShapes(&recur_input_shapes);
-  CHECK_EQ(recur_input_shapes.size(), recur_input_blobs_.size());
-  for (int i = 0; i < recur_input_shapes.size(); ++i) {
-    recur_input_blobs_[i]->Reshape(recur_input_shapes[i]);
+  const int num_recur_blobs = NumRecurrentBlobs();
+  CHECK_EQ(num_recur_blobs, recur_input_shapes.size());
+  const bool expose_hidden_state =
+      this->layer_param_.recurrent_param().expose_hidden_state();
+  for (int i = 0; i < num_recur_blobs; ++i) {
+    if (expose_hidden_state) {
+      CHECK(recur_input_blobs_[i]->ShapeEquals(recur_input_shapes[i]))
+          << "recurrent input " << i << " must have shape: "
+          << recur_input_shapes[i].DebugString();
+    } else {
+      recur_input_blobs_[i]->Reshape(recur_input_shapes[i]);
+    }
   }
   unrolled_net_->Reshape();
   x_input_blob_->ShareData(*bottom[0]);
@@ -189,10 +200,17 @@ void RecurrentLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
     x_static_input_blob_->ShareData(*bottom[2]);
     x_static_input_blob_->ShareDiff(*bottom[2]);
   }
-  for (int i = 0; i < top.size(); ++i) {
-    top[i]->ReshapeLike(*output_blobs_[i]);
-    output_blobs_[i]->ShareData(*top[i]);
-    output_blobs_[i]->ShareDiff(*top[i]);
+  top[0]->ReshapeLike(*output_blob_);
+  output_blob_->ShareData(*top[0]);
+  output_blob_->ShareDiff(*top[0]);
+  if (expose_hidden_state) {
+    for (int recur_i = 0, top_i = top.size() - num_recur_blobs;
+         recur_i < num_recur_blobs; ++recur_i, ++top_i) {
+      Blob<Dtype>* recur_output = recur_output_blobs_[recur_i];
+      top[top_i]->ReshapeLike(*recur_output);
+      recur_output->ShareData(*top[top_i]);
+      recur_output->ShareDiff(*top[top_i]);
+    }
   }
 }
 

@@ -264,6 +264,7 @@ class Blob {
   void ShareDiff(const Blob& other);
 
   bool ShapeEquals(const BlobProto& other);
+  bool ShapeEquals(const BlobShape& other);
 
  protected:
   shared_ptr<SyncedMemory> data_;

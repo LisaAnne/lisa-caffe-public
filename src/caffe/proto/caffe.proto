@@ -818,6 +818,15 @@ message RecurrentParameter {
 
   // Whether to enable displaying debug_info in the unrolled recurrent net.
   optional bool debug_info = 4 [default = false];
+
+  // Whether to input the T_0 (timestep 0) hidden state and output the T_T
+  // (timestep T) hidden state. Useful at "deploy" time for saving a particular
+  // hidden state to be used later, without having to rerun the entire sequence
+  // from the beginning. This requires N extra bottoms and tops, where N depends
+  // on the particular recurrent net implementation, specified by
+  // NumRecurrentBlobs(); for example, RNNLayer::NumRecurrentBlobs() == 1 and
+  // LSTMLayer::NumRecurrentBlobs() == 2.
+  optional bool expose_hidden_state = 5 [default = false];
 }
 
 // Message that stores parameters used by ReLULayer

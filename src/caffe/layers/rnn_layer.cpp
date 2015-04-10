@@ -33,12 +33,6 @@ void RNNLayer<Dtype>::RecurrentInputShapes(vector<BlobShape>* shapes) const {
 }
 
 template <typename Dtype>
-void RNNLayer<Dtype>::OutputBlobNames(vector<string>* names) const {
-  names->resize(1);
-  (*names)[0] = "o";
-}
-
-template <typename Dtype>
 void RNNLayer<Dtype>::FillUnrolledNet(NetParameter* net_param) const {
   const int num_output = this->layer_param_.recurrent_param().num_output();
   CHECK_GT(num_output, 0) << "num_output must be positive";

@@ -33,9 +33,18 @@ class RecurrentLayer : public Layer<Dtype> {
   virtual void Reset();
 
   virtual inline const char* type() const { return "Recurrent"; }
-  virtual inline int MinBottomBlobs() const { return 2; }
-  virtual inline int MaxBottomBlobs() const { return 3; }
-  virtual inline int ExactNumTopBlobs() const { return 1; }
+  virtual inline int MinBottomBlobs() const {
+     return 2 + (this->layer_param_.recurrent_param().expose_hidden_state()
+                 * NumRecurrentBlobs());
+  }
+  virtual inline int MaxBottomBlobs() const {
+     return 3 + (this->layer_param_.recurrent_param().expose_hidden_state()
+                 * NumRecurrentBlobs());
+  }
+  virtual inline int ExactNumTopBlobs() const {
+     return 1 + (this->layer_param_.recurrent_param().expose_hidden_state()
+                 * NumRecurrentBlobs());
+  }
 
   virtual inline bool AllowForceBackward(const int bottom_index) const {
     // Can't propagate to sequence continuation indicators.
@@ -48,6 +57,13 @@ class RecurrentLayer : public Layer<Dtype> {
    *        should define this -- see RNNLayer and LSTMLayer for examples.
    */
   virtual void FillUnrolledNet(NetParameter* net_param) const = 0;
+
+  /**
+   * @brief Returns the number of recurrent input and output Blob&s.
+   *        Subclasses should define this -- see RNNLayer and LSTMLayer for
+   *        examples.
+   */
+  virtual int NumRecurrentBlobs() const = 0;
 
   /**
    * @brief Fills names with the names of the 0th timestep recurrent input
@@ -76,7 +92,7 @@ class RecurrentLayer : public Layer<Dtype> {
    *        Subclasses should define this -- see RNNLayer and LSTMLayer for
    *        examples.
    */
-  virtual void OutputBlobNames(vector<string>* names) const = 0;
+  virtual const char* OutputBlobName() const = 0;
 
   /**
    * @param bottom input Blob vector (length 2-3)
@@ -150,7 +166,7 @@ class RecurrentLayer : public Layer<Dtype> {
 
   vector<Blob<Dtype>* > recur_input_blobs_;
   vector<Blob<Dtype>* > recur_output_blobs_;
-  vector<Blob<Dtype>* > output_blobs_;
+  Blob<Dtype>* output_blob_;
   Blob<Dtype>* x_input_blob_;
   Blob<Dtype>* x_static_input_blob_;
   Blob<Dtype>* cont_input_blob_;
@@ -195,10 +211,11 @@ class LSTMLayer : public RecurrentLayer<Dtype> {
 
  protected:
   virtual void FillUnrolledNet(NetParameter* net_param) const;
+  virtual inline int NumRecurrentBlobs() const { return 2; }
   virtual void RecurrentInputBlobNames(vector<string>* names) const;
   virtual void RecurrentOutputBlobNames(vector<string>* names) const;
   virtual void RecurrentInputShapes(vector<BlobShape>* shapes) const;
-  virtual void OutputBlobNames(vector<string>* names) const;
+  virtual inline const char* OutputBlobName() const { return "h"; }
 };
 
 /**
@@ -310,10 +327,11 @@ class RNNLayer : public RecurrentLayer<Dtype> {
 
  protected:
   virtual void FillUnrolledNet(NetParameter* net_param) const;
+  virtual inline int NumRecurrentBlobs() const { return 1; }
   virtual void RecurrentInputBlobNames(vector<string>* names) const;
   virtual void RecurrentOutputBlobNames(vector<string>* names) const;
   virtual void RecurrentInputShapes(vector<BlobShape>* shapes) const;
-  virtual void OutputBlobNames(vector<string>* names) const;
+  virtual inline const char* OutputBlobName() const { return "o"; }
 };
 
 }  // namespace caffe
