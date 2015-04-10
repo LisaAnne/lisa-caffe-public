@@ -21,12 +21,13 @@ from pycocoevalcap.eval import COCOEvalCap
 class CaptionExperiment():
   # captioner is an initialized Captioner (captioner.py)
   # dataset is a dict: image path -> [caption1, caption2, ...]
-  def __init__(self, captioner, dataset, cache_dir, sg):
+  def __init__(self, captioner, dataset, dataset_cache_dir, cache_dir, sg):
     self.captioner = captioner
     self.sg = sg
+    self.dataset_cache_dir = dataset_cache_dir
     self.cache_dir = cache_dir
-    if not os.path.exists(cache_dir):
-      os.makedirs(cache_dir)
+    for d in [dataset_cache_dir, cache_dir]:
+      if not os.path.exists(d): os.makedirs(d)
     self.dataset = dataset
     self.images = dataset.keys()
     self.init_caption_list(dataset)
@@ -43,7 +44,7 @@ class CaptionExperiment():
     self.captions.sort(key=lambda c: len(c['caption']))
 
   def compute_descriptors(self):
-    descriptor_filename = '%s/descriptors.npz' % self.cache_dir
+    descriptor_filename = '%s/descriptors.npz' % self.dataset_cache_dir
     if os.path.exists(descriptor_filename):
       self.descriptors = np.load(descriptor_filename)['descriptors']
     else:
@@ -264,6 +265,7 @@ class CaptionExperiment():
       'caption': model_captions[image_index]
     } for (image_index, image_path) in enumerate(self.images)]
     json_filename = '%s/generation_result.json' % self.cache_dir
+    print 'Dumping result to file: %s' % json_filename
     with open(json_filename, 'w') as json_file:
       json.dump(generation_result, json_file)
     generation_result = self.sg.coco.loadRes(json_filename)
@@ -310,7 +312,10 @@ def main():
   IMAGE_NET_FILE = './models/bvlc_reference_caffenet/deploy.prototxt'
   LSTM_NET_FILE = './examples/coco_caption/lrcn_word_to_preds.deploy.prototxt'
   NET_TAG = '%s_%s' % (TAG, MODEL_FILENAME)
-  CACHE_DIR = './retrieval_cache/%s' % NET_TAG
+  DATASET_SUBDIR = '%s/%s_ims' % (DATASET_NAME,
+      str(MAX_IMAGES) if MAX_IMAGES >= 0 else 'all')
+  DATASET_CACHE_DIR = './retrieval_cache/%s' % DATASET_SUBDIR
+  CACHE_DIR = '%s/%s' % (DATASET_CACHE_DIR, MODEL_FILENAME)
   VOCAB_FILE = './examples/coco_caption/h5_data/buffer_100/vocabulary.txt'
   DEVICE_ID = 0
   with open(VOCAB_FILE, 'r') as vocab_file:
@@ -336,7 +341,7 @@ def main():
   if MAX_IMAGES < 0: MAX_IMAGES = len(dataset.keys())
   captioner = Captioner(MODEL_FILE, IMAGE_NET_FILE, LSTM_NET_FILE, VOCAB_FILE,
                         device_id=DEVICE_ID)
-  experimenter = CaptionExperiment(captioner, dataset, CACHE_DIR, sg)
+  experimenter = CaptionExperiment(captioner, dataset, DATASET_CACHE_DIR, CACHE_DIR, sg)
   captioner.set_image_batch_size(min(100, MAX_IMAGES))
   beam_size = 1
   generation_strategy = {'type': 'beam', 'beam_size': beam_size}
