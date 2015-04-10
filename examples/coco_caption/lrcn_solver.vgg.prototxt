@@ -9,11 +9,11 @@ net: "./examples/coco_caption/lrcn.vgg.prototxt"
 # below as appropriate:
 
 train_state: { stage: 'freeze-convnet' stage: 'factored' stage: '2-layer' }
-test_iter: 25
-test_state: { stage: 'freeze-convnet' stage: 'factored' stage: '2-layer' stage: 'test-on-train' }
-test_iter: 25
-test_state: { stage: 'freeze-convnet' stage: 'factored' stage: '2-layer' stage: 'test-on-val' }
-test_interval: 1000
+# test_iter: 25
+# test_state: { stage: 'freeze-convnet' stage: 'factored' stage: '2-layer' stage: 'test-on-train' }
+# test_iter: 25
+# test_state: { stage: 'freeze-convnet' stage: 'factored' stage: '2-layer' stage: 'test-on-val' }
+# test_interval: 1000
 base_lr: 0.01
 lr_policy: "step"
 gamma: 0.5
