@@ -192,7 +192,7 @@ class CaptionExperiment():
     print 'Image-to-caption retrieval results:'
     self.print_recall_results(self.image_to_caption_recall)
 
-  def generation_experiment(self, strategy):
+  def generation_experiment(self, strategy, batch_size=1000):
     # Compute image descriptors.
     print 'Computing image descriptors'
     self.compute_descriptors()
@@ -201,19 +201,36 @@ class CaptionExperiment():
 
     # Generate captions for all images.
     all_captions = [None] * num_images
-    for image_index in xrange(num_images):
+    for image_index in xrange(0, num_images, batch_size):
       sys.stdout.write("\rGenerating captions for image %d/%d" %
                        (image_index, num_images))
       sys.stdout.flush()
-      captions, caption_probs = self.captioner.predict_caption(
-          self.descriptors[image_index], strategy=strategy)
-      best_caption, max_log_prob = None, None
-      for caption, probs in zip(captions, caption_probs):
-        log_prob = gen_stats(probs)['log_p']
-        if best_caption is None or \
-            (best_caption is not None and log_prob > max_log_prob):
-          best_caption, max_log_prob = caption, log_prob
-      all_captions[image_index] = best_caption
+      if (strategy['type'] == 'beam' and strategy['beam_size'] == 1) or \
+         (strategy['type'] == 'sample' and
+          ('temp' not in strategy or strategy['temp'] in (1, float('inf'))) and
+          ('num' not in strategy or strategy['num'] == 1)):
+        if strategy['type'] == 'beam' or \
+            ('temp' in strategy and strategy['temp'] == float('inf')):
+          temp = float('inf')
+        else:
+          temp = 1
+        output_captions, output_probs = self.captioner.sample_captions(
+            self.descriptors[image_index : (image_index + batch_size)],
+            temp=temp)
+        batch_end_index = min(image_index + batch_size, num_images)
+        for batch_index, output in zip(range(image_index, batch_end_index),
+                                       output_captions):
+          all_captions[batch_index] = output
+      else:
+        captions, caption_probs = self.captioner.predict_caption(
+            self.descriptors[image_index], strategy=strategy)
+        best_caption, max_log_prob = None, None
+        for caption, probs in zip(captions, caption_probs):
+          log_prob = gen_stats(probs)['log_p']
+          if best_caption is None or \
+              (best_caption is not None and log_prob > max_log_prob):
+            best_caption, max_log_prob = caption, log_prob
+        all_captions[image_index] = best_caption
     sys.stdout.write('\n')
 
     # Compute the number of reference files as the maximum number of ground
@@ -274,12 +291,20 @@ def gen_stats(prob):
   return stats
 
 def main():
-  MAX_IMAGES = 1000
+  MAX_IMAGES = -1  # -1 to use all images
   TAG = 'coco_2layer_factored'
-  ITER = 110000
-  MODEL_FILENAME = 'lrcn_finetune_iter_%d' % ITER
   if MAX_IMAGES >= 0:
     TAG += '_%dimages' % MAX_IMAGES
+  eval_on_test = False
+  if eval_on_test:
+    ITER = 100000
+    MODEL_FILENAME = 'lrcn_finetune_trainval_stepsize40k_iter_%d' % ITER
+    DATASET_NAME = 'test'
+  else:  # eval on val
+    ITER = 50000
+    MODEL_FILENAME = 'lrcn_finetune_iter_%d' % ITER
+    DATASET_NAME = 'val'
+  TAG += '_%s' % DATASET_NAME
   MODEL_DIR = './examples/coco_caption'
   MODEL_FILE = '%s/%s.caffemodel' % (MODEL_DIR, MODEL_FILENAME)
   IMAGE_NET_FILE = './models/bvlc_reference_caffenet/deploy.prototxt'
@@ -288,7 +313,6 @@ def main():
   CACHE_DIR = './retrieval_cache/%s' % NET_TAG
   VOCAB_FILE = './examples/coco_caption/h5_data/buffer_100/vocabulary.txt'
   DEVICE_ID = 0
-  DATASET_NAME = 'val'
   with open(VOCAB_FILE, 'r') as vocab_file:
     vocab = [line.strip() for line in vocab_file.readlines()]
   coco = COCO(COCO_ANNO_PATH % DATASET_NAME)
@@ -301,7 +325,7 @@ def main():
       dataset[image_path] = []
     dataset[image_path].append((sg.line_to_stream(sentence), sentence))
   print 'Original dataset contains %d images' % len(dataset.keys())
-  if MAX_IMAGES >= 0 and MAX_IMAGES < len(dataset.keys()):
+  if 0 <= MAX_IMAGES < len(dataset.keys()):
     all_keys = dataset.keys()
     perm = np.random.permutation(len(all_keys))[:MAX_IMAGES]
     chosen_keys = set([all_keys[p] for p in perm])
@@ -309,10 +333,13 @@ def main():
       if key not in chosen_keys:
         del dataset[key]
     print 'Reduced dataset to %d images' % len(dataset.keys())
+  if MAX_IMAGES < 0: MAX_IMAGES = len(dataset.keys())
   captioner = Captioner(MODEL_FILE, IMAGE_NET_FILE, LSTM_NET_FILE, VOCAB_FILE,
                         device_id=DEVICE_ID)
   experimenter = CaptionExperiment(captioner, dataset, CACHE_DIR, sg)
-  generation_strategy = {'type': 'beam', 'beam_size': 1}
+  captioner.set_image_batch_size(min(100, MAX_IMAGES))
+  beam_size = 1
+  generation_strategy = {'type': 'beam', 'beam_size': beam_size}
   captioner.set_caption_batch_size(1)
   experimenter.generation_experiment(generation_strategy)
   captioner.set_caption_batch_size(min(MAX_IMAGES * 5, 1000))
