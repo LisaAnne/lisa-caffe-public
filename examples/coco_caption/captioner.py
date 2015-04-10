@@ -273,11 +273,13 @@ class Captioner():
     return outputs
 
   def sample_captions(self, descriptor, prob_output_name='probs',
-                      output_name='samples', caption_source='sample'):
+                      temp=1, max_length=50):
+    descriptor = np.array(descriptor)
+    batch_size = descriptor.shape[0]
+    self.set_caption_batch_size(batch_size)
     net = self.lstm_net
     cont_input = np.zeros_like(net.blobs['cont_sentence'].data)
     word_input = np.zeros_like(net.blobs['input_sentence'].data)
-    batch_size = descriptor.shape[0]
     image_features = np.zeros_like(net.blobs['image_features'].data)
     image_features[:] = descriptor
     outputs = []
@@ -285,7 +287,7 @@ class Captioner():
     output_probs = [[] for b in range(batch_size)]
     caption_index = 0
     num_done = 0
-    while num_done < batch_size:
+    while num_done < batch_size and caption_index < max_length:
       if caption_index == 0:
         cont_input[:] = 0
       elif caption_index == 1:
@@ -294,33 +296,29 @@ class Captioner():
         word_input[:] = 0
       else:
         for index in range(batch_size):
-          word_input[index] = \
+          word_input[0, index] = \
               output_captions[index][caption_index - 1] if \
               caption_index <= len(output_captions[index]) else 0
       net.forward(image_features=image_features, cont_sentence=cont_input,
                   input_sentence=word_input)
-      net_output_samples = net.blobs[output_name].data
-      net_output_probs = net.blobs[prob_output_name].data
-      for index in range(batch_size):
+      net_output_probs = net.blobs[prob_output_name].data[0]
+      samples = [
+          random_choice_from_probs(dist, temp=temp, already_softmaxed=True)
+          for dist in net_output_probs
+      ]
+      for index, next_word_sample in enumerate(samples):
         # If the caption is empty, or non-empty but the last word isn't EOS,
         # predict another word.
         if not output_captions[index] or output_captions[index][-1] != 0:
-          next_word_sample = net_output_samples[index]
-          assert next_word_sample == int(next_word_sample)
-          next_word_sample = int(next_word_sample)
           output_captions[index].append(next_word_sample)
           output_probs[index].append(net_output_probs[index, next_word_sample])
           if next_word_sample == 0: num_done += 1
-      print '%d/%d done after word %d' % (num_done, batch_size, caption_index)
+      sys.stdout.write('\r%d/%d done after word %d' %
+          (num_done, batch_size, caption_index))
+      sys.stdout.flush()
       caption_index += 1
-    for prob, caption in zip(output_probs, output_captions):
-      output = {}
-      output['caption'] = caption
-      output['prob'] = prob
-      output['gt'] = False
-      output['source'] = caption_source
-      outputs.append(output)
-    return outputs
+    sys.stdout.write('\n')
+    return output_captions, output_probs
 
   def sentence(self, vocab_indices):
     sentence = ' '.join([self.vocab[i] for i in vocab_indices])
@@ -348,10 +346,13 @@ def softmax(softmax_inputs, temp):
   eps_sum = 1e-20
   return exp_outputs / max(exp_outputs_sum, eps_sum)
 
-def random_choice_from_probs(softmax_inputs, temp=1.0, already_softmaxed=False):
+def random_choice_from_probs(softmax_inputs, temp=1, already_softmaxed=False):
+  # temperature of infinity == take the max
+  if temp == float('inf'):
+    return np.argmax(softmax_inputs)
   if already_softmaxed:
     probs = softmax_inputs
-    assert temp == 1.0
+    assert temp == 1
   else:
     probs = softmax(softmax_inputs, temp)
   r = random.random()
