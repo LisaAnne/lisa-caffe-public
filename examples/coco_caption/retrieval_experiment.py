@@ -193,45 +193,48 @@ class CaptionExperiment():
     print 'Image-to-caption retrieval results:'
     self.print_recall_results(self.image_to_caption_recall)
 
-  def generation_experiment(self, strategy, batch_size=1000):
+  def generation_experiment(self, strategy, max_batch_size=1000):
     # Compute image descriptors.
     print 'Computing image descriptors'
     self.compute_descriptors()
 
+    do_batches = (strategy['type'] == 'beam' and strategy['beam_size'] == 1) or \
+        (strategy['type'] == 'sample' and
+         ('temp' not in strategy or strategy['temp'] in (1, float('inf'))) and
+         ('num' not in strategy or strategy['num'] == 1))
+
     num_images = len(self.images)
+    batch_size = min(max_batch_size, num_images) if do_batches else 1
 
     # Generate captions for all images.
     all_captions = [None] * num_images
     for image_index in xrange(0, num_images, batch_size):
+      batch_end_index = min(image_index + batch_size, num_images)
       sys.stdout.write("\rGenerating captions for image %d/%d" %
                        (image_index, num_images))
       sys.stdout.flush()
-      if (strategy['type'] == 'beam' and strategy['beam_size'] == 1) or \
-         (strategy['type'] == 'sample' and
-          ('temp' not in strategy or strategy['temp'] in (1, float('inf'))) and
-          ('num' not in strategy or strategy['num'] == 1)):
+      if do_batches:
         if strategy['type'] == 'beam' or \
             ('temp' in strategy and strategy['temp'] == float('inf')):
           temp = float('inf')
         else:
           temp = 1
         output_captions, output_probs = self.captioner.sample_captions(
-            self.descriptors[image_index : (image_index + batch_size)],
-            temp=temp)
-        batch_end_index = min(image_index + batch_size, num_images)
+            self.descriptors[image_index:batch_end_index], temp=temp)
         for batch_index, output in zip(range(image_index, batch_end_index),
                                        output_captions):
           all_captions[batch_index] = output
       else:
-        captions, caption_probs = self.captioner.predict_caption(
-            self.descriptors[image_index], strategy=strategy)
-        best_caption, max_log_prob = None, None
-        for caption, probs in zip(captions, caption_probs):
-          log_prob = gen_stats(probs)['log_p']
-          if best_caption is None or \
-              (best_caption is not None and log_prob > max_log_prob):
-            best_caption, max_log_prob = caption, log_prob
-        all_captions[image_index] = best_caption
+        for batch_image_index in xrange(image_index, batch_end_index):
+          captions, caption_probs = self.captioner.predict_caption(
+              self.descriptors[batch_image_index], strategy=strategy)
+          best_caption, max_log_prob = None, None
+          for caption, probs in zip(captions, caption_probs):
+            log_prob = gen_stats(probs)['log_p']
+            if best_caption is None or \
+                (best_caption is not None and log_prob > max_log_prob):
+              best_caption, max_log_prob = caption, log_prob
+          all_captions[batch_image_index] = best_caption
     sys.stdout.write('\n')
 
     # Compute the number of reference files as the maximum number of ground
