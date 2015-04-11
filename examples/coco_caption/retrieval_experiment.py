@@ -317,8 +317,7 @@ def main():
   NET_TAG = '%s_%s' % (TAG, MODEL_FILENAME)
   DATASET_SUBDIR = '%s/%s_ims' % (DATASET_NAME,
       str(MAX_IMAGES) if MAX_IMAGES >= 0 else 'all')
-  DATASET_CACHE_DIR = './retrieval_cache/%s' % DATASET_SUBDIR
-  CACHE_DIR = '%s/%s' % (DATASET_CACHE_DIR, MODEL_FILENAME)
+  DATASET_CACHE_DIR = './retrieval_cache/%s/%s' % (DATASET_SUBDIR, MODEL_FILENAME)
   VOCAB_FILE = './examples/coco_caption/h5_data/buffer_100/vocabulary.txt'
   DEVICE_ID = 0
   with open(VOCAB_FILE, 'r') as vocab_file:
@@ -344,11 +343,17 @@ def main():
   if MAX_IMAGES < 0: MAX_IMAGES = len(dataset.keys())
   captioner = Captioner(MODEL_FILE, IMAGE_NET_FILE, LSTM_NET_FILE, VOCAB_FILE,
                         device_id=DEVICE_ID)
-  experimenter = CaptionExperiment(captioner, dataset, DATASET_CACHE_DIR, CACHE_DIR, sg)
-  captioner.set_image_batch_size(min(100, MAX_IMAGES))
   beam_size = 1
   generation_strategy = {'type': 'beam', 'beam_size': beam_size}
-  captioner.set_caption_batch_size(1)
+  if generation_strategy['type'] == 'beam':
+    strategy_name = 'beam%d' % generation_strategy['beam_size']
+  elif generation_strategy['type'] == 'sample':
+    strategy_name = 'sample%f' % generation_strategy['temp']
+  else:
+    raise Exception('Unknown generation strategy type: %s' % generation_strategy['type'])
+  CACHE_DIR = '%s/%s' % (DATASET_CACHE_DIR, strategy_name)
+  experimenter = CaptionExperiment(captioner, dataset, DATASET_CACHE_DIR, CACHE_DIR, sg)
+  captioner.set_image_batch_size(min(100, MAX_IMAGES))
   experimenter.generation_experiment(generation_strategy)
   captioner.set_caption_batch_size(min(MAX_IMAGES * 5, 1000))
   experimenter.retrieval_experiment()
