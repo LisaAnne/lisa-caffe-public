@@ -273,7 +273,7 @@ class Captioner():
     return outputs
 
   def sample_captions(self, descriptor, prob_output_name='probs',
-                      temp=1, max_length=50):
+                      pred_output_name='predict', temp=1, max_length=50):
     descriptor = np.array(descriptor)
     batch_size = descriptor.shape[0]
     self.set_caption_batch_size(batch_size)
@@ -301,11 +301,18 @@ class Captioner():
               caption_index <= len(output_captions[index]) else 0
       net.forward(image_features=image_features, cont_sentence=cont_input,
                   input_sentence=word_input)
-      net_output_probs = net.blobs[prob_output_name].data[0]
-      samples = [
-          random_choice_from_probs(dist, temp=temp, already_softmaxed=True)
-          for dist in net_output_probs
-      ]
+      if temp == 1.0 or temp == float('inf'):
+        net_output_probs = net.blobs[prob_output_name].data[0]
+        samples = [
+            random_choice_from_probs(dist, temp=temp, already_softmaxed=True)
+            for dist in net_output_probs
+        ]
+      else:
+        net_output_preds = net.blobs[pred_output_name].data[0]
+        samples = [
+            random_choice_from_probs(preds, temp=temp, already_softmaxed=False)
+            for preds in net_output_preds
+        ]
       for index, next_word_sample in enumerate(samples):
         # If the caption is empty, or non-empty but the last word isn't EOS,
         # predict another word.
