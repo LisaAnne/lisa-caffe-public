@@ -218,7 +218,7 @@ class CaptionExperiment():
             ('temp' in strategy and strategy['temp'] == float('inf')):
           temp = float('inf')
         else:
-          temp = 1
+          temp = strategy['temp'] if 'temp' in strategy else 1
         output_captions, output_probs = self.captioner.sample_captions(
             self.descriptors[image_index:batch_end_index], temp=temp)
         for batch_index, output in zip(range(image_index, batch_end_index),
