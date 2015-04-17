@@ -107,7 +107,7 @@ class Transformer:
         self.raw_scale = {}
         self.mean = {}
         self.input_scale = {}
-
+        self.is_flow = {}
 
     def __check_input(self, in_):
         if in_ not in self.inputs:
@@ -268,6 +268,16 @@ class Transformer:
         self.__check_input(in_)
         self.input_scale[in_] = scale
 
+    def set_is_flow(self, in_, is_flow):
+        """
+	Indicate if input is a flow image
+
+        Take
+        in_: which input to assign this scale factor
+        is_flow: boolean indicating if the input is a flow image
+        """
+        self.__check_input(in_)
+        self.is_flow[in_] = is_flow
 
 ## Image IO
 
@@ -326,7 +336,7 @@ def resize_image(im, new_dims, interp_order=1):
     return resized_im.astype(np.float32)
 
 
-def oversample(images, crop_dims):
+def oversample(images, crop_dims, flow=False):
     """
     Crop images into the four corners, center, and their mirrored versions.
 
@@ -366,4 +376,6 @@ def oversample(images, crop_dims):
             crops[ix] = im[crop[0]:crop[2], crop[1]:crop[3], :]
             ix += 1
         crops[ix-5:ix] = crops[ix-5:ix, :, ::-1, :]  # flip for mirrors
+        if flow:  #if using a flow input, should flip first channel which corresponds to x-flow
+          crops[ix-5:ix,:,:,0] = 1-crops[ix-5:ix,:,:,0]
     return crops
