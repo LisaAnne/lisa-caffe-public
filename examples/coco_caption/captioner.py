@@ -47,6 +47,9 @@ class Captioner():
     self.image_net.blobs['data'].reshape(batch_size,
         *self.image_net.blobs['data'].data.shape[1:])
 
+  def caption_batch_size(self):
+    return self.lstm_net.blobs['cont_sentence'].data.shape[1]
+
   def set_caption_batch_size(self, batch_size):
     self.lstm_net.blobs['cont_sentence'].reshape(1, batch_size)
     self.lstm_net.blobs['input_sentence'].reshape(1, batch_size)
@@ -136,6 +139,8 @@ class Captioner():
     return sentence, probs
 
   def predict_caption_beam_search(self, descriptor, strategy, max_length=50):
+    orig_batch_size = self.caption_batch_size()
+    if orig_batch_size != 1: self.set_caption_batch_size(1)
     beam_size = strategy['beam_size'] if 'beam_size' in strategy else 1
     assert beam_size >= 1
     beams = [[]]
@@ -182,6 +187,7 @@ class Captioner():
       for beam in new_beams:
         if beam[-1] == 0 or len(beam) >= max_length: beams_complete += 1
       beams, beam_probs = new_beams, new_beam_probs
+    if orig_batch_size != 1: self.set_caption_batch_size(orig_batch_size)
     return beams, beam_probs
 
   def score_caption(self, descriptor, caption, is_gt=True, caption_source='gt'):
