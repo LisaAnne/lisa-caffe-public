@@ -25,61 +25,54 @@ def processImage(im_path, transformer):
   processed_image = transformer.preprocess('data_in',data_in)
   return processed_image
 
-class ImageProcessor():
+class ImageProcessor(object):
   def __init__(self, transformer):
     self.transformer = transformer
   def __call__(self, im_path):
     return processImage(im_path, self.transformer)
 
-
-def advance_batch(result, N, channels, height, width, idx, num_examples, label, im_paths, image_processor, pool):
-    label_r = np.zeros((N))
+class sequenceGenerator(object):
+  def __init__(self, N, num_examples, label, im_paths):
+    self.N = N
+    self.num_examples = num_examples
+    self.label = label
+    self.im_paths = im_paths
+    self.idx = 0
+  def __call__(self):
+    label_r = np.zeros((self.N))
     im_in_batch = []
-    if idx + N >= num_examples:
-      label_r[0:num_examples-idx] = label[idx:]
-      label_r[num_examples-idx:] = label[0:num_examples-idx]
-      im_in_batch[0:num_examples-idx] = im_paths[idx:]
-      im_in_batch[num_examples-idx:] = im_paths[0:num_examples-idx]
+    if self.idx + self.N >= self.num_examples:
+      label_r[0:self.num_examples-self.idx] = self.label[self.idx:]
+      label_r[self.num_examples-self.idx:] = self.label[0:self.N-(self.num_examples-self.idx)]
+      im_in_batch[0:self.num_examples-self.idx] = self.im_paths[self.idx:]
+      im_in_batch[self.num_examples-self.idx:] = self.im_paths[0:self.N-(self.num_examples-self.idx)]
     else:
-      label_r = label[idx:idx+N]
-      im_in_batch = im_paths[idx:idx+N]
-  
-#    data = np.zeros(np.array((N, channels, height, width))[[0,1,2,3]], dtype=np.float32)
-#    for ix, im_path in enumerate(im_in_batch):
-#      data_in = caffe.io.load_image(im_path)
-#      data_in = caffe.io.resize_image(data_in, (227, 227))
-#      data[ix] = transformer.preprocess('data_in',data_in)
-    
-#    pdb.set_trace()
-    result['data'] = pool.map(image_processor, im_in_batch)
-    
-    result['label'] = label_r
+      label_r = self.label[self.idx:self.idx+self.N]
+      im_in_batch = self.im_paths[self.idx:self.idx+self.N]
 
-#    result['batch'] = generator.get_next_batch(truncate_at_exhaustion=False)
-#    image_list = [filename for filename, _ in generator.image_list]
-#    result['images'] = pool.map(image_processor, image_list)
-
-class BatchAdvancer():
-    def __init__(self, result, label, im_paths, num_examples, N, channels, height, width, pool, idx, transformer):
-      self.result = result
-      self.label = label
-      self.im_paths = im_paths
-      self.num_examples = num_examples
-      self.N = N
-      self.channels = channels
-      self.height = height
-      self.width = width
-      self.pool = pool
-      self.idx = idx
-      self.transformer = transformer
-      self.image_processor = ImageProcessor(self.transformer)
- 
-    def __call__(self):
-      idx_in = self.idx
       self.idx += self.N
       if self.idx >= self.num_examples:
         self.idx = 0
-      return advance_batch(self.result, self.N, self.channels, self.height, self.width, idx_in, self.num_examples, self.label, self.im_paths, self.image_processor, self.pool)
+
+    return label_r, im_in_batch 
+  
+
+def advance_batch(result, sequence_generator, image_processor, pool):
+  
+    label_r, im_in_batch = sequence_generator()
+    result['data'] = pool.map(image_processor, im_in_batch) 
+    result['label'] = label_r
+
+
+class BatchAdvancer():
+    def __init__(self, result, sequence_generator, image_processor, pool):
+      self.result = result
+      self.sequence_generator = sequence_generator
+      self.image_processor = image_processor
+      self.pool = pool
+ 
+    def __call__(self):
+      return advance_batch(self.result, self.sequence_generator, self.image_processor, self.pool)
 
 class imageRead(caffe.Layer):
 
@@ -121,8 +114,12 @@ class imageRead(caffe.Layer):
     self.thread_result = {}
     self.thread = None
     pool_size = 24
+
+    self.image_processor = ImageProcessor(self.transformer)
+    self.sequence_generator = sequenceGenerator(self.N, self.num_examples, self.label, self.im_paths)
+
     self.pool = Pool(processes=pool_size)
-    self.batch_advancer = BatchAdvancer(self.thread_result, self.label, self.im_paths, self.num_examples, self.N, self.channels, self.height, self.width, self.pool, self.idx, self.transformer)
+    self.batch_advancer = BatchAdvancer(self.thread_result, self.sequence_generator, self.image_processor, self.pool)
     self.dispatch_worker()
     self.top_names = ['data', 'label']
     print 'Outputs:', self.top_names
@@ -133,8 +130,6 @@ class imageRead(caffe.Layer):
     for top_index, name in enumerate(self.top_names):
       if name == 'data':
         shape = (self.N, self.channels, self.height, self.width)
-    
-    
       elif name == 'label':
         shape = (self.N,)
       top[top_index].reshape(*shape)
@@ -148,7 +143,6 @@ class imageRead(caffe.Layer):
       self.join_worker() 
 
     for top_index, name in zip(range(len(top)), self.top_names):
-      #pdb.set_trace()
       if name == 'data':
         for i in range(self.N):
           top[top_index].data[i, ...] = self.thread_result['data'][i] 
@@ -208,7 +202,6 @@ class HDF5Read(caffe.Layer):
 
     def setup(self, bottom, top):
       self.initialize() 
-      #pdb.set_trace() 
       f = h5py.File(self.HDF_File)
 
       self.clip_markers = np.array(f['clip_markers'])
@@ -399,7 +392,6 @@ class JointsSequenceLayer(caffe.Layer):
           top[top_index].data[...] = labels_final
      
 #      if self.train_or_test == 'train': 
-#        pdb.set_trace()
 
     def dispatch_worker(self):
         assert self.thread is None

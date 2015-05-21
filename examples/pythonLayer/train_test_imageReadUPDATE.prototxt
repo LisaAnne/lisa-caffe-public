@@ -3,10 +3,11 @@ layer {
   name: "data"
   type: "Python"
   top: "data"
+  top: "joints"
   top: "label"
   python_param {
-    module: "sequence_input_layer"
-    layer: "imageReadTrain"
+    module: "sequence_input_layer_joints"
+    layer: "imageJointsReadTrain"
   }
   include: { phase: TRAIN }
 }
@@ -15,10 +16,11 @@ layer {
   name: "data"
   type: "Python"
   top: "data"
+  top: "joints"
   top: "label"
   python_param {
-    module: "sequence_input_layer"
-    layer: "imageReadTest"
+    module: "sequence_input_layer_joints"
+    layer: "imageJointsReadTest"
   }
   include: { phase: TEST stage: "test-on-test" }
 }
