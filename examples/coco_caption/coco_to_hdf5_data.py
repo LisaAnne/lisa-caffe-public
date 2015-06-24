@@ -7,9 +7,10 @@ random.seed(3)
 import re
 import sys
 
-sys.path.append('./examples/coco_caption/')
+sys.path.append('.')
+sys.path.append('/y/lisaanne/coco/')
 
-COCO_PATH = './data/coco/coco'
+COCO_PATH = '/y/lisaanne/coco'
 COCO_TOOL_PATH = '%s/PythonAPI/build/lib/pycocotools' % COCO_PATH
 COCO_IMAGE_ROOT = '%s/images' % COCO_PATH
 
@@ -216,8 +217,8 @@ COCO_IMAGE_PATTERN = '%s/images/%%s2014' % COCO_PATH
 COCO_IMAGE_ID_PATTERN = 'COCO_%s2014_%%012d.jpg'
 
 BUFFER_SIZE = 100
-OUTPUT_DIR = './examples/coco_caption/h5_data/buffer_%d' % BUFFER_SIZE
-SPLITS_PATTERN = './data/coco/coco2014_cocoid.%s.txt'
+OUTPUT_DIR = 'h5_data/buffer_%d' % BUFFER_SIZE
+SPLITS_PATTERN = '/home/lisa/caffe-LSTM-video/data/coco/coco2014_cocoid.%s.txt'
 OUTPUT_DIR_PATTERN = '%s/%%s_batches' % OUTPUT_DIR
 
 def process_dataset(split_name, coco_split_name, batch_stream_length,
@@ -252,6 +253,46 @@ def process_dataset(split_name, coco_split_name, batch_stream_length,
       (num_pads, num_outs, num_truncates, num_outs)
   return sg.vocabulary_inverted
 
+def output_train_sentences(split_name, coco_split_name, batch_stream_length, file_save,
+                    vocab=None, aligned=True):
+  with open(SPLITS_PATTERN % split_name, 'r') as split_file:
+    split_image_ids = [int(line) for line in split_file.readlines()]
+  output_dataset_name = split_name
+  if aligned:
+    output_dataset_name += '_aligned_%d' % MAX_WORDS
+  else:
+    output_dataset_name += '_unaligned'
+  output_path = OUTPUT_DIR_PATTERN % output_dataset_name
+  coco = COCO(COCO_ANNO_PATH % coco_split_name)
+  image_root = COCO_IMAGE_PATTERN % coco_split_name
+  sg = CocoSequenceGenerator(coco, BUFFER_SIZE, image_root,
+      split_ids=split_image_ids, vocab=vocab, align=aligned, pad=aligned,
+      truncate=aligned)
+  
+  v = sg.vocabulary.keys()
+  sentences = sg.image_sentence_pairs
+
+  txt = open(file_save,'wb')
+
+  for ii, sent in enumerate(sentences):
+    print 'On %d of %d.\n' %(ii, len(sentences))
+    s = sent[1]
+    final_s = ''
+    total_w = len(s)
+    for i, word in enumerate(s):
+      if word in v:
+        final_s += word
+      else:
+        final_s += '<unk>'
+      if i == total_w-1:
+        final_s += '.\n'
+      else:
+        final_s += ' '
+    print final_s + '\n'
+    txt.write(final_s)
+  txt.close()        
+  return sg.vocabulary_inverted
+
 def process_coco(include_trainval=False):
   vocab = None
   datasets = [
@@ -275,4 +316,11 @@ def process_coco(include_trainval=False):
                             vocab=vocab, aligned=aligned)
 
 if __name__ == "__main__":
-  process_coco(include_trainval=False)
+  process_coco(True)
+#  vocab = None
+#  datasets = [
+#      ('train', 'train', 100000, True, 'train_sentences.txt'),
+#      ('val', 'val', 100000, True, 'val_sentences.txt'),
+#      ('trainval', 'trainval', 100000, True, 'trainval_sentences.txt')]
+#  for split_name, coco_split_name, batch_stream_length, aligned, file_save in datasets:
+#    vocab = output_train_sentences(split_name, coco_split_name, batch_stream_length, file_save, vocab=None, aligned=True)

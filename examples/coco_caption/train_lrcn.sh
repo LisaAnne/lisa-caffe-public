@@ -2,8 +2,8 @@
 
 GPU_ID=0
 WEIGHTS=\
-./models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel
-DATA_DIR=./examples/coco_caption/h5_data/
+/home/lisa/caffe-LSTM-video/models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel
+DATA_DIR=/home/lisa/caffe-LSTM-video/examples/coco_caption/h5_data/
 if [ ! -d $DATA_DIR ]; then
     echo "Data directory not found: $DATA_DIR"
     echo "First, download the COCO dataset (follow instructions in data/coco)"
@@ -11,7 +11,7 @@ if [ ! -d $DATA_DIR ]; then
     exit 1
 fi
 
-./build/tools/caffe train \
-    -solver ./examples/coco_caption/lrcn_solver.prototxt \
+/home/lisa/caffe-LSTM-video/build/tools/caffe train \
+    -solver /home/lisa/caffe-LSTM-video/examples/coco_caption/lrcn_solver.prototxt \
     -weights $WEIGHTS \
     -gpu $GPU_ID
