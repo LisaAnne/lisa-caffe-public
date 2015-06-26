@@ -9,7 +9,8 @@ import os
 import random
 import sys
 
-sys.path.append('./python/')
+home_dir = '/home/lisa/caffe-LSTM-video'
+sys.path.append(home_dir + '/python/')
 import caffe
 
 class Captioner():

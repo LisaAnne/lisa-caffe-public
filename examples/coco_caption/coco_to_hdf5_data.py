@@ -293,6 +293,8 @@ def output_train_sentences(split_name, coco_split_name, batch_stream_length, fil
   txt.close()        
   return sg.vocabulary_inverted
 
+def write_im_hdf5(im_list)
+
 def process_coco(include_trainval=False):
   vocab = None
   datasets = [
@@ -316,7 +318,24 @@ def process_coco(include_trainval=False):
                             vocab=vocab, aligned=aligned)
 
 if __name__ == "__main__":
-  process_coco(True)
+  #process_coco(True)
+  identifier = 'val'
+  split_name = identifier
+  coco_split_name = identifier
+  batch_stream_length = 100000
+  aligned = True
+  vocab = process_dataset(split_name, coco_split_name, batch_stream_length,
+                           ocab=vocab, aligned=aligned)
+  #just need to read images and then put into an hdf5 file
+  output_dataset_name = split_name
+  output_path = OUTPUT_DIR_PATTERN % output_dataset_name
+  image_out_path = '%s/image_list.txt' % output_path
+  
+  im_file = open(image_out_path, 'rb') 
+  im_list = im_file.readlines()
+
+  write_im_hdf5(im_list)
+
 #  vocab = None
 #  datasets = [
 #      ('train', 'train', 100000, True, 'train_sentences.txt'),

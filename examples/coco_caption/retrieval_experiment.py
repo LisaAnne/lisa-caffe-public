@@ -14,7 +14,10 @@ np.random.seed(seed=0)
 from coco_to_hdf5_data import *
 from captioner import Captioner
 
-COCO_EVAL_PATH = './data/coco/coco-caption-eval'
+home_dir = '/home/lisa/caffe-LSTM-video'
+sys.path.append(home_dir + '/python/')
+import caffe
+COCO_EVAL_PATH = home_dir + '/data/coco/coco-caption-eval'
 sys.path.append(COCO_EVAL_PATH)
 from pycocoevalcap.eval import COCOEvalCap
 
@@ -295,7 +298,7 @@ def gen_stats(prob):
     stats['perplex_word'] = float('inf')
   return stats
 
-def main():
+def main(model_name='',lstm_net=''):
   MAX_IMAGES = -1  # -1 to use all images
   TAG = 'coco_2layer_factored'
   if MAX_IMAGES >= 0:
@@ -306,19 +309,18 @@ def main():
     MODEL_FILENAME = 'lrcn_finetune_trainval_stepsize40k_iter_%d' % ITER
     DATASET_NAME = 'test'
   else:  # eval on val
-    ITER = 50000
-    MODEL_FILENAME = 'lrcn_finetune_iter_%d' % ITER
+    MODEL_FILENAME = model_name 
     DATASET_NAME = 'val'
   TAG += '_%s' % DATASET_NAME
-  MODEL_DIR = './examples/coco_caption'
+  MODEL_DIR = home_dir + '/examples/coco_caption/snapshots'
   MODEL_FILE = '%s/%s.caffemodel' % (MODEL_DIR, MODEL_FILENAME)
-  IMAGE_NET_FILE = './models/bvlc_reference_caffenet/deploy.prototxt'
-  LSTM_NET_FILE = './examples/coco_caption/lrcn_word_to_preds.deploy.prototxt'
+  IMAGE_NET_FILE = home_dir + '/models/bvlc_reference_caffenet/deploy.prototxt'
+  LSTM_NET_FILE = home_dir + '/examples/coco_caption/lrcn_word_to_preds.deploy.prototxt'
   NET_TAG = '%s_%s' % (TAG, MODEL_FILENAME)
   DATASET_SUBDIR = '%s/%s_ims' % (DATASET_NAME,
       str(MAX_IMAGES) if MAX_IMAGES >= 0 else 'all')
-  DATASET_CACHE_DIR = './retrieval_cache/%s/%s' % (DATASET_SUBDIR, MODEL_FILENAME)
-  VOCAB_FILE = './examples/coco_caption/h5_data/buffer_100/vocabulary.txt'
+  DATASET_CACHE_DIR = home_dir + '/retrieval_cache/%s/%s' % (DATASET_SUBDIR, MODEL_FILENAME)
+  VOCAB_FILE = home_dir + '/examples/coco_caption/h5_data/buffer_100/vocabulary.txt'
   DEVICE_ID = 0
   with open(VOCAB_FILE, 'r') as vocab_file:
     vocab = [line.strip() for line in vocab_file.readlines()]
@@ -356,7 +358,7 @@ def main():
   captioner.set_image_batch_size(min(100, MAX_IMAGES))
   experimenter.generation_experiment(generation_strategy)
   captioner.set_caption_batch_size(min(MAX_IMAGES * 5, 1000))
-  experimenter.retrieval_experiment()
+  #experimenter.retrieval_experiment()
 
 if __name__ == "__main__":
-  main()
+  main(sys.argv[1], sys.argv[2])

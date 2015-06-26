@@ -1,7 +1,13 @@
 import numpy as np
 import skimage.io
+skimage.io.use_plugin('matplotlib')
 from scipy.ndimage import zoom
 from skimage.transform import resize
+
+#needed to deal with weird IO issue
+from PIL import Image
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 try:
     # Python3 will most likely not be able to load protobuf
@@ -289,7 +295,11 @@ def load_image(filename, color=True):
         of size (H x W x 3) in RGB or
         of size (H x W x 1) in grayscale.
     """
-    img = skimage.img_as_float(skimage.io.imread(filename)).astype(np.float32)
+    try:
+      img = skimage.img_as_float(skimage.io.imread(filename)).astype(np.float32)
+    except:
+      print "Can't load with skimage, trying with PIL.\n"
+      img =  numpy.asarray(PIL.Image.open(filename)).astype(np.float32)
     if img.ndim == 2:
         img = img[:, :, np.newaxis]
         if color:
