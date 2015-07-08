@@ -6,6 +6,9 @@ import random
 random.seed(3)
 import re
 import sys
+import h5py
+import numpy as np
+import pickle as pkl
 
 sys.path.append('.')
 sys.path.append('/y/lisaanne/coco/')
@@ -13,6 +16,7 @@ sys.path.append('/y/lisaanne/coco/')
 COCO_PATH = '/y/lisaanne/coco'
 COCO_TOOL_PATH = '%s/PythonAPI/build/lib/pycocotools' % COCO_PATH
 COCO_IMAGE_ROOT = '%s/images' % COCO_PATH
+FEATURE_ROOT = '/y/lisaanne/image_captioning/coco_features'
 
 MAX_HASH = 100000
 
@@ -39,8 +43,9 @@ MAX_WORDS = 20
 class CocoSequenceGenerator(SequenceGenerator):
   def __init__(self, coco, batch_num_streams, image_root, vocab=None,
                max_words=MAX_WORDS, align=True, shuffle=True, gt_captions=True,
-               pad=True, truncate=True, split_ids=None):
+               pad=True, truncate=True, split_ids=None, feats_bool=False):
     self.max_words = max_words
+    self.feats_bool = feats_bool
     num_empty_lines = 0
     self.images = []
     num_total = 0
@@ -293,7 +298,38 @@ def output_train_sentences(split_name, coco_split_name, batch_stream_length, fil
   txt.close()        
   return sg.vocabulary_inverted
 
-def write_im_hdf5(im_list)
+def write_im_hdf5(im_list, save_name):
+  ims_per_file = 20000
+  h5_list = '%s_h5_list.txt' %save_name
+  h5_file = open(h5_list, 'w')
+  for ix, im in enumerate(im_list):
+    if ix % 100 == 0:
+      print '%s: on %d of %d.\n' %(save_name, ix, len(im_list))
+    full_im = '%s/%s_vgg_fc7Feat.p' %(FEATURE_ROOT, im.split('/')[-1].split('.')[0])
+    feat = pkl.load(open(full_im, 'rb'))
+    if ix % ims_per_file == 0:
+      if ix > 0:
+        save_name_full = '%s_%d.h5' %(save_name, ix/ims_per_file)
+        f = h5py.File(save_name_full)
+        labels = np.ones((min(len(im_list), ims_per_file)))
+        f.create_dataset('label', data=labels)
+        f.create_dataset('data', data=full_feat)
+        f.close()
+        h5_file.writelines(('%s\n.' %save_name_full))
+      full_feat = np.zeros((min(len(im_list), ims_per_file), len(feat['fc7'])))
+      count_feats = 0
+    full_feat[count_feats,:] = feat['fc7']
+    count_feats += 1
+  if not (ix-1) % ims_per_file == 0: # need to write remainder of items
+    write_feats = full_feat[:count_feats,:]
+    save_name_full = '%s_%d.h5' %(save_name, (ix/ims_per_file)+1)
+    f = h5py.File(save_name_full)
+    f.create_dataset('label', data=np.ones((min(len(im_list), ims_per_file))))
+    f.create_dataset('data', data=full_feat)
+    f.close()
+    h5_file.writelines(('%s\n.' %save_name_full))
+
+  h5_file.close() 
 
 def process_coco(include_trainval=False):
   vocab = None
@@ -319,22 +355,27 @@ def process_coco(include_trainval=False):
 
 if __name__ == "__main__":
   #process_coco(True)
-  identifier = 'val'
-  split_name = identifier
-  coco_split_name = identifier
-  batch_stream_length = 100000
-  aligned = True
-  vocab = process_dataset(split_name, coco_split_name, batch_stream_length,
-                           ocab=vocab, aligned=aligned)
-  #just need to read images and then put into an hdf5 file
-  output_dataset_name = split_name
-  output_path = OUTPUT_DIR_PATTERN % output_dataset_name
-  image_out_path = '%s/image_list.txt' % output_path
   
-  im_file = open(image_out_path, 'rb') 
-  im_list = im_file.readlines()
+  #make new train/test splits
+  identifiers = ['train_aligned_20']
+  for identifier in identifiers:
+    vocab = None
+    split_name = identifier
+    coco_split_name = identifier
+    batch_stream_length = 100000
+    aligned = True
+    #vocab = process_dataset(split_name, coco_split_name, batch_stream_length,
+    #                         ocab=vocab, aligned=aligned)
+    #just need to read images and then put into an hdf5 file
+    output_dataset_name = split_name
+    output_path = OUTPUT_DIR_PATTERN % output_dataset_name
+    image_out_path = '%s/image_list.txt' % output_path
+  
+    im_file = open(image_out_path, 'rb') 
+    im_list = im_file.readlines()
 
-  write_im_hdf5(im_list)
+    save_name = '%s/%s' %(output_path, identifier)
+    write_im_hdf5(im_list, save_name)
 
 #  vocab = None
 #  datasets = [

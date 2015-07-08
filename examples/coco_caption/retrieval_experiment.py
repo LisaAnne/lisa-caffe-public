@@ -51,7 +51,7 @@ class CaptionExperiment():
     if os.path.exists(descriptor_filename):
       self.descriptors = np.load(descriptor_filename)['descriptors']
     else:
-      self.descriptors = self.captioner.compute_descriptors(self.images)
+      self.descriptors = self.captioner.compute_descriptors(self.images,self.sg.feats_bool)
       np.savez_compressed(descriptor_filename, descriptors=self.descriptors)
 
   def score_captions(self, image_index, output_name='probs'):
@@ -298,7 +298,10 @@ def gen_stats(prob):
     stats['perplex_word'] = float('inf')
   return stats
 
-def main(model_name='',lstm_net=''):
+def main(model_name='',image_net='', feats_bool_in=True):
+  #model_name is the trained model
+  #image_net is the model to extract length 1000 image features
+  #feats_bool is whether or not the images are saved as pickle feature files or if they are normal images
   MAX_IMAGES = -1  # -1 to use all images
   TAG = 'coco_2layer_factored'
   if MAX_IMAGES >= 0:
@@ -314,7 +317,8 @@ def main(model_name='',lstm_net=''):
   TAG += '_%s' % DATASET_NAME
   MODEL_DIR = home_dir + '/examples/coco_caption/snapshots'
   MODEL_FILE = '%s/%s.caffemodel' % (MODEL_DIR, MODEL_FILENAME)
-  IMAGE_NET_FILE = home_dir + '/models/bvlc_reference_caffenet/deploy.prototxt'
+  #IMAGE_NET_FILE = home_dir + '/models/bvlc_reference_caffenet/deploy.prototxt'
+  IMAGE_NET_FILE = home_dir + image_net 
   LSTM_NET_FILE = home_dir + '/examples/coco_caption/lrcn_word_to_preds.deploy.prototxt'
   NET_TAG = '%s_%s' % (TAG, MODEL_FILENAME)
   DATASET_SUBDIR = '%s/%s_ims' % (DATASET_NAME,
@@ -327,7 +331,9 @@ def main(model_name='',lstm_net=''):
   coco = COCO(COCO_ANNO_PATH % DATASET_NAME)
   image_root = COCO_IMAGE_PATTERN % DATASET_NAME
   sg = CocoSequenceGenerator(coco, BUFFER_SIZE, image_root, vocab=vocab,
-                             align=False, shuffle=False)
+                             max_words=MAX_WORDS, align=True, shuffle=True,  
+                             gt_captions=True, pad=True, truncate=True, 
+                             split_ids=None, feats_bool=feats_bool_in)
   dataset = {}
   for image_path, sentence in sg.image_sentence_pairs:
     if image_path not in dataset:
