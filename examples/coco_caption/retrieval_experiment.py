@@ -367,4 +367,4 @@ def main(model_name='',image_net='', feats_bool_in=True):
   #experimenter.retrieval_experiment()
 
 if __name__ == "__main__":
-  main(sys.argv[1], sys.argv[2])
+  main(sys.argv[1], sys.argv[2], False)
