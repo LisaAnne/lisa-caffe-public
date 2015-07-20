@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-sys.path.append('/home/lisaanne/caffe-forward-backward/python')
+sys.path.append('/home/lisaanne/caffe-LSTM/python')
 import caffe
 import io
 from PIL import Image
@@ -22,8 +22,12 @@ def processImageCrop(im_info, transformer):
   im_path = im_info[0]
   im_crop = im_info[1] #should be [x_min, y_min, x_max, y_max]
   im_reshape = im_info[2]
+  im_flip = im_info[3]
   data_in = caffe.io.load_image(im_path)
-  data_in = caffe.io.resize_image(data_in, im_reshape)
+  if (data_in.shape[0] < im_reshape[0]) | (data_in.shape[1] < im_reshape[1]):
+    data_in = caffe.io.resize_image(data_in, im_reshape)
+#  if im_flip:
+#    data_in = caffe.io.flip_image(data_in, 1, True) #need to watch out for RGB
   data_in = data_in[im_crop[0]:im_crop[2], im_crop[1]:im_crop[3], :] 
   processed_image = transformer.preprocess('data_in',data_in)
   return processed_image
@@ -49,6 +53,7 @@ class sequenceGeneratorVideo(object):
     im_paths = []
     im_crop = []
     im_reshape = []  
+    im_flip = []
  
     if self.idx + self.buffer_size >= self.num_videos:
       idx_list = range(self.idx, self.num_videos)
@@ -64,30 +69,39 @@ class sequenceGeneratorVideo(object):
       video_crop = self.video_dict[key]['crop']
       label_r.extend([label]*self.clip_length)
 
-      im_reshape.extend([(video_reshape)]*16)
+      im_reshape.extend([(video_reshape)]*self.clip_length)
       r0 = int(random.random()*(video_reshape[0] - video_crop[0]))
       r1 = int(random.random()*(video_reshape[1] - video_crop[1]))
-      im_crop.extend([(r0, r1, r0+video_crop[0], r1+video_crop[1])]*16)     
+      im_crop.extend([(r0, r1, r0+video_crop[0], r1+video_crop[1])]*self.clip_length)     
+      f = random.randint(0,1)
+      im_flip.extend([f]*self.clip_length)
       #rand_frame depends a bit on flow ... need to add this
       rand_frame = int(random.random()*(self.video_dict[key]['num_frames']-self.clip_length)+1+1)
       frames = []
+
       for i in range(rand_frame,rand_frame+self.clip_length):
         frames.append(self.video_dict[key]['frames'] %i)
+     
       im_paths.extend(frames) 
     
     
-    im_info = zip(im_paths,im_crop, im_reshape)
+    im_info = zip(im_paths,im_crop, im_reshape, im_flip)
 
     self.idx += self.buffer_size
     if self.idx >= self.num_videos:
       self.idx = self.idx - self.num_videos
+      #random.shuffle(self.video_order)
 
     return label_r, im_info
   
 def advance_batch(result, sequence_generator, image_processor, pool):
   
     label_r, im_info = sequence_generator()
-    result['data'] = pool.map(image_processor, im_info) 
+    #pdb.set_trace()
+    #tmp = image_processor(im_info[0])
+    result['data'] = pool.map(image_processor, im_info)
+    #ss = 0
+    #for nn in range(128): ss += np.abs(np.mean(result['data'][nn])) 
     result['label'] = label_r
     cm = np.ones(len(label_r))
     cm[0::16] = 0
@@ -130,28 +144,20 @@ class videoRead(caffe.Layer):
     video_dict = {}
     current_line = 0
     self.video_order = []
-    while current_line < len(f_lines):
-      label = int(f_lines[current_line])
-      #if not self.flow:
-      num_frames = int(f_lines[current_line+1])
-      #else: 
-      #  num_frames = int(f_lines[current_line+1]) - 1
-      video = f_lines[current_line+2].split('/')[-2]
+    for ix, line in enumerate(f_lines):
+      video = line.split(' ')[0].split('/')[1]
+      l = int(line.split(' ')[1])
+      frames = glob.glob('%s%s/*.jpg' %(self.path_to_images, video))
+      num_frames = len(frames)
       video_dict[video] = {}
-      if not self.flow:
-        video_dict[video]['frames'] = self.path_to_images+f_lines[current_line+2].replace('\n','').replace('0001','%04d')
-      else:
-        video_dict[video]['frames'] = self.path_to_images+f_lines[current_line+2].replace('\n','').replace('0002','%04d')
+      video_dict[video]['frames'] = frames[0].split('.')[0] + '.%04d.jpg'
       video_dict[video]['reshape'] = (240,320)
-      video_dict[video]['crop'] = (227,227)
-      video_dict[video]['label'] = int(label)
-      if not self.flow:
-        video_dict[video]['num_frames'] = num_frames
-      else:
-        video_dict[video]['num_frames'] = num_frames - 1
-      self.video_order.append(video)
-      current_line += num_frames+2     
-       
+      video_dict[video]['crop'] = (227, 227)
+      video_dict[video]['num_frames'] = num_frames
+      video_dict[video]['label'] = l
+      self.video_order.append(video) 
+      print "On %d of %d.\n" %(ix, len(f_lines)) 
+
     self.video_dict = video_dict
     self.num_videos = len(video_dict.keys())
 
@@ -202,7 +208,7 @@ class videoRead(caffe.Layer):
     pass
 
   def forward(self, bottom, top):
-   
+  
     if self.thread is not None:
       self.join_worker() 
 
@@ -244,8 +250,8 @@ class videoReadTrain_flow(videoRead):
     self.channels = 3
     self.height = 227
     self.width = 227
-    self.path_to_images = '/mnt/y/lisaanne/ucf101/flow_images_Georgia/'
-    self.video_list = 'ucf101_flow_train_split_1.txt' 
+    self.path_to_images = '/x/data/ucf101/flow_images_Georgia/'
+    self.video_list = 'ucf101_flow_split1_trainVideos.txt' 
 
 class videoReadTest_flow(videoRead):
 
@@ -261,8 +267,8 @@ class videoReadTest_flow(videoRead):
     self.channels = 3
     self.height = 227
     self.width = 227
-    self.path_to_images = '/mnt/y/lisaanne/ucf101/flow_images_Georgia/'
-    self.video_list = 'ucf101_flow_test_split_1.txt' 
+    self.path_to_images = '/x/data/ucf101/flow_images_Georgia/'
+    self.video_list = 'ucf101_flow_split1_testVideos.txt' 
 
 class videoReadTrain_RGB(videoRead):
 
@@ -276,7 +282,7 @@ class videoReadTrain_RGB(videoRead):
     self.channels = 3
     self.height = 227
     self.width = 227
-    self.path_to_images = '/mnt/y/lisaanne/ucf101/frames/'
+    self.path_to_images = '/y/data/vis-common/ucf101/frames/'
     self.video_list = 'ucf101_RGB_train_split_1.txt' 
 
 class videoReadTest_RGB(videoRead):
@@ -291,6 +297,5 @@ class videoReadTest_RGB(videoRead):
     self.channels = 3
     self.height = 227
     self.width = 227
-    self.path_to_images = '/mnt/y/lisaanne/ucf101/frames/'
+    self.path_to_images = '/y/data/vis-common/ucf101/frames/'
     self.video_list = 'ucf101_RGB_test_split_1.txt' 
-### old  

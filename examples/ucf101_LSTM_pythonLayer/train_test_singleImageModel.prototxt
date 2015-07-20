@@ -7,7 +7,7 @@ layer {
   top: "clip_markers"
   python_param {
     module: "sequence_input_layer"
-    layer: "videoReadTrain_RGB"
+    layer: "videoReadTrain_flow"
   }
   include: { phase: TRAIN }
 }
@@ -20,9 +20,14 @@ layer {
   top: "clip_markers"
   python_param {
     module: "sequence_input_layer"
-    layer: "videoReadTest_RGB"
+    layer: "videoReadTest_flow"
   }
   include: { phase: TEST stage: "test-on-test" }
+}
+layer{ 
+  name: "silence-cm"
+  type: "Silence"
+  bottom: "clip_markers"
 }
 layer {
   name: "conv1"
@@ -288,10 +293,10 @@ layer {
   }
 }
 layer {
-  name: "fc6"
+  name: "fc7"
   type: "InnerProduct"
-  bottom: "pool5"
-  top: "fc6"
+  bottom: "fc6"
+  top: "fc7"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -357,7 +362,7 @@ layer {
   name: "loss"
   type: "SoftmaxWithLoss"
   bottom: "fc8-final"
-  bottom: "reshape-label"
+  bottom: "label"
   top: "loss"
   softmax_param {
     axis: 1
@@ -367,7 +372,7 @@ layer {
   name: "accuracy"
   type: "Accuracy"
   bottom: "fc8-final"
-  bottom: "reshape-label"
+  bottom: "label"
   top: "accuracy"
   accuracy_param {
     axis: 1
