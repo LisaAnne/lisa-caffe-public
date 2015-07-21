@@ -20,7 +20,7 @@ import skimage.io
 import copy
 
 flow_frames = '/mnt/y/lisaanne/ucf101/flow_images_Georgia/'
-RGB_frames = '/y/data/vis-common/ucf101/frames/'
+RGB_frames = '/y/vis-common/data/ucf101/frames/'
 test_frames = 16 
 train_frames = 16
 test_buffer = 3
@@ -271,8 +271,8 @@ class videoReadTrain_flow(videoRead):
   def initialize(self):
     self.train_or_test = 'train'
     self.flow = True
-    self.buffer_size = test_buffer  #num videos processed per batch
-    self.frames = test_frames   #length of processed clip
+    self.buffer_size = train_buffer  #num videos processed per batch
+    self.frames = train_frames   #length of processed clip
     self.N = self.buffer_size*self.frames
     self.idx = 0
     self.channels = 3
@@ -301,8 +301,8 @@ class videoReadTrain_RGB(videoRead):
   def initialize(self):
     self.train_or_test = 'train'
     self.flow = False
-    self.buffer_size = test_buffer  #num videos processed per batch
-    self.frames = test_frames   #length of processed clip
+    self.buffer_size = train_buffer  #num videos processed per batch
+    self.frames = train_frames   #length of processed clip
     self.N = self.buffer_size*self.frames
     self.idx = 0
     self.channels = 3
