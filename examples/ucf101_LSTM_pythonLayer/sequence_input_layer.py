@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-sys.path.append('/home/lisaanne/caffe-LSTM/python')
+sys.path.append('../../python')
 import caffe
 import io
 from PIL import Image
@@ -17,6 +17,15 @@ import h5py
 from multiprocessing import Pool
 from threading import Thread
 import skimage.io
+import copy
+
+flow_frames = '/mnt/y/lisaanne/ucf101/flow_images_Georgia/'
+RGB_frames = '/y/data/vis-common/ucf101/frames/'
+test_frames = 16 
+train_frames = 16
+test_buffer = 3
+train_buffer = 24
+
 
 def processImageCrop(im_info, transformer):
   im_path = im_info[0]
@@ -24,8 +33,8 @@ def processImageCrop(im_info, transformer):
   im_reshape = im_info[2]
   im_flip = im_info[3]
   data_in = caffe.io.load_image(im_path)
-  #if (data_in.shape[0] < im_reshape[0]) | (data_in.shape[1] < im_reshape[1]):
-  data_in = caffe.io.resize_image(data_in, im_reshape)
+  if (data_in.shape[0] < im_reshape[0]) | (data_in.shape[1] < im_reshape[1]):
+    data_in = caffe.io.resize_image(data_in, im_reshape)
   if im_flip:
     data_in = caffe.io.flip_image(data_in, 1, True) #need to watch out for RGB
   data_in = data_in[im_crop[0]:im_crop[2], im_crop[1]:im_crop[3], :] 
@@ -97,8 +106,8 @@ class sequenceGeneratorVideo(object):
 def advance_batch(result, sequence_generator, image_processor, pool):
   
     label_r, im_info = sequence_generator()
-    #pdb.set_trace()
-    #tmp = image_processor(im_info[0])
+   # pdb.set_trace()
+    tmp = image_processor(im_info[0])
     result['data'] = pool.map(image_processor, im_info)
     #ss = 0
     #for nn in range(128): ss += np.abs(np.mean(result['data'][nn])) 
@@ -106,6 +115,9 @@ def advance_batch(result, sequence_generator, image_processor, pool):
     cm = np.ones(len(label_r))
     cm[0::16] = 0
     result['clip_markers'] = cm
+
+    
+
 
 class BatchAdvancer():
     def __init__(self, result, sequence_generator, image_processor, pool):
@@ -212,6 +224,24 @@ class videoRead(caffe.Layer):
     if self.thread is not None:
       self.join_worker() 
 
+
+    new_result_data = copy.deepcopy(self.thread_result['data'])
+    new_result_label = copy.deepcopy(self.thread_result['label'])
+    new_result_cm = copy.deepcopy(self.thread_result['clip_markers'])
+    #pdb.set_trace()
+    for i in range(self.frames):
+      for ii in range(self.buffer_size):
+        old_idx = ii*self.frames + i
+        new_idx = i*self.buffer_size + ii
+        #print old_idx, new_idx
+        new_result_data[new_idx] = self.thread_result['data'][old_idx]
+        new_result_label[new_idx] = self.thread_result['label'][old_idx]
+        new_result_cm[new_idx] = self.thread_result['clip_markers'][old_idx]
+
+    self.thread_result['data'] = new_result_data
+    self.thread_result['label'] = new_result_label
+    self.thread_result['clip_markers'] = new_result_cm
+
     for top_index, name in zip(range(len(top)), self.top_names):
       if name == 'data':
         for i in range(self.N):
@@ -241,16 +271,14 @@ class videoReadTrain_flow(videoRead):
   def initialize(self):
     self.train_or_test = 'train'
     self.flow = True
-    self.buffer_size = 128  #num videos processed per batch
-    self.frames = 1   #length of processed clip
-    #self.buffer_size = 24  #num videos processed per batch
-    #self.frames = 16   #length of processed clip
+    self.buffer_size = test_buffer  #num videos processed per batch
+    self.frames = test_frames   #length of processed clip
     self.N = self.buffer_size*self.frames
     self.idx = 0
     self.channels = 3
     self.height = 227
     self.width = 227
-    self.path_to_images = '/x/data/ucf101/flow_images_Georgia/'
+    self.path_to_images = flow_frames 
     self.video_list = 'ucf101_flow_split1_trainVideos.txt' 
 
 class videoReadTest_flow(videoRead):
@@ -258,16 +286,14 @@ class videoReadTest_flow(videoRead):
   def initialize(self):
     self.train_or_test = 'test'
     self.flow = True
-    self.buffer_size = 128  #num videos processed per batch
-    self.frames = 1   #length of processed clip
-#    self.buffer_size = 3  #num videos processed per batch
-#    self.frames = 16   #length of processed clip
+    self.buffer_size = test_buffer  #num videos processed per batch
+    self.frames = test_frames   #length of processed clip
     self.N = self.buffer_size*self.frames
     self.idx = 0
     self.channels = 3
     self.height = 227
     self.width = 227
-    self.path_to_images = '/x/data/ucf101/flow_images_Georgia/'
+    self.path_to_images = flow_frames 
     self.video_list = 'ucf101_flow_split1_testVideos.txt' 
 
 class videoReadTrain_RGB(videoRead):
@@ -275,27 +301,27 @@ class videoReadTrain_RGB(videoRead):
   def initialize(self):
     self.train_or_test = 'train'
     self.flow = False
-    self.buffer_size = 24  #num videos processed per batch
-    self.frames = 16   #length of processed clip
+    self.buffer_size = test_buffer  #num videos processed per batch
+    self.frames = test_frames   #length of processed clip
     self.N = self.buffer_size*self.frames
     self.idx = 0
     self.channels = 3
     self.height = 227
     self.width = 227
-    self.path_to_images = '/y/data/vis-common/ucf101/frames/'
-    self.video_list = 'ucf101_RGB_train_split_1.txt' 
+    self.path_to_images = RGB_frames 
+    self.video_list = 'ucf101_flow_split1_trainVideos.txt' 
 
 class videoReadTest_RGB(videoRead):
 
   def initialize(self):
     self.train_or_test = 'test'
     self.flow = False
-    self.buffer_size = 3  #num videos processed per batch
-    self.frames = 16   #length of processed clip
+    self.buffer_size = test_buffer  #num videos processed per batch
+    self.frames = test_frames   #length of processed clip
     self.N = self.buffer_size*self.frames
     self.idx = 0
     self.channels = 3
     self.height = 227
     self.width = 227
-    self.path_to_images = '/y/data/vis-common/ucf101/frames/'
-    self.video_list = 'ucf101_RGB_test_split_1.txt' 
+    self.path_to_images = RGB_frames 
+    self.video_list = 'ucf101_flow_split1_testVideos.txt' 

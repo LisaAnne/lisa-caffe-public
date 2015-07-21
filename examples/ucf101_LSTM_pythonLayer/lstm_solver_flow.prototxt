@@ -1,5 +1,5 @@
-#net: "train_test_lstm_images_flow.prototxt"
-net: "train_test_singleImageModel.prototxt"
+net: "train_test_lstm_images_flow.prototxt"
+#net: "train_test_singleImageModel.prototxt"
 #test_iter: 1 
 test_iter: 100
 test_state: { stage: 'test-on-test' }
@@ -14,11 +14,11 @@ max_iter: 100
 momentum: 0.9
 weight_decay: 0.005
 snapshot: 5000
-snapshot_prefix: "snapshots/snapshots_flow_LSTM_1frame_check"
+snapshot_prefix: "/mnt/y/lisaanne/snapshots_Jedits_lstm/snapshots_flow_LSTM_resizeFix_lr0p1_flip"
 solver_mode: GPU
 device_id: 1
 random_seed: 1701
 average_loss: 1000
-#clip_gradients: 15
-debug_info: true
+clip_gradients: 15
+#debug_info: true
 #snapshot_blobs_hdf5: false
