@@ -3,7 +3,7 @@ import io
 import random
 random.seed(5)
 
-video_path = '/x/data/ucf101/'
+video_path = '/mnt/y/lisaanne/ucf101/'
 
 if len(sys.argv) > 1:
   split = int(sys.argv[1])
