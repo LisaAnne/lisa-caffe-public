@@ -1,4 +1,4 @@
-net: "/home/lisa/caffe-LSTM-video/examples/coco_caption/lrcn.hdf5image.prototxt"
+net: "/home/lisa/caffe-LSTM-video/examples/coco_caption/lrcn.prototxt"
 
 # lrcn.prototxt supports three variants of the LRCN architecture:
 # (1) stage: 'factored' stage: '2-layer'
