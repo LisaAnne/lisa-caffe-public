@@ -11,7 +11,15 @@ if [ ! -d $DATA_DIR ]; then
     exit 1
 fi
 
+#/home/lisa/caffe-LSTM-video/build/tools/caffe train \
+#    -solver /home/lisa/caffe-LSTM-video/examples/coco_caption/lrcn_solver_features.prototxt \
+#    -weights $WEIGHTS \
+#    -gpu $GPU_ID
+
 /home/lisa/caffe-LSTM-video/build/tools/caffe train \
     -solver /home/lisa/caffe-LSTM-video/examples/coco_caption/lrcn_solver.prototxt \
     -weights $WEIGHTS \
     -gpu $GPU_ID
+#    -snapshot /home/lisa/caffe-LSTM-video/examples/coco_caption/snapshots/lrcn_vgg_fromImages_iter_50000.solverstate \
+#    -weights /home/lisa/caffe-LSTM-video/examples/extract_fc6_fc7/coco/VGG_ILSVRC_16_layers.caffemodel,/home/lisa/caffe-LSTM-video/examples/coco_caption/snapshots/lrcn_vgg_fromFeats_iter_110000.caffemodel \
+

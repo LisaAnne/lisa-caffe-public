@@ -1,4 +1,4 @@
-net: "/home/lisa/caffe-LSTM-video/examples/coco_caption/lrcn.hdf5image.prototxt"
+net: "/home/lisa/caffe-LSTM-video/examples/coco_caption/lrcn.prototxt"
 
 # lrcn.prototxt supports three variants of the LRCN architecture:
 # (1) stage: 'factored' stage: '2-layer'
@@ -23,7 +23,7 @@ max_iter: 110000
 momentum: 0.9
 weight_decay: 0.0000
 snapshot: 5000
-snapshot_prefix: "/home/lisa/caffe-LSTM-video/examples/coco_caption/snapshots/lrcn_vgg_fromFeats"
+snapshot_prefix: "/home/lisa/caffe-LSTM-video/examples/coco_caption/snapshots/lrcn_alex_black_bike.blue_train.red_car.yellow_shirt.green_car_lr0.01"
 solver_mode: GPU
 random_seed: 1701
 average_loss: 100

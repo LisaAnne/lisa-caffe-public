@@ -15,7 +15,8 @@ sys.path.append('/y/lisaanne/coco/')
 
 COCO_PATH = '/y/lisaanne/coco'
 COCO_TOOL_PATH = '%s/PythonAPI/build/lib/pycocotools' % COCO_PATH
-COCO_IMAGE_ROOT = '%s/images' % COCO_PATH
+IM_FOLDER = 'images2'
+COCO_IMAGE_ROOT = '%s/%s' % (COCO_PATH, IM_FOLDER)
 FEATURE_ROOT = '/y/lisaanne/image_captioning/coco_features'
 
 MAX_HASH = 100000
@@ -218,7 +219,7 @@ class CocoSequenceGenerator(SequenceGenerator):
     return image_hash
 
 COCO_ANNO_PATH = '%s/annotations/captions_%%s2014.json' % COCO_PATH
-COCO_IMAGE_PATTERN = '%s/images/%%s2014' % COCO_PATH
+COCO_IMAGE_PATTERN = '%s/%s/%%s2014' % (COCO_PATH, IM_FOLDER)
 COCO_IMAGE_ID_PATTERN = 'COCO_%s2014_%%012d.jpg'
 
 BUFFER_SIZE = 100
@@ -227,7 +228,7 @@ SPLITS_PATTERN = '/home/lisa/caffe-LSTM-video/data/coco/coco2014_cocoid.%s.txt'
 OUTPUT_DIR_PATTERN = '%s/%%s_batches' % OUTPUT_DIR
 
 def process_dataset(split_name, coco_split_name, batch_stream_length,
-                    vocab=None, aligned=True):
+                    vocab=None, aligned=True, vocab_tag=''):
   with open(SPLITS_PATTERN % split_name, 'r') as split_file:
     split_image_ids = [int(line) for line in split_file.readlines()]
   output_dataset_name = split_name
@@ -236,18 +237,19 @@ def process_dataset(split_name, coco_split_name, batch_stream_length,
   else:
     output_dataset_name += '_unaligned'
   output_path = OUTPUT_DIR_PATTERN % output_dataset_name
+  #coco (I think) just puts annotations together for train/test set.  Want to use trainval set for my own images (I think... need to ask Jeff)
   coco = COCO(COCO_ANNO_PATH % coco_split_name)
   image_root = COCO_IMAGE_PATTERN % coco_split_name
   sg = CocoSequenceGenerator(coco, BUFFER_SIZE, image_root,
       split_ids=split_image_ids, vocab=vocab, align=aligned, pad=aligned,
       truncate=aligned)
+  if vocab is None:
+    vocab_out_path = '%s/%svocabulary.txt' % (OUTPUT_DIR, vocab_tag)
+    sg.dump_vocabulary(vocab_out_path)
   sg.batch_stream_length = batch_stream_length
   writer = HDF5SequenceWriter(sg, output_dir=output_path)
   writer.write_to_exhaustion()
   writer.write_filelists()
-  if vocab is None:
-    vocab_out_path = '%s/vocabulary.txt' % OUTPUT_DIR
-    sg.dump_vocabulary(vocab_out_path)
   image_out_path = '%s/image_list.txt' % output_path
   image_dummy_labels_out_path = '%s/image_list.with_dummy_labels.txt' % output_path
   sg.dump_image_file(image_out_path, image_dummy_labels_out_path)
@@ -315,7 +317,7 @@ def write_im_hdf5(im_list, save_name):
         f.create_dataset('label', data=labels)
         f.create_dataset('data', data=full_feat)
         f.close()
-        h5_file.writelines(('%s\n.' %save_name_full))
+        h5_file.writelines(('%s\n' %save_name_full))
       full_feat = np.zeros((min(len(im_list), ims_per_file), len(feat['fc7'])))
       count_feats = 0
     full_feat[count_feats,:] = feat['fc7']
@@ -357,17 +359,18 @@ if __name__ == "__main__":
   #process_coco(True)
   
   #make new train/test splits
-  identifiers = ['train_aligned_20']
+  identifiers = ['black_bike.blue_train.red_car.yellow_shirt.green_car.train', 'black_bike.blue_train.red_car.yellow_shirt.green_car.val', 'black_bike.blue_train.red_car.yellow_shirt.green_car.val_novel', 'black_bike.blue_train.red_car.yellow_shirt.green_car.val_train']
+  vocab_tag = 'black_bike.blue_train.red_car.yellow_shirt.green_car'
   for identifier in identifiers:
     vocab = None
-    split_name = identifier
-    coco_split_name = identifier
+    split_name = identifier 
+    coco_split_name = 'trainval'
     batch_stream_length = 100000
     aligned = True
-    #vocab = process_dataset(split_name, coco_split_name, batch_stream_length,
-    #                         ocab=vocab, aligned=aligned)
+    vocab = process_dataset(split_name, coco_split_name, batch_stream_length,
+                             vocab=vocab, aligned=aligned, vocab_tag=vocab_tag)
     #just need to read images and then put into an hdf5 file
-    output_dataset_name = split_name
+    output_dataset_name = split_name + '_aligned_20'
     output_path = OUTPUT_DIR_PATTERN % output_dataset_name
     image_out_path = '%s/image_list.txt' % output_path
   

@@ -1,4 +1,4 @@
-net: "./examples/coco_caption/lrcn.vgg.prototxt"
+net: "/home/lisa/caffe-LSTM-video/examples/coco_caption/lrcn.vgg.prototxt"
 
 # lrcn.prototxt supports three variants of the LRCN architecture:
 # (1) stage: 'factored' stage: '2-layer'
@@ -14,16 +14,16 @@ train_state: { stage: 'freeze-convnet' stage: 'factored' stage: '2-layer' }
 # test_iter: 25
 # test_state: { stage: 'freeze-convnet' stage: 'factored' stage: '2-layer' stage: 'test-on-val' }
 # test_interval: 1000
-base_lr: 0.01
+base_lr: 0.001
 lr_policy: "step"
 gamma: 0.5
 stepsize: 20000
-display: 1
+display: 20
 max_iter: 110000
 momentum: 0.9
 weight_decay: 0.0000
 snapshot: 5000
-snapshot_prefix: "./examples/coco_caption/lrcn_vgg"
+snapshot_prefix: "/home/lisa/caffe-LSTM-video/examples/coco_caption/snapshots/lrcn_vgg_fromImages"
 solver_mode: GPU
 random_seed: 1701
 average_loss: 100

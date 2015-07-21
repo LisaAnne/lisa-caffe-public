@@ -298,9 +298,11 @@ def gen_stats(prob):
     stats['perplex_word'] = float('inf')
   return stats
 
-def main(model_name='',image_net='', feats_bool_in=True):
-  #model_name is the trained model
-  #image_net is the model to extract length 1000 image features
+def main(model_name='',image_net='', dataset_name='val', vocab='vocabulary', feats_bool_in=True):
+  #model_name is the trained model: path relative to /home/lisa/caffe-LSTM-video
+  #image_net is the model to extract length 1000 image features: path relative to snapshots folder; do not need to include "caffemodel"
+  #dataset_name indicates which dataset to look at
+  #vocab indicates which vocabulary file to look at
   #feats_bool is whether or not the images are saved as pickle feature files or if they are normal images
   MAX_IMAGES = -1  # -1 to use all images
   TAG = 'coco_2layer_factored'
@@ -313,7 +315,7 @@ def main(model_name='',image_net='', feats_bool_in=True):
     DATASET_NAME = 'test'
   else:  # eval on val
     MODEL_FILENAME = model_name 
-    DATASET_NAME = 'val'
+    DATASET_NAME = dataset_name
   TAG += '_%s' % DATASET_NAME
   MODEL_DIR = home_dir + '/examples/coco_caption/snapshots'
   MODEL_FILE = '%s/%s.caffemodel' % (MODEL_DIR, MODEL_FILENAME)
@@ -324,14 +326,14 @@ def main(model_name='',image_net='', feats_bool_in=True):
   DATASET_SUBDIR = '%s/%s_ims' % (DATASET_NAME,
       str(MAX_IMAGES) if MAX_IMAGES >= 0 else 'all')
   DATASET_CACHE_DIR = home_dir + '/retrieval_cache/%s/%s' % (DATASET_SUBDIR, MODEL_FILENAME)
-  VOCAB_FILE = home_dir + '/examples/coco_caption/h5_data/buffer_100/vocabulary.txt'
-  DEVICE_ID = 0
+  VOCAB_FILE = home_dir + '/examples/coco_caption/h5_data/buffer_100/%s.txt' %vocab
+  DEVICE_ID = 1
   with open(VOCAB_FILE, 'r') as vocab_file:
     vocab = [line.strip() for line in vocab_file.readlines()]
   coco = COCO(COCO_ANNO_PATH % DATASET_NAME)
   image_root = COCO_IMAGE_PATTERN % DATASET_NAME
   sg = CocoSequenceGenerator(coco, BUFFER_SIZE, image_root, vocab=vocab,
-                             max_words=MAX_WORDS, align=True, shuffle=True,  
+                             max_words=MAX_WORDS, align=False, shuffle=False,  
                              gt_captions=True, pad=True, truncate=True, 
                              split_ids=None, feats_bool=feats_bool_in)
   dataset = {}
@@ -367,4 +369,5 @@ def main(model_name='',image_net='', feats_bool_in=True):
   #experimenter.retrieval_experiment()
 
 if __name__ == "__main__":
-  main(sys.argv[1], sys.argv[2], False)
+  #input to main: model_name, image_net, dataset_name, vocab, feats_bool
+  main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], False)

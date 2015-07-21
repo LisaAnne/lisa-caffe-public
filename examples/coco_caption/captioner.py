@@ -348,6 +348,9 @@ class Captioner():
     return output_captions, output_probs
 
   def sentence(self, vocab_indices):
+    if not vocab_indices:
+      print "Had issue with image!"
+      return ' '
     sentence = ' '.join([self.vocab[i] for i in vocab_indices])
     if not sentence: return sentence
     sentence = sentence[0].upper() + sentence[1:]
