@@ -24,10 +24,10 @@ def processImageCrop(im_info, transformer):
   im_reshape = im_info[2]
   im_flip = im_info[3]
   data_in = caffe.io.load_image(im_path)
-  if (data_in.shape[0] < im_reshape[0]) | (data_in.shape[1] < im_reshape[1]):
-    data_in = caffe.io.resize_image(data_in, im_reshape)
-#  if im_flip:
-#    data_in = caffe.io.flip_image(data_in, 1, True) #need to watch out for RGB
+  #if (data_in.shape[0] < im_reshape[0]) | (data_in.shape[1] < im_reshape[1]):
+  data_in = caffe.io.resize_image(data_in, im_reshape)
+  if im_flip:
+    data_in = caffe.io.flip_image(data_in, 1, True) #need to watch out for RGB
   data_in = data_in[im_crop[0]:im_crop[2], im_crop[1]:im_crop[3], :] 
   processed_image = transformer.preprocess('data_in',data_in)
   return processed_image
