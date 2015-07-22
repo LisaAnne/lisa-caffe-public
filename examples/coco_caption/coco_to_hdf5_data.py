@@ -16,6 +16,7 @@ sys.path.append('/y/lisaanne/coco/')
 COCO_PATH = '/y/lisaanne/coco'
 COCO_TOOL_PATH = '%s/PythonAPI/build/lib/pycocotools' % COCO_PATH
 IM_FOLDER = 'images2'
+COCO_IM_FOLDER = 'images'
 COCO_IMAGE_ROOT = '%s/%s' % (COCO_PATH, IM_FOLDER)
 FEATURE_ROOT = '/y/lisaanne/image_captioning/coco_features'
 
@@ -219,7 +220,7 @@ class CocoSequenceGenerator(SequenceGenerator):
     return image_hash
 
 COCO_ANNO_PATH = '%s/annotations/captions_%%s2014.json' % COCO_PATH
-COCO_IMAGE_PATTERN = '%s/%s/%%s2014' % (COCO_PATH, IM_FOLDER)
+COCO_IMAGE_PATTERN = '%s/%s/%%s2014' % (COCO_PATH, COCO_IM_FOLDER)
 COCO_IMAGE_ID_PATTERN = 'COCO_%s2014_%%012d.jpg'
 
 BUFFER_SIZE = 100
@@ -359,8 +360,8 @@ if __name__ == "__main__":
   #process_coco(True)
   
   #make new train/test splits
-  identifiers = ['black_bike.blue_train.red_car.yellow_shirt.green_car.train', 'black_bike.blue_train.red_car.yellow_shirt.green_car.val', 'black_bike.blue_train.red_car.yellow_shirt.green_car.val_novel', 'black_bike.blue_train.red_car.yellow_shirt.green_car.val_train']
-  vocab_tag = 'black_bike.blue_train.red_car.yellow_shirt.green_car'
+  identifiers = ['fixVocab.black_bike.blue_train.red_car.yellow_shirt.green_car.train', 'fixVocab.black_bike.blue_train.red_car.yellow_shirt.green_car.val', 'fixVocab.black_bike.blue_train.red_car.yellow_shirt.green_car.val_novel', 'fixVocab.black_bike.blue_train.red_car.yellow_shirt.green_car.val_train']
+  vocab_tag = 'fixVocab.black_bike.blue_train.red_car.yellow_shirt.green_car'
   for identifier in identifiers:
     vocab = None
     split_name = identifier 
@@ -370,15 +371,15 @@ if __name__ == "__main__":
     vocab = process_dataset(split_name, coco_split_name, batch_stream_length,
                              vocab=vocab, aligned=aligned, vocab_tag=vocab_tag)
     #just need to read images and then put into an hdf5 file
-    output_dataset_name = split_name + '_aligned_20'
-    output_path = OUTPUT_DIR_PATTERN % output_dataset_name
-    image_out_path = '%s/image_list.txt' % output_path
-  
-    im_file = open(image_out_path, 'rb') 
-    im_list = im_file.readlines()
-
-    save_name = '%s/%s' %(output_path, identifier)
-    write_im_hdf5(im_list, save_name)
+#    output_dataset_name = split_name + '_aligned_20'
+#    output_path = OUTPUT_DIR_PATTERN % output_dataset_name
+#    image_out_path = '%s/image_list.txt' % output_path
+#  
+#    im_file = open(image_out_path, 'rb') 
+#    im_list = im_file.readlines()
+#
+#    save_name = '%s/%s' %(output_path, identifier)
+#    write_im_hdf5(im_list, save_name)
 
 #  vocab = None
 #  datasets = [

@@ -370,4 +370,5 @@ def main(model_name='',image_net='', dataset_name='val', vocab='vocabulary', fea
 
 if __name__ == "__main__":
   #input to main: model_name, image_net, dataset_name, vocab, feats_bool
+  #examples: ./retrieval_experiment.py lrcn_alex_black_bike.blue_train.red_car.yellow_shirt.green_car_iter_110000  /models/bvlc_reference_caffenet/deploy.prototxt black_bike.blue_train.red_car.yellow_shirt.green_car.val vocabulary
   main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], False)

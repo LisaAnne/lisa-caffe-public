@@ -10,8 +10,11 @@ import caffe
 caffe.set_mode_gpu()
 caffe.set_device(1)
 import glob
+from multiprocessing import Pool
 
 import random
+pool_size = 24
+pool = Pool(processes=pool_size)
 #Things to change for flow: #vid_pattern #base_images #test_images
 
 base_folder = '/home/lisa/caffe-LSTM-video/data/coco/coco/images/'
@@ -44,7 +47,8 @@ transformer.set_transpose('data', (2, 0, 1))
 
 def image_processor(input_im):
   data_in = caffe.io.load_image(input_im)
-  data_in = caffe.io.resize_image(data_in, (256,256))
+  if (data_in.shape[0] < im_reshape[0]) | (data_in.shape[1] < im_reshape[1]):
+    data_in = caffe.io.resize_image(data_in, (256,256))
   rand_x = int(random.random() * (256-224))
   rand_y = int(random.random() * (256-224))
   data_in = data_in[rand_x:rand_x+224, rand_y:rand_y+224,:]
@@ -64,8 +68,9 @@ for image_count, image in enumerate(images[start:end:batch_size]):
   trunc_batch_size = min(image_count*batch_size+batch_size, len(images))-image_count*batch_size 
   batch_frames = images[image_count*batch_size:image_count*batch_size+trunc_batch_size] 
   data = []
-  for j in range(len(batch_frames)):
-    data.append(image_processor(batch_frames[j]))
+#  for j in range(len(batch_frames)):
+#    data.append(image_processor(batch_frames[j]))
+  data = pool.map(image_processor, batch_frames)
 
   net.blobs['data'].reshape((trunc_batch_size),3,224,224)
   for j in range(trunc_batch_size):

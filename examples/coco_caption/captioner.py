@@ -94,8 +94,10 @@ class Captioner():
   def image_to_descriptor(self, image, output_name='fc8'):
     return self.preprocessed_image_to_descriptor(self.preprocess_image(image))
 
-  def predict_single_word(self, descriptor, previous_word, output='probs'):
+  def predict_single_word(self, descriptor, previous_word, output='probs', seed_net=''):
     net = self.lstm_net
+    is seed_net:
+      net = seed_net #this is to ensure net maintains state for predict_missing word scheme
     cont = 0 if previous_word == 0 else 1
     cont_input = np.array([cont])
     word_input = np.array([previous_word])
@@ -111,6 +113,18 @@ class Captioner():
       probs = self.predict_single_word(descriptor, word)
     return probs
 
+  def predict_missing_word_from_all_words(self, descriptor, previous_words, next_words):
+    for word in [0] + previous_words:
+      probs = self.predict_single_word(descriptor, word)
+    #have to watch out for net!!!
+    seed_net = self.lstm_net  #this might be a problem with copying; may have to copy individual weights
+    missing_word_probs = []
+    for w in range(len(probs)):  #there is probably a better way to explore this!
+      #w is one of the predicted words
+      for word in next_words:
+        mising_word_probs.append(self.predict_single_word(descriptor, word, seed_net))
+    return missing_word_probs
+        
   # Strategy must be either 'beam' or 'sample'.
   # If 'beam', do a max likelihood beam search with beam size num_samples.
   # Otherwise, sample with temperature temp.
