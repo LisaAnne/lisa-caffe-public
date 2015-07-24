@@ -194,6 +194,7 @@ class Captioner():
       sample_probs.append(sample_prob)
     return samples, sample_probs
 
+
   def sample_caption(self, descriptor, strategy,
                      net_output='predict', max_length=50):
     sentence = []
