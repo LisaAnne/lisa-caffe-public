@@ -360,10 +360,10 @@ if __name__ == "__main__":
   #process_coco(True)
   
   #make new train/test splits
-  identifiers = ['fixVocab.black_bike.blue_train.red_car.yellow_shirt.green_car.train', 'fixVocab.black_bike.blue_train.red_car.yellow_shirt.green_car.val', 'fixVocab.black_bike.blue_train.red_car.yellow_shirt.green_car.val_novel', 'fixVocab.black_bike.blue_train.red_car.yellow_shirt.green_car.val_train']
-  vocab_tag = 'fixVocab.black_bike.blue_train.red_car.yellow_shirt.green_car'
+  identifiers = ['fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car.train', 'fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car.val', 'fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car.val_novel', 'fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car.val_train']
+  vocab_tag = 'fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car'
+  vocab = None
   for identifier in identifiers:
-    vocab = None
     split_name = identifier 
     coco_split_name = 'trainval'
     batch_stream_length = 100000

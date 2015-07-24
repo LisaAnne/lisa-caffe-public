@@ -196,6 +196,38 @@ class CaptionExperiment():
     print 'Image-to-caption retrieval results:'
     self.print_recall_results(self.image_to_caption_recall)
 
+  def madlib_experiment(self, fill_word, cooccur_words=[]):
+    print 'Computing image descriptors'
+    self.compute_descriptors()
+ 
+    word_idx = self.sg.vocabulary[fill_word] 
+    captions = [c for c in self.captions if word_idx+1 in c['caption']]
+    for cw in cooccur_words:
+      cw_idx = self.sg.vocabulary[cw]
+      captions = [c for c in captions if cw_idx+1 in c['caption']]
+    num_captions = len(captions)
+    print '%d/%d sentences include query word %s and cooccur words.\n' %(num_captions, len(self.captions), fill_word)
+
+    #should be able to match caption to images using self.images and self.descriptors
+    #get list of descriptors!
+
+    caption_descriptors = np.zeros((num_captions, self.descriptors.shape[1]))
+    for ix, c in enumerate(captions):
+      image_path = c['source_image'] 
+      descriptor_idx = self.images.index(image_path)  
+      caption_descriptors[ix,...] = self.descriptors[descriptor_idx,:]
+
+    all_dists = np.zeros((num_captions, len(self.sg.vocabulary)+1)) 
+    
+    for ci in range(num_captions):
+      sys.stdout.write("\rFilling in word for caption %d/%d" %
+                       (ci, num_captions))
+      sys.stdout.flush()
+      all_dists[ci,...] = self.captioner.fill_caption(caption_descriptors[ci], captions[ci]['caption'], word_idx+1)
+
+    return all_dists #neeed to come up with good way to output it
+
+
   def generation_experiment(self, strategy, max_batch_size=1000):
     # Compute image descriptors.
     print 'Computing image descriptors'
@@ -331,6 +363,7 @@ def main(model_name='',image_net='', dataset_name='val', vocab='vocabulary', fea
   with open(VOCAB_FILE, 'r') as vocab_file:
     vocab = [line.strip() for line in vocab_file.readlines()]
   coco = COCO(COCO_ANNO_PATH % DATASET_NAME)
+  COCO_IMAGE_PATTERN = '/y/lisaanne/coco/images2/%s2014' 
   image_root = COCO_IMAGE_PATTERN % DATASET_NAME
   sg = CocoSequenceGenerator(coco, BUFFER_SIZE, image_root, vocab=vocab,
                              max_words=MAX_WORDS, align=False, shuffle=False,  
@@ -364,6 +397,7 @@ def main(model_name='',image_net='', dataset_name='val', vocab='vocabulary', fea
   CACHE_DIR = '%s/%s' % (DATASET_CACHE_DIR, strategy_name)
   experimenter = CaptionExperiment(captioner, dataset, DATASET_CACHE_DIR, CACHE_DIR, sg)
   captioner.set_image_batch_size(min(100, MAX_IMAGES))
+  #experimenter.madlib_experiment('black', ['bike'])
   experimenter.generation_experiment(generation_strategy)
   captioner.set_caption_batch_size(min(MAX_IMAGES * 5, 1000))
   #experimenter.retrieval_experiment()

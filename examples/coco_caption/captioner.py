@@ -9,6 +9,7 @@ import os
 import random
 import sys
 import pickle as pkl
+import copy
 
 home_dir = '/home/lisa/caffe-LSTM-video'
 sys.path.append(home_dir + '/python/')
@@ -96,7 +97,7 @@ class Captioner():
 
   def predict_single_word(self, descriptor, previous_word, output='probs', seed_net=''):
     net = self.lstm_net
-    is seed_net:
+    if seed_net:
       net = seed_net #this is to ensure net maintains state for predict_missing word scheme
     cont = 0 if previous_word == 0 else 1
     cont_input = np.array([cont])
@@ -113,18 +114,70 @@ class Captioner():
       probs = self.predict_single_word(descriptor, word)
     return probs
 
-  def predict_missing_word_from_all_words(self, descriptor, previous_words, next_words):
-    for word in [0] + previous_words:
-      probs = self.predict_single_word(descriptor, word)
-    #have to watch out for net!!!
-    seed_net = self.lstm_net  #this might be a problem with copying; may have to copy individual weights
-    missing_word_probs = []
-    for w in range(len(probs)):  #there is probably a better way to explore this!
-      #w is one of the predicted words
-      for word in next_words:
-        mising_word_probs.append(self.predict_single_word(descriptor, word, seed_net))
+  def copy_net_blobs(self, net):
+    copy_blobs = {}
+    for key in net.blobs.keys():
+      copy_blobs[key] = copy.deepcopy(net.blobs[key].data)
+    return copy_blobs
+
+  def reinitialize_blobs(self, copy_blobs, net):
+    for key in net.blobs.keys():
+      net.blobs[key].data[...] = copy.deepcopy(copy_blobs[key])
+    return net
+
+  def predict_missing_word_from_all_words(self, descriptor, previous_words, next_words, prob_output_name='probs'):
+    descriptor = np.array(descriptor)
+    #batch_size = len(self.vocab)
+    batch_size = 1000
+    self.set_caption_batch_size(batch_size)
+    net = self.lstm_net
+    cont_input = np.zeros_like(net.blobs['cont_sentence'].data)
+    word_input = np.zeros_like(net.blobs['input_sentence'].data)
+    image_features = np.zeros_like(net.blobs['image_features'].data)
+    image_features[:] = descriptor
+    outputs = []
+    output_captions = [[] for b in range(batch_size)]
+    output_probs = [[] for b in range(batch_size)]
+
+    #prep the lstm with previous words  
+    for wi, word in enumerate([0] + previous_words):
+      if wi == 0:
+        cont_input[:] = 0
+      else:
+        cont_input[:] = 1
+      word_input[:] = word
+      net.forward(image_features=image_features, cont_sentence=cont_input, input_sentence=word_input) 
+
+    probs = net.blobs[prob_output_name].data[0]
+    missing_word_probs = np.zeros((probs.shape[1],))
+    missing_word_probs = probs[0,:] #p(word|prev_word)
+    final_words = next_words + [0]
+
+    #copy lstm_weights
+    seed_net_blobs = self.copy_net_blobs(self.lstm_net)  
+    #now look at probabilities for placement of each vocab word
+    for b in xrange(0,len(self.vocab), batch_size):  #don't consider first word which is EOS
+      self.lstm_net = self.reinitialize_blobs(seed_net_blobs, self.lstm_net)
+      #first propogate possible words to fill in blank
+      batch_end = min(len(self.vocab), b + batch_size)
+      cont_input[:] = 1
+      word_input[0,:batch_end-b] = range(b, batch_end) 
+      net.forward(image_features=image_features, cont_sentence=cont_input, input_sentence=word_input)
+      missing_word_probs[b:batch_end] *= net.blobs[prob_output_name].data[0][0:batch_end-b, final_words[0]] 
+      for wi in range(len(final_words)-1):
+        word_input[:] = final_words[wi]
+        net.forward(image_features=image_features, cont_sentence=cont_input, input_sentence=word_input) 
+        missing_word_probs[b:batch_end] *= net.blobs[prob_output_name].data[0][0:batch_end-b, final_words[wi+1]] 
+    
+    missing_word_probs = missing_word_probs/np.sum(missing_word_probs) 
     return missing_word_probs
-        
+       
+  def fill_caption(self, descriptor, caption, word_idx):
+    del_word = caption.index(word_idx)
+    previous_words = caption[:del_word]
+    next_words = caption[del_word+1:]
+    return self.predict_missing_word_from_all_words(descriptor, previous_words, next_words)
+ 
   # Strategy must be either 'beam' or 'sample'.
   # If 'beam', do a max likelihood beam search with beam size num_samples.
   # Otherwise, sample with temperature temp.
@@ -141,6 +194,7 @@ class Captioner():
       samples.append(sample)
       sample_probs.append(sample_prob)
     return samples, sample_probs
+
 
   def sample_caption(self, descriptor, strategy,
                      net_output='predict', max_length=50):
@@ -305,7 +359,7 @@ class Captioner():
         output['source'] = caption_source
         outputs.append(output)
     return outputs
-
+  
   def sample_captions(self, descriptor, prob_output_name='probs',
                       pred_output_name='predict', temp=1, max_length=50):
     descriptor = np.array(descriptor)
