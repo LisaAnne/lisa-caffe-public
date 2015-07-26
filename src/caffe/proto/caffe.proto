@@ -355,6 +355,9 @@ message TransformationParameter {
   // or can be repeated the same number of times as channels
   // (would subtract them from the corresponding channel)
   repeated float mean_value = 5;
+  //will flip x flow if flow image input
+  optional bool flow = 6 [default = false];
+
 }
 
 // Message that stores parameters shared by loss layers
@@ -585,6 +588,9 @@ message ImageDataParameter {
   // It will also resize images if new_height or new_width are not zero.
   optional uint32 new_height = 9 [default = 0];
   optional uint32 new_width = 10 [default = 0];
+  // Enforces that have minimum height and width; if not reshapes.
+  optional uint32 min_height = 13 [default = 0];
+  optional uint32 min_width = 14 [default = 0];
   // Specify if the images are color or gray
   optional bool is_color = 11 [default = true];
   // DEPRECATED. See TransformationParameter. For data pre-processing, we can do

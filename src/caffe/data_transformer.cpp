@@ -48,6 +48,7 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
   const bool has_mean_file = param_.has_mean_file();
   const bool has_uint8 = data.size() > 0;
   const bool has_mean_values = mean_values_.size() > 0;
+  const bool flow = param_.flow();
 
   CHECK_GT(datum_channels, 0);
   CHECK_GE(datum_height, crop_size);
@@ -103,8 +104,14 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
         if (has_uint8) {
           datum_element =
             static_cast<Dtype>(static_cast<uint8_t>(data[data_index]));
+          if (flow && c == 2 && do_mirror) {
+            datum_element = 255-datum_element;
+          }
         } else {
           datum_element = datum.float_data(data_index);
+          if (flow && c == 2 && do_mirror) {
+            datum_element = 255-datum_element;
+          }
         }
         if (has_mean_file) {
           transformed_data[top_index] =

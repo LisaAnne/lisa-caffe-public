@@ -68,7 +68,8 @@ void WriteProtoToBinaryFile(const Message& proto, const char* filename) {
 }
 
 cv::Mat ReadImageToCVMat(const string& filename,
-    const int height, const int width, const bool is_color) {
+    const int height, const int width, const bool is_color, 
+    const int min_height, const int min_width) {
   cv::Mat cv_img;
   int cv_read_flag = (is_color ? CV_LOAD_IMAGE_COLOR :
     CV_LOAD_IMAGE_GRAYSCALE);
@@ -79,6 +80,16 @@ cv::Mat ReadImageToCVMat(const string& filename,
   }
   if (height > 0 && width > 0) {
     cv::resize(cv_img_origin, cv_img, cv::Size(width, height));
+  } else if (cv_img_origin.rows < min_height || cv_img_origin.cols < min_width){
+    bool resize_width = (min_width - cv_img_origin.cols > min_height - cv_img_origin.rows) 
+                         ? true: false;
+    if (resize_width) {
+       int height_aspect_ratio = float(min_width)*(float(cv_img_origin.rows)/float(cv_img_origin.cols)) + 0.5;
+       cv::resize(cv_img_origin, cv_img, cv::Size(min_width, height_aspect_ratio));
+    } else {
+       int width_aspect_ratio = float(min_height)*(float(cv_img_origin.cols)/float(cv_img_origin.rows)) + 0.5;
+       cv::resize(cv_img_origin, cv_img, cv::Size(width_aspect_ratio , min_height));
+    }
   } else {
     cv_img = cv_img_origin;
   }
@@ -87,16 +98,16 @@ cv::Mat ReadImageToCVMat(const string& filename,
 
 cv::Mat ReadImageToCVMat(const string& filename,
     const int height, const int width) {
-  return ReadImageToCVMat(filename, height, width, true);
+  return ReadImageToCVMat(filename, height, width, true, 0, 0);
 }
 
 cv::Mat ReadImageToCVMat(const string& filename,
     const bool is_color) {
-  return ReadImageToCVMat(filename, 0, 0, is_color);
+  return ReadImageToCVMat(filename, 0, 0, is_color, 0, 0);
 }
 
 cv::Mat ReadImageToCVMat(const string& filename) {
-  return ReadImageToCVMat(filename, 0, 0, true);
+  return ReadImageToCVMat(filename, 0, 0, true, 0, 0);
 }
 // Do the file extension and encoding match?
 static bool matchExt(const std::string & fn,
@@ -114,7 +125,7 @@ static bool matchExt(const std::string & fn,
 bool ReadImageToDatum(const string& filename, const int label,
     const int height, const int width, const bool is_color,
     const std::string & encoding, Datum* datum) {
-  cv::Mat cv_img = ReadImageToCVMat(filename, height, width, is_color);
+  cv::Mat cv_img = ReadImageToCVMat(filename, height, width, is_color, 0, 0);
   if (cv_img.data) {
     if (encoding.size()) {
       if ( (cv_img.channels() == 3) == is_color && !height && !width &&

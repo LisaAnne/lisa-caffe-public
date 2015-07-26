@@ -125,6 +125,10 @@ bool DecodeDatumNative(Datum* datum);
 bool DecodeDatum(Datum* datum, bool is_color);
 
 cv::Mat ReadImageToCVMat(const string& filename,
+    const int height, const int width, const bool is_color,
+    const int min_height, const int min_width);
+
+cv::Mat ReadImageToCVMat(const string& filename,
     const int height, const int width, const bool is_color);
 
 cv::Mat ReadImageToCVMat(const string& filename,

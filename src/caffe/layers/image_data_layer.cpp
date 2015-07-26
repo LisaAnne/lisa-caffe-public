@@ -25,12 +25,17 @@ void ImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
   const int new_height = this->layer_param_.image_data_param().new_height();
   const int new_width  = this->layer_param_.image_data_param().new_width();
+  const int min_height = this->layer_param_.image_data_param().min_height();
+  const int min_width  = this->layer_param_.image_data_param().min_width();
   const bool is_color  = this->layer_param_.image_data_param().is_color();
   string root_folder = this->layer_param_.image_data_param().root_folder();
 
   CHECK((new_height == 0 && new_width == 0) ||
       (new_height > 0 && new_width > 0)) << "Current implementation requires "
       "new_height and new_width to be set at the same time.";
+  CHECK((min_height == 0 && min_width == 0) ||
+      (min_height > 0 && min_width > 0)) << "Current implementation requires "
+      "min_height and min_width to be set at the same time.";
   // Read the file with filenames and labels
   const string& source = this->layer_param_.image_data_param().source();
   LOG(INFO) << "Opening file " << source;
@@ -61,7 +66,7 @@ void ImageDataLayer<Dtype>::DataLayerSetUp(const vector<Blob<Dtype>*>& bottom,
   }
   // Read an image, and use it to initialize the top blob.
   cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first,
-                                    new_height, new_width, is_color);
+                                    new_height, new_width, is_color, min_height, min_width);
   const int channels = cv_img.channels();
   const int height = cv_img.rows;
   const int width = cv_img.cols;
@@ -107,6 +112,8 @@ void ImageDataLayer<Dtype>::InternalThreadEntry() {
   const int batch_size = image_data_param.batch_size();
   const int new_height = image_data_param.new_height();
   const int new_width = image_data_param.new_width();
+  const int min_height = image_data_param.min_height();
+  const int min_width  = image_data_param.min_width();
   const int crop_size = this->layer_param_.transform_param().crop_size();
   const bool is_color = image_data_param.is_color();
   string root_folder = image_data_param.root_folder();
@@ -114,7 +121,7 @@ void ImageDataLayer<Dtype>::InternalThreadEntry() {
   // Reshape on single input batches for inputs of varying dimension.
   if (batch_size == 1 && crop_size == 0 && new_height == 0 && new_width == 0) {
     cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first,
-        0, 0, is_color);
+        0, 0, is_color, min_height, min_width);
     this->prefetch_data_.Reshape(1, cv_img.channels(),
         cv_img.rows, cv_img.cols);
     this->transformed_data_.Reshape(1, cv_img.channels(),
@@ -131,7 +138,7 @@ void ImageDataLayer<Dtype>::InternalThreadEntry() {
     timer.Start();
     CHECK_GT(lines_size, lines_id_);
     cv::Mat cv_img = ReadImageToCVMat(root_folder + lines_[lines_id_].first,
-        new_height, new_width, is_color);
+        new_height, new_width, is_color, min_height, min_width);
     CHECK(cv_img.data) << "Could not load " << lines_[lines_id_].first;
     read_time += timer.MicroSeconds();
     timer.Start();
