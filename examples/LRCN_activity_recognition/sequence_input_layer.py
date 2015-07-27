@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+#Data layer for video.  Change flow_frames and RGB_frames to be the path to the flow and RGB frames.
+
 import sys
 sys.path.append('../../python')
 import caffe

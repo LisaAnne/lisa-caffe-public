@@ -1,3 +1,7 @@
+#classify_video.py will classify a video using (1) singleFrame RGB model (2) singleFrame flow model (3) 0.5/0.5 singleFrame RGB/singleFrame flow fusion (4) 0.33/0.67 singleFrame RGB/singleFrame flow fusion (5) LRCN RGB model (6) LRCN flow model (7) 0.5/0.5 LRCN RGB/LRCN flow model (8) 0.33/0.67 LRCN RGB/LRCN flow model
+#Before using, change RGB_video_path and flow_video_path.
+#Use: classify_video.py video, where video is the video you wish to classify.  If no video is specified, the video "v_Archery_g01_c01" will be classified.
+
 import numpy as np
 import glob
 caffe_root = '../../'
