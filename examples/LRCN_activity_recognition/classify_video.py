@@ -8,8 +8,8 @@ caffe.set_mode_gpu()
 caffe.set_device(0)
 import pickle
 
-RGB_video_path = '/y/vis-common/data/ucf101/frames/'
-flow_video_path = '/x/data/ucf101/flow_images/'
+RGB_video_path = 'frames/'
+flow_video_path = 'flow_images/'
 if len(sys.argv) > 1:
   video = sys.argv[1]
 else:
@@ -107,7 +107,7 @@ def singleFrame_classify_video(frames, net, transformer, is_flow):
 #Models and weights
 singleFrame_model = 'deploy_singleFrame.prototxt'
 lstm_model = 'deploy_lstm.prototxt'
-RGB_singleFrame = 'single_frame_all_layers_hyb_iter_5000.caffemodel'
+RGB_singleFrame = 'single_frame_all_layers_hyb_RGB_iter_5000.caffemodel'
 flow_singleFrame = 'single_frame_all_layers_hyb_flow_iter_50000.caffemodel'
 RGB_lstm = 'RGB_lstm_model_iter_30000.caffemodel'
 flow_lstm = 'flow_lstm_model_iter_50000.caffemodel'
