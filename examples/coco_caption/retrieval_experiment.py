@@ -330,7 +330,7 @@ def gen_stats(prob):
     stats['perplex_word'] = float('inf')
   return stats
 
-def main(model_name='',image_net='', dataset_name='val', vocab='vocabulary', feats_bool_in=True):
+def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='vocabulary', feats_bool_in=True):
   #model_name is the trained model: path relative to /home/lisa/caffe-LSTM-video
   #image_net is the model to extract length 1000 image features: path relative to snapshots folder; do not need to include "caffemodel"
   #dataset_name indicates which dataset to look at
@@ -349,11 +349,13 @@ def main(model_name='',image_net='', dataset_name='val', vocab='vocabulary', fea
     MODEL_FILENAME = model_name 
     DATASET_NAME = dataset_name
   TAG += '_%s' % DATASET_NAME
-  MODEL_DIR = home_dir + '/examples/coco_caption/snapshots'
+  #MODEL_DIR = home_dir + '/examples/coco_caption/snapshots'
+  MODEL_DIR = 'snapshots'
   MODEL_FILE = '%s/%s.caffemodel' % (MODEL_DIR, MODEL_FILENAME)
   #IMAGE_NET_FILE = home_dir + '/models/bvlc_reference_caffenet/deploy.prototxt'
   IMAGE_NET_FILE = home_dir + image_net 
-  LSTM_NET_FILE = home_dir + '/examples/coco_caption/lrcn_word_to_preds.deploy.prototxt'
+  #LSTM_NET_FILE = home_dir + '/examples/coco_caption/lrcn_word_to_preds.deploy.prototxt'
+  LSTM_NET_FILE = LM_net
   NET_TAG = '%s_%s' % (TAG, MODEL_FILENAME)
   DATASET_SUBDIR = '%s/%s_ims' % (DATASET_NAME,
       str(MAX_IMAGES) if MAX_IMAGES >= 0 else 'all')
@@ -363,7 +365,7 @@ def main(model_name='',image_net='', dataset_name='val', vocab='vocabulary', fea
   with open(VOCAB_FILE, 'r') as vocab_file:
     vocab = [line.strip() for line in vocab_file.readlines()]
   coco = COCO(COCO_ANNO_PATH % DATASET_NAME)
-  COCO_IMAGE_PATTERN = '/y/lisaanne/coco/images2/%s2014' 
+  COCO_IMAGE_PATTERN = '/y/lisaanne/coco/images/%s2014' 
   image_root = COCO_IMAGE_PATTERN % DATASET_NAME
   sg = CocoSequenceGenerator(coco, BUFFER_SIZE, image_root, vocab=vocab,
                              max_words=MAX_WORDS, align=False, shuffle=False,  
@@ -403,6 +405,6 @@ def main(model_name='',image_net='', dataset_name='val', vocab='vocabulary', fea
   #experimenter.retrieval_experiment()
 
 if __name__ == "__main__":
-  #input to main: model_name, image_net, dataset_name, vocab, feats_bool
+  #input to main: model_name, image_net, LM_net, dataset_name, vocab, feats_bool
   #examples: ./retrieval_experiment.py lrcn_alex_black_bike.blue_train.red_car.yellow_shirt.green_car_iter_110000  /models/bvlc_reference_caffenet/deploy.prototxt black_bike.blue_train.red_car.yellow_shirt.green_car.val vocabulary
-  main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], False)
+  main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], False)
