@@ -13,11 +13,11 @@ flow_video_path = '/x/data/ucf101/flow_images/'
 if len(sys.argv) > 1:
   video = sys.argv[1]
 else:
-  video = 'v_ApplyEyeMakeup_g01_c01'
+  video = 'v_Archery_g01_c01'
 
 #Initialize transformers
 
-def initialize_transformer(image_mean):
+def initialize_transformer(image_mean, is_flow):
   shape = (10*16, 3, 227, 227)
   transformer = caffe.io.Transformer({'data': shape})
   channel_mean = np.zeros((3,227,227))
@@ -27,18 +27,19 @@ def initialize_transformer(image_mean):
   transformer.set_raw_scale('data', 255)
   transformer.set_channel_swap('data', (2, 1, 0))
   transformer.set_transpose('data', (2, 0, 1))
+  transformer.set_is_flow('data', is_flow)
   return transformer
 
 
 ucf_mean_RGB = np.zeros((3,1,1))
 ucf_mean_flow = np.zeros((3,1,1))
-ucf_mean_RGB[:,:,:] = 128
-ucf_mean_flow[0,:,:] = 103.939
-ucf_mean_flow[1,:,:] = 116.779
-ucf_mean_flow[2,:,:] = 128.68
+ucf_mean_flow[:,:,:] = 128
+ucf_mean_RGB[0,:,:] = 103.939
+ucf_mean_RGB[1,:,:] = 116.779
+ucf_mean_RGB[2,:,:] = 128.68
 
-transformer_RGB = initialize_transformer(ucf_mean_RGB)
-transformer_flow = initialize_transformer(ucf_mean_flow)
+transformer_RGB = initialize_transformer(ucf_mean_RGB, False)
+transformer_flow = initialize_transformer(ucf_mean_flow,True)
 
 # Extract list of frames in video
 RGB_frames = glob.glob('%s%s/*.jpg' %(RGB_video_path, video))
@@ -67,8 +68,8 @@ def LRCN_classify_video(frames, net, transformer, is_flow):
     clip_input = caffe.io.oversample(clip_input,[227,227])
     clip_clip_markers = np.ones((clip_input.shape[0],1,1,1))
     clip_clip_markers[0:10,:,:,:] = 0
-    if is_flow:  #need to negate the values when mirroring
-      clip_input[5:,:,:,0] = 1 - clip_input[5:,:,:,0]
+#    if is_flow:  #need to negate the values when mirroring
+#      clip_input[5:,:,:,0] = 1 - clip_input[5:,:,:,0]
     caffe_in = np.zeros(np.array(clip_input.shape)[[0,3,1,2]], dtype=np.float32)
     for ix, inputs in enumerate(clip_input):
       caffe_in[ix] = transformer.preprocess('data',inputs)
