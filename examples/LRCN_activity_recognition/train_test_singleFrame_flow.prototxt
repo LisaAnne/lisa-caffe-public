@@ -1,4 +1,4 @@
-name: "singleFrame_flow"
+ame: "singleFrame_flow"
 layer {
   name: "data"
   type: "ImageData"
@@ -17,7 +17,7 @@ layer {
   }
   image_data_param {
     source: "ucf101_singleFrame_flow_train_split1.txt"
-    root_folder: "/x/data/ucf101/flow_images_Georgia/"
+    root_folder: ""
     batch_size: 128
     min_height: 227
     min_width: 227
@@ -42,7 +42,7 @@ layer {
   }
   image_data_param {
     source: "ucf101_singleFrame_flow_test_split1.txt"
-    root_folder: "/x/data/ucf101/flow_images_Georgia/"
+    root_folder: ""
     batch_size: 128
     min_height: 227
     min_width: 227

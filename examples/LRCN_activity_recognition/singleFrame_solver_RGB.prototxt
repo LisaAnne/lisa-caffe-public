@@ -1,4 +1,4 @@
-net: "train_test_lstm_RGB.prototxt"
+net: "train_test_singleFrame_RGB.prototxt"
 test_iter: 75 
 test_state: { stage: 'test-on-test' }
 test_interval: 100
