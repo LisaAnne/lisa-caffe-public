@@ -1,4 +1,10 @@
 function create_flow_images_LRCN(base, save_base)
+%create_flow_images will compute flow images from RGB images using [1].
+%input: 
+%     base: folder in which RGB frames from videos are stored
+%     save_base: folder in which flow images should be saved
+%
+%[1] Brox, Thomas, et al. "High accuracy optical flow estimation based on a theory for warping." Computer Vision-ECCV 2004. Springer Berlin Heidelberg, 2004. 25-36.
 
   list = clean_dir(base);
   
