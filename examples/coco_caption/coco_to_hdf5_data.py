@@ -11,9 +11,9 @@ import numpy as np
 import pickle as pkl
 
 sys.path.append('.')
-sys.path.append('/y/lisaanne/coco/')
+sys.path.append('../../data/coco/coco')
 
-COCO_PATH = '/y/lisaanne/coco'
+COCO_PATH = '../../data/coco/coco'
 COCO_TOOL_PATH = '%s/PythonAPI/build/lib/pycocotools' % COCO_PATH
 IM_FOLDER = 'images2'
 COCO_IM_FOLDER = 'images'
@@ -225,7 +225,7 @@ COCO_IMAGE_ID_PATTERN = 'COCO_%s2014_%%012d.jpg'
 
 BUFFER_SIZE = 100
 OUTPUT_DIR = 'h5_data/buffer_%d' % BUFFER_SIZE
-SPLITS_PATTERN = '/home/lisa/caffe-LSTM-video/data/coco/coco2014_cocoid.%s.txt'
+SPLITS_PATTERN = '/home/lisaanne/caffe-LSTM/data/coco/coco2014_cocoid.%s.txt'
 OUTPUT_DIR_PATTERN = '%s/%%s_batches' % OUTPUT_DIR
 
 def process_dataset(split_name, coco_split_name, batch_stream_length,

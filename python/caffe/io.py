@@ -299,7 +299,7 @@ def load_image(filename, color=True):
       img = skimage.img_as_float(skimage.io.imread(filename)).astype(np.float32)
     except:
       print "Can't load with skimage, trying with PIL.\n"
-      img =  numpy.asarray(PIL.Image.open(filename)).astype(np.float32)
+      img =  np.asarray(PIL.Image.open(filename)).astype(np.float32)
     if img.ndim == 2:
         img = img[:, :, np.newaxis]
         if color:
