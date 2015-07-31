@@ -1,0 +1,97 @@
+name: "caffenet_to_lstm"
+
+input: "cont_sentence"
+input_shape { dim: 1 dim: 1000 }
+
+input: "input_sentence"
+input_shape { dim: 1 dim: 1000 }
+
+input: "image_features"
+input_shape { dim: 1 dim: 1000 dim: 1000 }
+
+layer {
+  name: "embedding"
+  type: "Embed"
+  bottom: "input_sentence"
+  top: "embedded_input_sentence_1"
+  embed_param {
+    bias_term: false
+    input_dim: 8801 
+    num_output: 512
+  }
+}
+layer {
+  name: "embedding2"
+  type: "InnerProduct"
+  bottom: "embedded_input_sentence_1"
+  top: "embedded_input_sentence"
+  inner_product_param {
+    num_output: 512
+    axis: 2
+  }
+}
+layer {
+  name: "lstm1"
+  type: "LSTM"
+  bottom: "embedded_input_sentence"
+  bottom: "cont_sentence"
+  top: "lstm1"
+  recurrent_param {
+    num_output: 512
+  }
+}
+layer {
+  name: "div-fc8"
+  type: "Power"
+  power_param{
+    scale: 0.512
+  }
+  bottom: "image_features"
+  top: "div-fc8"
+}
+layer {
+  name: "concat"
+  type: "Concat"
+  concat_param{
+    axis: 2
+  }
+  bottom: "div-fc8"
+  bottom: "embedded_input_sentence"
+  bottom: "lstm1"
+  top: "multimodal_concat"
+}
+layer {
+  name: "multimodal"
+  type: "InnerProduct"
+  bottom: "multimodal_concat"
+  top: "multimodal"
+  inner_product_param {
+    num_output: 1024 
+    axis: 2
+  }
+}
+layer {
+  name: "predict"
+  type: "InnerProduct"
+  bottom: "multimodal"
+  top: "predict"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  inner_product_param {
+    num_output: 8801
+    axis: 2
+  }
+}
+layer {
+  name: "probs"
+  type: "Softmax"
+  bottom: "predict"
+  top: "probs"
+  softmax_param { axis: 2 }
+}
