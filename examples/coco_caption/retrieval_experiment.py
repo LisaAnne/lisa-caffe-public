@@ -7,6 +7,9 @@ import pprint
 import cPickle as pickle
 import string
 import sys
+home_dir = '/home/lisa/caffe-LSTM-video'
+sys.path.append(home_dir + '/python/')
+sys.path.append(home_dir + '/examples/coco_caption/')
 
 # seed the RNG so we evaluate on the same subset each time
 np.random.seed(seed=0)
@@ -14,8 +17,6 @@ np.random.seed(seed=0)
 from coco_to_hdf5_data import *
 from captioner import Captioner
 
-home_dir = '/home/lisa/caffe-LSTM-video'
-sys.path.append(home_dir + '/python/')
 import caffe
 COCO_EVAL_PATH = home_dir + '/data/coco/coco-caption-eval'
 sys.path.append(COCO_EVAL_PATH)
@@ -47,11 +48,12 @@ class CaptionExperiment():
     self.captions.sort(key=lambda c: len(c['caption']))
 
   def compute_descriptors(self):
+    output_name = 'fc8'
     descriptor_filename = '%s/descriptors.npz' % self.dataset_cache_dir
     if os.path.exists(descriptor_filename):
       self.descriptors = np.load(descriptor_filename)['descriptors']
     else:
-      self.descriptors = self.captioner.compute_descriptors(self.images,self.sg.feats_bool)
+      self.descriptors = self.captioner.compute_descriptors(self.images,self.sg.feats_bool, output_name=output_name)
       np.savez_compressed(descriptor_filename, descriptors=self.descriptors)
 
   def score_captions(self, image_index, output_name='probs'):
@@ -355,7 +357,7 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
   #IMAGE_NET_FILE = home_dir + '/models/bvlc_reference_caffenet/deploy.prototxt'
   IMAGE_NET_FILE = home_dir + image_net 
   #LSTM_NET_FILE = home_dir + '/examples/coco_caption/lrcn_word_to_preds.deploy.prototxt'
-  LSTM_NET_FILE = LM_net
+  LSTM_NET_FILE = home_dir + LM_net
   NET_TAG = '%s_%s' % (TAG, MODEL_FILENAME)
   DATASET_SUBDIR = '%s/%s_ims' % (DATASET_NAME,
       str(MAX_IMAGES) if MAX_IMAGES >= 0 else 'all')
@@ -406,5 +408,5 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
 
 if __name__ == "__main__":
   #input to main: model_name, image_net, LM_net, dataset_name, vocab, feats_bool
-  #examples: ./retrieval_experiment.py lrcn_alex_black_bike.blue_train.red_car.yellow_shirt.green_car_iter_110000  /models/bvlc_reference_caffenet/deploy.prototxt black_bike.blue_train.red_car.yellow_shirt.green_car.val vocabulary
+  #examples: ./retrieval_experiment.py lrcn_alex_black_bike.blue_train.red_car.yellow_shirt.green_car_iter_110000  /examples/coco_caption/lm /models/bvlc_reference_caffenet/deploy.prototxt black_bike.blue_train.red_car.yellow_shirt.green_car.val vocabulary
   main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], False)

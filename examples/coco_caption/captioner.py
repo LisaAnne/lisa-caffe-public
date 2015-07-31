@@ -57,10 +57,16 @@ class Captioner():
     return self.lstm_net.blobs['cont_sentence'].data.shape[1]
 
   def set_caption_batch_size(self, batch_size):
+    dim = len(self.lstm_net.blobs['image_features'].data.shape)
     self.lstm_net.blobs['cont_sentence'].reshape(1, batch_size)
     self.lstm_net.blobs['input_sentence'].reshape(1, batch_size)
-    self.lstm_net.blobs['image_features'].reshape(batch_size,
-        *self.lstm_net.blobs['image_features'].data.shape[1:])
+    if dim == 2:
+      self.lstm_net.blobs['image_features'].reshape(batch_size,
+          *self.lstm_net.blobs['image_features'].data.shape[1:])
+    elif dim == 3:
+      self.lstm_net.blobs['image_features'].reshape(1, batch_size,
+          *self.lstm_net.blobs['image_features'].data.shape[2:])
+ 
     self.lstm_net.reshape()
 
   def preprocess_image(self, image, verbose=False):
@@ -92,7 +98,7 @@ class Captioner():
     return descriptor
 
   def image_to_descriptor(self, image, output_name='fc8'):
-    return self.preprocessed_image_to_descriptor(self.preprocess_image(image))
+    return self.preprocessed_image_to_descriptor(self.preprocess_image(image), output_name)
 
   def predict_single_word(self, descriptor, previous_word, output='probs', seed_net=''):
     net = self.lstm_net

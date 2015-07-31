@@ -357,20 +357,21 @@ def process_coco(include_trainval=False):
                             vocab=vocab, aligned=aligned)
 
 if __name__ == "__main__":
-  #process_coco(True)
+  process_coco(True)
   
   #make new train/test splits
-  identifiers = ['fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car.train', 'fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car.val', 'fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car.val_novel', 'fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car.val_train']
-  vocab_tag = 'fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car'
-  vocab = None
-  for identifier in identifiers:
-    split_name = identifier 
-    coco_split_name = 'trainval'
-    batch_stream_length = 100000
-    aligned = True
-    vocab = process_dataset(split_name, coco_split_name, batch_stream_length,
-                             vocab=vocab, aligned=aligned, vocab_tag=vocab_tag)
-    #just need to read images and then put into an hdf5 file
+#  identifiers = ['fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car.train', 'fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car.val', 'fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car.val_novel', 'fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car.val_train']
+#  vocab_tag = 'fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car'
+#  vocab = None
+#  for identifier in identifiers:
+#    split_name = identifier 
+#    coco_split_name = 'trainval'
+#    batch_stream_length = 100000
+#    aligned = True
+#    vocab = process_dataset(split_name, coco_split_name, batch_stream_length,
+#                             vocab=vocab, aligned=aligned, vocab_tag=vocab_tag)
+#
+#   #just need to read images and then put into an hdf5 file
 #    output_dataset_name = split_name + '_aligned_20'
 #    output_path = OUTPUT_DIR_PATTERN % output_dataset_name
 #    image_out_path = '%s/image_list.txt' % output_path
