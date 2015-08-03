@@ -1,4 +1,4 @@
-ame: "singleFrame_flow"
+name: "singleFrame_flow"
 layer {
   name: "data"
   type: "ImageData"
@@ -17,7 +17,7 @@ layer {
   }
   image_data_param {
     source: "ucf101_singleFrame_flow_train_split1.txt"
-    root_folder: "flow_iamges/"
+    root_folder: "flow_images/"
     batch_size: 128
     min_height: 227
     min_width: 227

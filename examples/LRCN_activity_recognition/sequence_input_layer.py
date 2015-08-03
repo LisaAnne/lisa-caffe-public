@@ -28,7 +28,7 @@ train_frames = 16
 test_buffer = 3
 train_buffer = 24
 
-def processImageCrop(im_info, transformer):
+def processImageCrop(im_info, transformer, flow):
   im_path = im_info[0]
   im_crop = im_info[1] 
   im_reshape = im_info[2]
@@ -37,15 +37,15 @@ def processImageCrop(im_info, transformer):
   if (data_in.shape[0] < im_reshape[0]) | (data_in.shape[1] < im_reshape[1]):
     data_in = caffe.io.resize_image(data_in, im_reshape)
   if im_flip:
-    data_in = caffe.io.flip_image(data_in, 1, self.flow) 
+    data_in = caffe.io.flip_image(data_in, 1, flow) 
     data_in = data_in[im_crop[0]:im_crop[2], im_crop[1]:im_crop[3], :] 
   processed_image = transformer.preprocess('data_in',data_in)
   return processed_image
 
 class ImageProcessorCrop(object):
-  def __init__(self, transformer):
+  def __init__(self, transformer, flow):
     self.transformer = transformer
-    self.flow
+    self.flow = flow
   def __call__(self, im_info):
     return processImageCrop(im_info, self.transformer, self.flow)
 
@@ -160,7 +160,6 @@ class videoRead(caffe.Layer):
       video_dict[video]['num_frames'] = num_frames
       video_dict[video]['label'] = l
       self.video_order.append(video) 
-      print "On %d of %d.\n" %(ix, len(f_lines)) 
 
     self.video_dict = video_dict
     self.num_videos = len(video_dict.keys())

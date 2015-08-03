@@ -13,5 +13,5 @@ weight_decay: 0.005
 snapshot: 5000
 snapshot_prefix: "snapshots_singleFrame_flow"
 solver_mode: GPU
-device_id: 2 
+device_id: 1 
 random_seed: 1701
