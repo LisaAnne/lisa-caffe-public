@@ -19,6 +19,7 @@ IM_FOLDER = 'images2'
 COCO_IM_FOLDER = 'images'
 COCO_IMAGE_ROOT = '%s/%s' % (COCO_PATH, IM_FOLDER)
 FEATURE_ROOT = '/y/lisaanne/image_captioning/coco_features'
+home_dir = '/home/lisaanne/caffe-LSTM/examples/coco_captions/'
 
 MAX_HASH = 100000
 
@@ -312,7 +313,7 @@ def write_im_hdf5(im_list, save_name):
     feat = pkl.load(open(full_im, 'rb'))
     if ix % ims_per_file == 0:
       if ix > 0:
-        save_name_full = '%s_%d.h5' %(save_name, ix/ims_per_file)
+        save_name_full = '%s/%s_%d.h5' %(home_dir, save_name, ix/ims_per_file)
         f = h5py.File(save_name_full)
         labels = np.ones((min(len(im_list), ims_per_file)))
         f.create_dataset('label', data=labels)
