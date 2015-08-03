@@ -17,7 +17,7 @@ layer {
   }
   image_data_param {
     source: "ucf101_singleFrame_flow_train_split1.txt"
-    root_folder: ""
+    root_folder: "flow_iamges/"
     batch_size: 128
     min_height: 227
     min_width: 227
@@ -42,7 +42,7 @@ layer {
   }
   image_data_param {
     source: "ucf101_singleFrame_flow_test_split1.txt"
-    root_folder: ""
+    root_folder: "flow_images/"
     batch_size: 128
     min_height: 227
     min_width: 227

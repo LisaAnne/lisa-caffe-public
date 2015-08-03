@@ -17,7 +17,7 @@ layer {
   }
   image_data_param {
     source: "ucf101_singleFrame_RGB_train_split1.txt"
-    root_folder: ""
+    root_folder: "frames/"
     batch_size: 128
     new_height: 240
     new_width: 320
@@ -41,8 +41,8 @@ layer {
     flow: false
   }
   image_data_param {
-    source: "ucf101_singleFrame_flow_test_split1.txt"
-    root_folder: ""
+    source: "ucf101_singleFrame_RGB_test_split1.txt"
+    root_folder: "frames/"
     batch_size: 128
     new_height: 240
     new_width: 320
