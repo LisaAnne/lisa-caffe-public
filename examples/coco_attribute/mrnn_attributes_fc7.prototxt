@@ -620,38 +620,6 @@ layer {
     }
   }
 }
-# for fc8 attributes
-#layer {
-#  name: "fc8-attributes"
-#  type: "InnerProduct"
-#  bottom: "fc7"
-#  top: "fc8-attributes"
-#  param {
-#    lr_mult: 0
-#    decay_mult: 0 
-#  }
-#  param {
-#    lr_mult: 0
-#    decay_mult: 0
-#  }
-#  inner_product_param {
-#    num_output: 471 
-#    weight_filler {
-#      type: "gaussian"
-#      std: 0.01
-#    }
-#    bias_filler {
-#      type: "constant"
-#      value: 0
-#    }
-#  }
-#}
-#layer{
-#  name: "prob-attributes"
-#  type: "Sigmoid"
-#  bottom: "fc8-attributes"
-#  top: "prob-attributes"
-#}
 layer {
   name: "embedding"
   type: "Embed"
@@ -787,7 +755,7 @@ layer {
   name: "div-fc8"
   type: "Power"
   power_param{
-    scale: 0.512 
+    scale: 1.087 
   }
   bottom: "tile-fc8"
   top: "div-fc8"

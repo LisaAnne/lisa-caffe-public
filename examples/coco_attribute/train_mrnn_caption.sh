@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-GPU_ID=1
-#WEIGHTS=snapshots/attributes_JJ100_NN300_VB100_iter_50000.caffemodel
+GPU_ID=2
 #WEIGHTS=snapshots/mrnn_attribute_JJ100_NN300_VB100_fc7_fc8-probs_iter_55000.solverstate
 DATA_DIR=../../examples/coco_caption/h5_data/
 if [ ! -d $DATA_DIR ]; then
@@ -17,15 +16,15 @@ fi
 #    -gpu $GPU_ID
 
 ##########fc7
-WEIGHTS=snapshots/mrnn_attribute_JJ100_NN300_VB100_fc7_iter_55000.caffemodel
-../../build/tools/caffe train \
-    -solver ../../examples/coco_attribute/attribute_mrnn_solver_fc7.prototxt \
-    -snapshot $WEIGHTS \
-    -gpu $GPU_ID
-##########fc8
-#WEIGHTS=snapshots/mrnn_attribute_JJ100_NN300_VB100_fc8-probs_iter_55000.caffemodel
+#WEIGHTS=snapshots/mrnn_attribute_JJ100_NN300_VB100_fc7_iter_55000.solverstate
 #../../build/tools/caffe train \
-#    -solver ../../examples/coco_attribute/attribute_mrnn_solver_fc8.prototxt \
+#    -solver ../../examples/coco_attribute/attribute_mrnn_solver_fc7.prototxt \
 #    -snapshot $WEIGHTS \
 #    -gpu $GPU_ID
+##########fc8
+WEIGHTS=snapshots/attributes_JJ100_NN300_VB100_iter_50000.caffemodel
+../../build/tools/caffe train \
+    -solver ../../examples/coco_attribute/attribute_mrnn_solver_fc8.prototxt \
+    -weights $WEIGHTS \
+    -gpu $GPU_ID
 

@@ -92,7 +92,7 @@ accuracies = {}
 accuracies['accuracy'] = accuracy
 accuracies['f1'] = f1
 
-pkl.dump(accuracies, open(save_accuracies, 'wb'))
+#pkl.dump(accuracies, open(save_accuracies, 'wb'))
 print "Wrting accuracy to %s.\n" %(save_accuracies)
 
 for ix, att in enumerate(attribute_list):    
