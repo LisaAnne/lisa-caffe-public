@@ -23,7 +23,7 @@ max_iter: 110000
 momentum: 0.9
 weight_decay: 0.0000
 snapshot: 5000
-snapshot_prefix: "snapshots/mrnn_attribute_JJ100_NN300_VB100_fc8-probs_2"
+snapshot_prefix: "snapshots/mrnn_attribute_JJ100_NN300_VB100_fc8-probs"
 solver_mode: GPU
 random_seed: 1701
 average_loss: 100
