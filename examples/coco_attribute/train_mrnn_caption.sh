@@ -15,12 +15,13 @@ fi
 #    -gpu $GPU_ID
 
 ##########fc7
-GPU_ID=0
-WEIGHTS=snapshots/mrnn_attribute_JJ100_NN300_VB100_fc7_iter_55000.solverstate
-../../build/tools/caffe train \
-    -solver ../../examples/coco_attribute/attribute_mrnn_solver_fc7.prototxt \
-    -snapshot $WEIGHTS \
-    -gpu $GPU_ID
+#GPU_ID=2
+##WEIGHTS=snapshots/attributes_JJ100_NN300_VB100_iter_50000.caffemodel
+#WEIGHTS=snapshots/mrnn_attribute_JJ100_NN300_VB100_fc7_lr0p01_step40k_iter_10000.solverstate
+#../../build/tools/caffe train \
+#    -solver ../../examples/coco_attribute/attribute_mrnn_solver_fc7.prototxt \
+#    -snapshot $WEIGHTS \
+#    -gpu $GPU_ID
 ##########fc8
 #GPU_ID=1
 #WEIGHTS=snapshots/attributes_JJ100_NN300_VB100_iter_50000.caffemodel
@@ -28,11 +29,11 @@ WEIGHTS=snapshots/mrnn_attribute_JJ100_NN300_VB100_fc7_iter_55000.solverstate
 #    -solver ../../examples/coco_attribute/attribute_mrnn_solver_fc8.prototxt \
 #    -weights $WEIGHTS \
 #    -gpu $GPU_ID
-##########fc8
-#GPU_ID=2
-#WEIGHTS=snapshots/attributes_JJ100_NN300_VB100_iter_50000.caffemodel
-#../../build/tools/caffe train \
-#    -solver ../../examples/coco_attribute/attribute_mrnn_solver_fc7_fc8.prototxt \
-#    -weights $WEIGHTS \
-#    -gpu $GPU_ID
+##########fc8 and fc7
+GPU_ID=0
+WEIGHTS=snapshots/attributes_JJ100_NN300_VB100_iter_50000.caffemodel
+../../build/tools/caffe train \
+    -solver ../../examples/coco_attribute/attribute_mrnn_solver_fc7_fc8.prototxt \
+    -weights $WEIGHTS \
+    -gpu $GPU_ID
 

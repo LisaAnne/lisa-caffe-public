@@ -19,7 +19,7 @@ IM_FOLDER = 'images2'
 COCO_IM_FOLDER = 'images'
 COCO_IMAGE_ROOT = '%s/%s' % (COCO_PATH, IM_FOLDER)
 FEATURE_ROOT = '/y/lisaanne/image_captioning/coco_features'
-home_dir = '/home/lisaanne/caffe-LSTM/examples/coco_captions/'
+home_dir = '/home/lisaanne/caffe-LSTM'
 
 MAX_HASH = 100000
 
@@ -356,6 +356,9 @@ def process_coco(include_trainval=False):
   for split_name, coco_split_name, batch_stream_length, aligned in datasets:
     vocab = process_dataset(split_name, coco_split_name, batch_stream_length,
                             vocab=vocab, aligned=aligned)
+
+def add_new_coco_set(new_set):
+  vocabulary_txt = '/h5_data/buffer_100/vocabualry.txt' 
 
 if __name__ == "__main__":
   process_coco(True)

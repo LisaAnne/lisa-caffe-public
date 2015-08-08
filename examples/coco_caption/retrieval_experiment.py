@@ -7,9 +7,9 @@ import pprint
 import cPickle as pickle
 import string
 import sys
-home_dir = '/home/lisa/caffe-LSTM-video'
-sys.path.append(home_dir + '/python/')
-sys.path.append(home_dir + '/examples/coco_caption/')
+home_dir = '/home/lisaanne/caffe-LSTM'
+sys.path.insert(0,home_dir + '/python/')
+sys.path.insert(0, home_dir + '/examples/coco_caption/')
 
 # seed the RNG so we evaluate on the same subset each time
 np.random.seed(seed=0)
@@ -18,8 +18,8 @@ from coco_to_hdf5_data import *
 from captioner import Captioner
 
 import caffe
-COCO_EVAL_PATH = home_dir + '/data/coco/coco-caption-eval'
-sys.path.append(COCO_EVAL_PATH)
+COCO_EVAL_PATH = '../../data/coco/coco-caption-eval/'
+sys.path.insert(0,COCO_EVAL_PATH)
 from pycocoevalcap.eval import COCOEvalCap
 
 class CaptionExperiment():
@@ -49,6 +49,8 @@ class CaptionExperiment():
 
   def compute_descriptors(self):
     output_name = 'fc8'
+    #output_name = 'prob-attributes'
+    #output_name = 'fc8-concat'
     descriptor_filename = '%s/descriptors.npz' % self.dataset_cache_dir
     if os.path.exists(descriptor_filename):
       self.descriptors = np.load(descriptor_filename)['descriptors']
@@ -362,12 +364,14 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
   DATASET_SUBDIR = '%s/%s_ims' % (DATASET_NAME,
       str(MAX_IMAGES) if MAX_IMAGES >= 0 else 'all')
   DATASET_CACHE_DIR = home_dir + '/retrieval_cache/%s/%s' % (DATASET_SUBDIR, MODEL_FILENAME)
-  VOCAB_FILE = home_dir + '/examples/coco_caption/h5_data/buffer_100/%s.txt' %vocab
+  VOCAB_FILE = '../../examples/coco_caption/h5_data/buffer_100/%s.txt' %vocab
   DEVICE_ID = 1
   with open(VOCAB_FILE, 'r') as vocab_file:
     vocab = [line.strip() for line in vocab_file.readlines()]
   coco = COCO(COCO_ANNO_PATH % DATASET_NAME)
-  COCO_IMAGE_PATTERN = '/y/lisaanne/coco/images/%s2014' 
+  #COCO_IMAGE_PATTERN = '/y/lisaanne/coco/images/%s2014' 
+  COCO_IMAGE_PATTERN = '../../data/coco/coco/images/%s2014' 
+  #COCO_IMAGE_PATTERN = '/y/lisaanne/coco/images2/%s2014' 
   image_root = COCO_IMAGE_PATTERN % DATASET_NAME
   sg = CocoSequenceGenerator(coco, BUFFER_SIZE, image_root, vocab=vocab,
                              max_words=MAX_WORDS, align=False, shuffle=False,  

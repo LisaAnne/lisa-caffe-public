@@ -11,7 +11,7 @@ import sys
 import pickle as pkl
 import copy
 
-home_dir = '/home/lisa/caffe-LSTM-video'
+home_dir = '/home/lisaanne/caffe-LSTM/'
 sys.path.append(home_dir + '/python/')
 import caffe
 feature_path ='/y/lisaanne/image_captioning/coco_features/' 
