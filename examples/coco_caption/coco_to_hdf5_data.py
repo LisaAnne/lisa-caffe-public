@@ -335,33 +335,44 @@ def write_im_hdf5(im_list, save_name):
 
   h5_file.close() 
 
-def process_coco(include_trainval=False):
+def process_coco(tag='', include_trainval=False):
   vocab = None
   datasets = [
-      ('train', 'train', 100000, True),
-      ('val', 'val', 100000, True),
-      ('test', 'val', 100000, True),
+      (tag+'train', 'trainval', 100000, True),
+      (tag+'val', 'val', 100000, True),
+      (tag+'val_train', 'val', 100000, True),
+      (tag+'val_novel', 'val', 100000, True),
+      (tag+'test', 'test', 100000, True),
       # Write unaligned datasets as well:
-      ('train', 'train', 100000, False),
-      ('val', 'val', 100000, False),
-      ('test', 'val', 100000, False),
+#      ('train', 'train', 100000, False),
+#      ('val', 'val', 100000, False),
+#      ('test', 'val', 100000, False),
   ]
   # Also create a 'trainval' set if include_trainval is set.
   # ./data/coco/make_trainval.py must have been run for this to work.
   if include_trainval:
     datasets += [
-      ('trainval', 'trainval', 100000, True),
-      ('trainval', 'trainval', 100000, False),
+      (tag+'trainval', 'trainval', 100000, True),
+#      ('trainval', 'trainval', 100000, False),
     ]
   for split_name, coco_split_name, batch_stream_length, aligned in datasets:
     vocab = process_dataset(split_name, coco_split_name, batch_stream_length,
-                            vocab=vocab, aligned=aligned)
+                            vocab=vocab, vocab_tag=tag, aligned=aligned)
+  pkl.dump(vocab, open(('vocab_dicts/%s_vocab.p' %tag),'wb'))  
 
-def add_new_coco_set(new_set):
-  vocabulary_txt = '/h5_data/buffer_100/vocabualry.txt' 
+def add_dataset(tag):
+  vocab = pkl.load(open(('vocab_dicts/%s_vocab.p' %tag), 'rb'))
+  split_name = tag
+  coco_split_name = 'trainval'
+  batch_stream_length = 100000
+  aligned = True
+  vocab = process_dataset(split_name, coco_split_name, batch_stream_length,
+                          vocab=vocab, aligned=aligned)
 
 if __name__ == "__main__":
-  process_coco(True)
+  process_coco('captions_augment_train_set_NN300_noZebra2', False)
+#  tag = 'captions_augment_train_set_NN300_noZebra_train' 
+#  add_dataset(tag, 'vocab_dicts/captions_augment_train_set_NN300_noZebra_train_vocab.p')
   
   #make new train/test splits
 #  identifiers = ['fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car.train', 'fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car.val', 'fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car.val_novel', 'fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car.val_train']

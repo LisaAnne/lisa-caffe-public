@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-GPU_ID=0
+GPU_ID=2
 WEIGHTS=\
-/home/lisa/caffe-LSTM-video/models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel
-DATA_DIR=/home/lisa/caffe-LSTM-video/examples/coco_caption/h5_data/
+/home/lisaanne/caffe-LSTM/models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel
+DATA_DIR=../coco_caption/h5_data/
 if [ ! -d $DATA_DIR ]; then
     echo "Data directory not found: $DATA_DIR"
     echo "First, download the COCO dataset (follow instructions in data/coco)"
@@ -16,8 +16,8 @@ fi
 #    -weights $WEIGHTS \
 #    -gpu $GPU_ID
 
-/home/lisa/caffe-LSTM-video/build/tools/caffe train \
-    -solver /home/lisa/caffe-LSTM-video/examples/coco_caption/lrcn_solver.prototxt \
+../../build/tools/caffe train \
+    -solver ../coco_caption/lrcn_solver.prototxt \
     -weights $WEIGHTS \
     -gpu $GPU_ID
 #    -snapshot /home/lisa/caffe-LSTM-video/examples/coco_caption/snapshots/lrcn_vgg_fromImages_iter_50000.solverstate \

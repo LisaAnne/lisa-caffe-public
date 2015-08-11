@@ -38,6 +38,14 @@ def combine_json_dict(current_dict, add_json, json_name):
       current_dict[image_id]['annotations'].append((caption, ix))
   return current_dict
 
+def init(json_dict):
+  json_dict['info'] = train_captions['info'] 
+  json_dict['licenses'] = train_captions['info'] 
+  json_dict['type'] = train_captions['type']
+  json_dict['annotations'] = [] 
+  json_dict['images'] = []
+  return json_dict  
+
 def make_split(word_groups):
   #words is a list of tuples that cannot cooccur in the same sentence.
 	#e.g. [(brown, dog), (black, cat), (brown, bear)]
@@ -76,13 +84,6 @@ def make_split(word_groups):
       add_json['annotations'].append(old_dict['annotations'][annotation[1]])
     return add_json
 
-  def init(json_dict):
-    json_dict['info'] = train_captions['info'] 
-    json_dict['licenses'] = train_captions['info'] 
-    json_dict['type'] = train_captions['type']
-    json_dict['annotations'] = [] 
-    json_dict['images'] = []
-    return json_dict  
 
   new_train_json = {}
   new_val_json = {}
@@ -130,25 +131,34 @@ def write_txt_file(save_file, im_dir, json_dict):
     if str(im['id']) not in known_ids:
       known_ids.append(str(im['id']))
       val_or_train = im['file_name'].split('_')[1]
-      real_path = '../../data/coco/coco/images/%s/%s'  %(val_or_train, im['file_name'])
+      real_path = '/home/lisaanne/caffe-LSTM/data/coco/coco/images/%s/%s'  %(val_or_train, im['file_name'])
       link_path = '%s/%s' % (im_dir_full, im['file_name'])
       os.symlink(real_path, link_path) 
       write_file.writelines('%s\n' %str(im['id']))
   write_file.close() 
 
+def match_words(rm_words, words):
+  list_matches = [False]*len(rm_words)
+  for x, rm_w in enumerate(rm_words):
+    for w in words:
+      if w == rm_w:
+        list_matches[x] = True
+  return any(list_matches)
+
 #add "dumb" captions to new_train_json
-def augment_captions(train_dict, rm_word=None): 
+def augment_captions(train_dict, rm_word=None, all_object_sents=False): 
   #go through each iamge
   #look at annotations
   #for each image find words that are in NN attribute list
   #add caption "A __" for each NN in the image
+  #rm_word can be rm_words -- multiple words
 
   nouns = pkl.load(open('../coco_attribute/attribute_lists/attributes_NN300.pkl','rb')) 
   anno_ids = [train_dict['annotations'][i]['image_id'] for i in range(len(train_dict['annotations']))] 
   id_count = 500000
   rm_ids = []
-  for count_im, im in enumerate(train_dict['images'][280:290]):
-    if count_im % 100 == 0:
+  for count_im, im in enumerate(train_dict['images']):
+    if count_im % 50 == 0:
       sys.stdout.write("\rAdding sentences for im %d/%d" % (count_im, len(train_dict['images'])))
       sys.stdout.flush()
 
@@ -160,8 +170,13 @@ def augment_captions(train_dict, rm_word=None):
       words.extend(c.split(' '))
     words = list(set(words))
     if rm_word:  #remove all annotations if one related annotation contains given word
-      if rm_word in words: 
+      if match_words(rm_word, words): 
         rm_ids.extend(anno_idxs)
+        #Right now there are multiple sentences with objects in the image that are *not* zebra; this is not quite right
+      if not all_object_sents:  #This will make the only sentneces associated with an image the label
+        #option2 of rm_words...
+        words = rm_word 
+
     word_sentences = ['A %s.' %(word) for word in words if word in nouns]
     for ws in word_sentences:
       new_annotation = {} 
@@ -175,6 +190,46 @@ def augment_captions(train_dict, rm_word=None):
       a = train_dict['annotations'].pop(rm_id)
   random.shuffle(train_dict['annotations'])  
   return train_dict
+
+def separate_val_set(val_dict, rm_word=None):
+  val_dict_train = {}
+  val_dict_novel = {}
+  val_dict_train = init(val_dict_train)
+  val_dict_novel = init(val_dict_novel)
+
+  anno_ids = [val_dict['annotations'][i]['image_id'] for i in range(len(val_dict['annotations']))]
+  novel_annotation_ids = [] 
+  novel_image_ids = [] 
+  train_annotation_ids = [] 
+  train_image_ids = [] 
+  for count_im, im in enumerate(val_dict['images']):
+    if count_im % 50 == 0:
+      sys.stdout.write("\rAdding sentences for im %d/%d" % (count_im, len(val_dict['images'])))
+      sys.stdout.flush()
+
+    im_id = im['id']
+    anno_idxs = [ix for ix, anno_id in enumerate(anno_ids) if anno_id == im_id]
+    words = []
+    for idx in anno_idxs:
+      c = val_dict['annotations'][idx]['caption'].replace('.','').replace(',','').replace("'",'').lower()
+      words.extend(c.split(' '))
+    words = list(set(words))
+    if match_words(rm_word, words): 
+      novel_annotation_ids.extend(anno_idxs)
+      novel_image_ids.append(count_im)
+    else:
+      train_annotation_ids.extend(anno_idxs)
+      train_image_ids.append(count_im)
+  for i in novel_annotation_ids:
+    val_dict_novel['annotations'].append(val_dict['annotations'][i])
+  for i in train_annotation_ids:
+    val_dict_train['annotations'].append(val_dict['annotations'][i])
+  for i in novel_image_ids:
+    val_dict_novel['images'].append(val_dict['images'][i])
+  for i in train_image_ids:
+    val_dict_train['images'].append(val_dict['images'][i])
+  print '\n.'
+  return val_dict_novel, val_dict_train
 
 def save_files(dump_json, identifier):
   file_save = coco_anno_path %(identifier)
@@ -190,9 +245,28 @@ if __name__ == "__main__":
   train_json = open(train_json_file).read()
   train_captions = json.loads(train_json) 
 
+  val_json_file = coco_anno_path %('val')  
+  val_json = open(val_json_file).read()
+  val_captions = json.loads(val_json) 
+  
+  test_json_file = coco_anno_path %('test')  
+  test_json = open(test_json_file).read()
+  test_captions = json.loads(test_json) 
+
   #This will make a train set in which all 'real' zebra captions are removed
-  augment_captions = augment_captions(train_captions, 'zebra')
-  save_files(augment_captions, 'captions_augment_train_set_NN300_noZebra_train')
+  tag = 'captions_augment_train_set_NN300_noZebra_'
+  #First zebra split
+  #augment_captions = augment_captions(train_captions, ['zebra'], all_object_sents=True)
+
+  #splits for zebra and motorcycle
+  #augment_captions = augment_captions(train_captions, ['zebra'])
+  #augment_captions = augment_captions(train_captions, ['motorcycle', 'motor', 'cycle'])
+  save_files(augment_captions, tag + 'train')
+  save_files(val_captions, tag+'val')
+  save_files(test_captions, tag+'test')
+  val_captions_novel, val_captions_train = separate_val_set(val_captions, ['zebra'])
+  save_files(val_captions_novel, tag+'val_novel')
+  save_files(val_captions_train, tag+'val_train')
 
   #This will make sets where 'zebra' only occurs in val
 #  word_groups = [('zebra', 'zebra')]
