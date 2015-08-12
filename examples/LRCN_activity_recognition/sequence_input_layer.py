@@ -215,9 +215,10 @@ class videoRead(caffe.Layer):
     if self.thread is not None:
       self.join_worker() 
 
-    new_result_data = copy.deepcopy(self.thread_result['data'])
-    new_result_label = copy.deepcopy(self.thread_result['label'])
-    new_result_cm = copy.deepcopy(self.thread_result['clip_markers'])
+    #rearrange the data: The LSTM takes inputs as [video0_frame0, video1_frame0,...] but the data is currently arranged as [video0_frame0, video0_frame1, ...]
+    new_result_data = [None]*len(self.thread_result['data']) 
+    new_result_label = [None]*len(self.thread_result['label']) 
+    new_result_cm = [None]*len(self.thread_result['clip_markers'])
     for i in range(self.frames):
       for ii in range(self.buffer_size):
         old_idx = ii*self.frames + i
@@ -226,19 +227,15 @@ class videoRead(caffe.Layer):
         new_result_label[new_idx] = self.thread_result['label'][old_idx]
         new_result_cm[new_idx] = self.thread_result['clip_markers'][old_idx]
 
-    self.thread_result['data'] = new_result_data
-    self.thread_result['label'] = new_result_label
-    self.thread_result['clip_markers'] = new_result_cm
-
     for top_index, name in zip(range(len(top)), self.top_names):
       if name == 'data':
         for i in range(self.N):
-          top[top_index].data[i, ...] = self.thread_result['data'][i] 
+          top[top_index].data[i, ...] = new_result_data[i] 
       elif name == 'label':
-        top[top_index].data[...] = self.thread_result['label']
+        top[top_index].data[...] = new_result_label
       elif name == 'clip_markers':
-        top[top_index].data[...] = self.thread_result['clip_markers']
- 
+        top[top_index].data[...] = new_result_cm
+
     self.dispatch_worker()
       
   def dispatch_worker(self):
