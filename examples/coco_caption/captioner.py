@@ -186,7 +186,8 @@ class Captioner():
   def predict_missing_word_from_all_words(self, descriptor, previous_words, next_words, word_idx, beam_size, prob_output_name='probs'):
     #input: list of descriptors, previous_words next_words, word_idxs
 
-    num_sentences = len(descriptor)
+    #num_sentences = len(descriptor)
+    num_sentences = 1
     batch_size = beam_size*num_sentences
  
     descriptor = np.array(descriptor)
@@ -208,26 +209,35 @@ class Captioner():
     cont_input = np.zeros_like(net.blobs['cont_sentence'].data)
     word_input = np.zeros_like(net.blobs['input_sentence'].data)
     image_features = np.zeros_like(net.blobs['image_features'].data)
-    image_features = put_items_in_list(image_features, descriptor) 
-    for wi in (len(previous_words[0])):
+    #image_features = put_items_in_list(image_features, descriptor) 
+    image_features[:] = descriptor
+    previous_words = [0] + previous_words
+    for wi in range(len(previous_words)):
       if wi == 0:
         cont_input[:] = 0
       else:
         cont_input[:] = 1
-      word_input = put_items_in_list(word_input, map(lambda x: previous_words[x][wi], range(num_sentences))
+#      word_input = put_items_in_list(word_input, map(lambda x: previous_words[x][wi], range(num_sentences))
+      word_input[:] = previous_words[wi]
       net.forward(image_features=image_features, cont_sentence=cont_input, input_sentence=word_input) 
 
     probs = net.blobs[prob_output_name].data[0]
 
-    track_idxs = np.array(())
-    for it in range(1, num_sentences):
-      ti_tmp = np.argsort(probs[ti*beam_size,:])[-beam_size:]
-    
-      if not np.where(ti_tmp == word_idx)[0]:
-        ti_tmp = np.append(ti_tmp, word_idx)
-        batch_size += 1
-        batch_end = min(len(self.vocab), batch_size)
-      track_idxs = np.concatenate((track_idxs, ti_tmp))
+    track_idxs = np.argsort(probs[0,:])[-beam_size:]
+    if not np.where(track_idxs == word_idx)[0]:
+      track_idxs = np.append(track_idxs, word_idx)
+      batch_size += 1
+      batch_end = min(len(self.vocab), batch_size)
+
+#    track_idxs = np.array(())
+#    for it in range(1, num_sentences):
+#      ti_tmp = np.argsort(probs[ti*beam_size,:])[-beam_size:]
+#    
+#      if not np.where(ti_tmp == word_idx)[0]:
+#        ti_tmp = np.append(ti_tmp, word_idx)
+#        batch_size += 1
+#        batch_end = min(len(self.vocab), batch_size)
+#      track_idxs = np.concatenate((track_idxs, ti_tmp))
 
     missing_word_probs = probs[0,track_idxs] #p(word|prev_word)
     final_words = next_words + [0]
@@ -256,11 +266,13 @@ class Captioner():
   def fill_caption(self, descriptor, caption, word_idx, beam_size):
     num_sentences = len(caption)
     del_word = caption.index(word_idx)
-    previous_words = []
-    next_words = []
-    for i in range(num_sentences):
-      previous_words.append(caption[i][:del_word])
-      next_words.append(caption[i][del_word+1:])
+#    previous_words = []
+#    next_words = []
+#    for i in range(num_sentences):
+#      previous_words.append(caption[i][:del_word])
+#      next_words.append(caption[i][del_word+1:])
+    previous_words = caption[:del_word]
+    next_words = caption[del_word+1:]
     return self.predict_missing_word_from_all_words(descriptor, previous_words, next_words, word_idx, beam_size)
  
   # Strategy must be either 'beam' or 'sample'.

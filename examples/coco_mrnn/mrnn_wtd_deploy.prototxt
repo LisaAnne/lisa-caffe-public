@@ -70,6 +70,12 @@ layer {
     axis: 2
   }
 }
+#layer {
+#  name: "sigmoid-multimodal"
+#  type: "Sigmoid"
+#  bottom: "multimodal"
+#  top: "multimodal"
+#}
 layer {
   name: "predict"
   type: "InnerProduct"

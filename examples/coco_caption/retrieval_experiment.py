@@ -17,6 +17,8 @@ np.random.seed(seed=0)
 from coco_to_hdf5_data import *
 from captioner import Captioner
 
+home_dir = '/home/lisa/caffe-LSTM-video'
+sys.path.append(home_dir + '/python/')
 import caffe
 COCO_EVAL_PATH = '../../data/coco/coco-caption-eval/'
 sys.path.insert(0,COCO_EVAL_PATH)
@@ -209,6 +211,7 @@ class CaptionExperiment():
     for cw in cooccur_words:
       cw_idx = self.sg.vocabulary[cw]
       captions = [c for c in captions if cw_idx+1 in c['caption']]
+ 
     num_captions = len(captions)
     print '%d/%d sentences include query word %s and cooccur words.\n' %(num_captions, len(self.captions), fill_word)
 
@@ -223,13 +226,35 @@ class CaptionExperiment():
 
     all_dists = np.zeros((num_captions, len(self.sg.vocabulary)+1)) 
     
+    beam_size = 50
     for ci in range(num_captions):
       sys.stdout.write("\rFilling in word for caption %d/%d" %
                        (ci, num_captions))
       sys.stdout.flush()
-      all_dists[ci,...] = self.captioner.fill_caption(caption_descriptors[ci], captions[ci]['caption'], word_idx+1)
+      all_dists[ci,...] = self.captioner.fill_caption(caption_descriptors[ci], captions[ci]['caption'], word_idx+1, beam_size = beam_size)
 
-    return all_dists #neeed to come up with good way to output it
+    #three metrics
+    #	(1) The mean index of the correct word (lower is better)
+    #	(2) The mean probability of the correct word (higher is better)
+    #   (3) Top five filler words (e.g. to see if black is being confused with red)
+
+    mean_index = 0
+    for ci in range(num_captions):
+      mean_index += min((np.argsort(all_dists[ci,:])[::-1]).tolist().index(word_idx+1), beam_size)
+
+    mean_index = mean_index/float(num_captions)
+    mean_prob = np.mean(all_dists[:,word_idx+1])
+    top_words = np.argsort(np.sum(all_dists,0))[-10:]
+
+    print '\nFor fill word %s and cooccur words %s:\n' %(fill_word, cooccur_words)
+    print 'Mean ranking of filler word %s:' %(fill_word)
+    print mean_index
+    print 'Mean probability of filler word: %s' %(fill_word)
+    print mean_prob
+    print 'Top ranked words'
+    print [(self.sg.vocabulary_inverted[idx-1], np.sum(all_dists,0)[idx]/num_captions) for idx in np.argsort(np.sum(all_dists,0))[-10:]]
+ 
+    return mean_index, mean_prob, top_words 
 
 
   def generation_experiment(self, strategy, max_batch_size=1000):
@@ -405,9 +430,11 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
   CACHE_DIR = '%s/%s' % (DATASET_CACHE_DIR, strategy_name)
   experimenter = CaptionExperiment(captioner, dataset, DATASET_CACHE_DIR, CACHE_DIR, sg)
   captioner.set_image_batch_size(min(100, MAX_IMAGES))
-  #experimenter.madlib_experiment('black', ['bike'])
+#  for c in ['black', 'blue', 'red', 'yellow', 'green']:
+#    for o in ['bike', 'train', 'car', 'shirt']:
+#      experimenter.madlib_experiment(c, [o])
   experimenter.generation_experiment(generation_strategy)
-  captioner.set_caption_batch_size(min(MAX_IMAGES * 5, 1000))
+  #captioner.set_caption_batch_size(min(MAX_IMAGES * 5, 1000))
   #experimenter.retrieval_experiment()
 
 if __name__ == "__main__":

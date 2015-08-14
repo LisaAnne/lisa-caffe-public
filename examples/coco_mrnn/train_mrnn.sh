@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-GPU_ID=1
+GPU_ID=0
 WEIGHTS=\
 /home/lisa/caffe-LSTM-video/models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel
 DATA_DIR=/home/lisa/caffe-LSTM-video/examples/coco_caption/h5_data/
