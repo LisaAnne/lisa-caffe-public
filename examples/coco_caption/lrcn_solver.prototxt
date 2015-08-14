@@ -23,7 +23,7 @@ max_iter: 110000
 momentum: 0.9
 weight_decay: 0.0000
 snapshot: 5000
-snapshot_prefix: "snapshots/lrcn_coco2014_cocoid.captions_augment_train_set_NN300train_baseline_vocab8801"
+snapshot_prefix: "snapshots/only_noun_sentences_noShortEOS_try2"
 solver_mode: GPU
 random_seed: 1701
 average_loss: 100

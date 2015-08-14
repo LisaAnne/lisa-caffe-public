@@ -240,7 +240,7 @@ def process_dataset(split_name, coco_split_name, batch_stream_length,
     output_dataset_name += '_unaligned'
   output_path = OUTPUT_DIR_PATTERN % output_dataset_name
   #coco (I think) just puts annotations together for train/test set.  Want to use trainval set for my own images (I think... need to ask Jeff)
-  coco = COCO(COCO_ANNO_PATH % coco_split_name)
+  coco = COCO(COCO_ANNO_PATH % split_name)  #THIS IS CHANGED!!!  This means that you have to have a json file with the captions for your split!
   image_root = COCO_IMAGE_PATTERN % coco_split_name
   sg = CocoSequenceGenerator(coco, BUFFER_SIZE, image_root,
       split_ids=split_image_ids, vocab=vocab, align=aligned, pad=aligned,
@@ -250,7 +250,7 @@ def process_dataset(split_name, coco_split_name, batch_stream_length,
     sg.dump_vocabulary(vocab_out_path)
   sg.batch_stream_length = batch_stream_length
   writer = HDF5SequenceWriter(sg, output_dir=output_path)
-  writer.write_to_exhaustion()
+  writer.write_to_exhaustion(min_sent_length=2)
   writer.write_filelists()
   image_out_path = '%s/image_list.txt' % output_path
   image_dummy_labels_out_path = '%s/image_list.with_dummy_labels.txt' % output_path
@@ -335,19 +335,20 @@ def write_im_hdf5(im_list, save_name):
 
   h5_file.close() 
 
-def process_coco(tag='', include_trainval=False):
+def process_coco(tag='', include_val = True, include_trainval=False):
   vocab = None
   datasets = [
-      (tag+'train', 'trainval', 100000, True),
+      (tag+'train', 'trainval', 100000, True)]
+  if include_val:
+      datasets += [
       (tag+'val', 'val', 100000, True),
       (tag+'val_train', 'val', 100000, True),
       (tag+'val_novel', 'val', 100000, True),
-      (tag+'test', 'test', 100000, True),
+      (tag+'test', 'test', 100000, True)]
       # Write unaligned datasets as well:
 #      ('train', 'train', 100000, False),
 #      ('val', 'val', 100000, False),
 #      ('test', 'val', 100000, False),
-  ]
   # Also create a 'trainval' set if include_trainval is set.
   # ./data/coco/make_trainval.py must have been run for this to work.
   if include_trainval:
@@ -360,17 +361,18 @@ def process_coco(tag='', include_trainval=False):
                             vocab=vocab, vocab_tag=tag, aligned=aligned)
   pkl.dump(vocab, open(('vocab_dicts/%s_vocab.p' %tag),'wb'))  
 
-def add_dataset(tag):
+def add_dataset(tag, split):
   vocab = pkl.load(open(('vocab_dicts/%s_vocab.p' %tag), 'rb'))
-  split_name = tag
-  coco_split_name = 'trainval'
+  split_name = tag + split
+  coco_split_name = 'trainval' 
   batch_stream_length = 100000
   aligned = True
   vocab = process_dataset(split_name, coco_split_name, batch_stream_length,
                           vocab=vocab, aligned=aligned)
 
 if __name__ == "__main__":
-  process_coco('captions_augment_train_set_NN300_noZebra2', False)
+  process_coco('augment_train_noShortEOS_', False, False)
+  #process_coco('only_noun_sentences_noZebra', False, False)
 #  tag = 'captions_augment_train_set_NN300_noZebra_train' 
 #  add_dataset(tag, 'vocab_dicts/captions_augment_train_set_NN300_noZebra_train_vocab.p')
   

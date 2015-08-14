@@ -45,7 +45,7 @@ void LSTMUnitLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   const Dtype* flush = bottom[2]->cpu_data();
   Dtype* C = top[0]->mutable_cpu_data();
   Dtype* H = top[1]->mutable_cpu_data();
-  for (int n = 0; n < num; ++n) {
+  for (int n = 0; n < num; ++n) {  //num is batch size
     for (int d = 0; d < hidden_dim_; ++d) {
       const Dtype i = sigmoid(X[d]);
       const Dtype f = (*flush == 0) ? 0 :
@@ -62,7 +62,7 @@ void LSTMUnitLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     X += x_dim;
     C += hidden_dim_;
     H += hidden_dim_;
-    ++flush;
+    ++flush;  //these guys are all pointers so incrementing the next thing to look at
   }
 }
 

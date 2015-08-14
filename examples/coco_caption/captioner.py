@@ -137,7 +137,7 @@ class Captioner():
     net = self.lstm_net
     outputs = []
     output_captions = [[] for b in range(batch_size)]
-    output_probs = [[] for b in range(batch_size)]
+    log_probs = [[] for b in range(batch_size)]
 
     #prep the lstm with previous words  
     missing_word_probs = np.zeros((net.blobs[prob_output_name].data.shape[2],))
@@ -458,7 +458,7 @@ class Captioner():
     return outputs
   
   def sample_captions(self, descriptor, prob_output_name='probs',
-                      pred_output_name='predict', temp=1, max_length=50):
+                      pred_output_name='predict', temp=1, max_length=50, min_length=2):
     descriptor = np.array(descriptor)
     batch_size = descriptor.shape[0]
     self.set_caption_batch_size(batch_size)
@@ -488,8 +488,9 @@ class Captioner():
                   input_sentence=word_input)
       if temp == 1.0 or temp == float('inf'):
         net_output_probs = net.blobs[prob_output_name].data[0]
+        no_EOS = False if (caption_index > min_length) else True
         samples = [
-            random_choice_from_probs(dist, temp=temp, already_softmaxed=True)
+            random_choice_from_probs(dist, temp=temp, already_softmaxed=True, no_EOS=no_EOS)
             for dist in net_output_probs
         ]
       else:
@@ -541,10 +542,14 @@ def softmax(softmax_inputs, temp):
   eps_sum = 1e-20
   return exp_outputs / max(exp_outputs_sum, eps_sum)
 
-def random_choice_from_probs(softmax_inputs, temp=1, already_softmaxed=False):
+def random_choice_from_probs(softmax_inputs, temp=1, already_softmaxed=False, no_EOS=False):
   # temperature of infinity == take the max
+  # if no_EOS True, then the next word will not be the end of the sentence
   if temp == float('inf'):
-    return np.argmax(softmax_inputs)
+    if no_EOS:
+      return np.argmax(softmax_inputs[1:]) + 1
+    else:
+      return np.argmax(softmax_inputs)
   if already_softmaxed:
     probs = softmax_inputs
     assert temp == 1

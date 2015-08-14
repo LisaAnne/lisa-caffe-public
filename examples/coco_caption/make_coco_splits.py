@@ -138,6 +138,8 @@ def write_txt_file(save_file, im_dir, json_dict):
   write_file.close() 
 
 def match_words(rm_words, words):
+  if not rm_words:
+    return False #if rm_words is none want to return False.
   list_matches = [False]*len(rm_words)
   for x, rm_w in enumerate(rm_words):
     for w in words:
@@ -146,12 +148,14 @@ def match_words(rm_words, words):
   return any(list_matches)
 
 #add "dumb" captions to new_train_json
-def augment_captions(train_dict, rm_word=None, all_object_sents=False): 
+def augment_captions(train_dict, rm_word=None, rm_all_object_sents=False, all_object_sents=False): 
   #go through each iamge
   #look at annotations
   #for each image find words that are in NN attribute list
   #add caption "A __" for each NN in the image
   #rm_word can be rm_words -- multiple words
+  #rm_all_object_sents: If this is True, then for sentences with rm_word, then augmented captions will include captions for all nouns in sentence ('A zebra in the field') --> 'A zebra.' 'A field.'
+  #all_object_sents: If this is true, then all training sentences are augmented with noun-captions.
 
   nouns = pkl.load(open('../coco_attribute/attribute_lists/attributes_NN300.pkl','rb')) 
   anno_ids = [train_dict['annotations'][i]['image_id'] for i in range(len(train_dict['annotations']))] 
@@ -169,22 +173,23 @@ def augment_captions(train_dict, rm_word=None, all_object_sents=False):
       c = train_dict['annotations'][idx]['caption'].replace('.','').replace(',','').replace("'",'').lower()
       words.extend(c.split(' '))
     words = list(set(words))
-    if rm_word:  #remove all annotations if one related annotation contains given word
-      if match_words(rm_word, words): 
-        rm_ids.extend(anno_idxs)
-        #Right now there are multiple sentences with objects in the image that are *not* zebra; this is not quite right
-      if not all_object_sents:  #This will make the only sentneces associated with an image the label
+    mw = match_words(rm_word, words)
+    if mw: #If match word (match_word will return false if rm_word is None) 
+      rm_ids.extend(anno_idxs)
+      #Right now there are multiple sentences with objects in the image that are *not* zebra; this is not quite right
+      if not rm_all_object_sents:  #This will make the only sentences associated with an image the label
         #option2 of rm_words...
         words = rm_word 
 
-    word_sentences = ['A %s.' %(word) for word in words if word in nouns]
-    for ws in word_sentences:
-      new_annotation = {} 
-      new_annotation['caption'] = ws
-      new_annotation['id'] = id_count
-      id_count += 1
-      new_annotation['image_id'] = im_id
-      train_dict['annotations'].append(new_annotation)
+    if mw | all_object_sents: #if match words or if inserting augmented sentences for all train sentences
+      word_sentences = ['A %s.' %(word) for word in words if word in nouns]
+      for ws in word_sentences:
+        new_annotation = {} 
+        new_annotation['caption'] = ws
+        new_annotation['id'] = id_count
+        id_count += 1
+        new_annotation['image_id'] = im_id
+        train_dict['annotations'].append(new_annotation)
   if rm_word:
     for rm_id in sorted(rm_ids)[::-1]:
       a = train_dict['annotations'].pop(rm_id)
@@ -228,7 +233,7 @@ def separate_val_set(val_dict, rm_word=None):
     val_dict_novel['images'].append(val_dict['images'][i])
   for i in train_image_ids:
     val_dict_train['images'].append(val_dict['images'][i])
-  print '\n.'
+  print '\n'
   return val_dict_novel, val_dict_train
 
 def save_files(dump_json, identifier):
@@ -254,28 +259,24 @@ if __name__ == "__main__":
   test_captions = json.loads(test_json) 
 
   #This will make a train set in which all 'real' zebra captions are removed
-  tag = 'captions_augment_train_set_NN300_noZebra_'
-  #First zebra split
-  #augment_captions = augment_captions(train_captions, ['zebra'], all_object_sents=True)
+  #tag = 'augment_train_noMotorcycle_'
+  tag = 'only_noun_sentences_noZebra'
 
-  #splits for zebra and motorcycle
-  #augment_captions = augment_captions(train_captions, ['zebra'])
-  #augment_captions = augment_captions(train_captions, ['motorcycle', 'motor', 'cycle'])
+  rm_words = ['zebra', 'zebras']
+  #rm_words = ['motor', 'cycle', 'motorcycle', 'motors', 'cycles', 'motorcycles']
+
+  #baseline
+  #rm_words = None
+  augment_captions = augment_captions(train_captions, rm_words, rm_all_object_sents=False, all_object_sents=False)
+
   save_files(augment_captions, tag + 'train')
-  save_files(val_captions, tag+'val')
-  save_files(test_captions, tag+'test')
-  val_captions_novel, val_captions_train = separate_val_set(val_captions, ['zebra'])
-  save_files(val_captions_novel, tag+'val_novel')
-  save_files(val_captions_train, tag+'val_train')
+#  save_files(val_captions, tag+'val')
+#  save_files(test_captions, tag+'test')
+#  val_captions_novel, val_captions_train = separate_val_set(val_captions, rm_words)
+#  save_files(val_captions_novel, tag+'val_novel')
+#  save_files(val_captions_train, tag+'val_train')
 
-  #This will make sets where 'zebra' only occurs in val
-#  word_groups = [('zebra', 'zebra')]
-#  identifier = 'noZebra'
-#  train_json, val_json, val_json_newVocab, val_json_oldVocab = make_split(word_groups)
-#  save_files(train_json, identifier + 'train')
-#  save_files(val_json, identifier + 'val')
-#  save_files(val_json_newVocab, identifier + 'val_novel')
-#  save_files(val_json_oldVocab, identifier + 'val_train')
+#################################################################################################################
 
 
 #Make first compositionality split

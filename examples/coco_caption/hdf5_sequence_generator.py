@@ -6,6 +6,8 @@ import os
 import random
 import sys
 
+MAX_WORDS=20
+
 class SequenceGenerator():
   def __init__(self):
     self.dimension = 10
@@ -101,8 +103,13 @@ class HDF5SequenceWriter():
     self.verbose = verbose
     self.filenames = []
 
-  def write_batch(self, stop_at_exhaustion=False):
+  def write_batch(self, min_sent_length=1, stop_at_exhaustion=False):
     batch_comps, cont_indicators = self.generator.get_next_batch()
+    #assert that senteces must be of a certain length
+    for i in range(0,self.generator.batch_stream_length, MAX_WORDS):
+      for j in range(min_sent_length+1):
+        aa = np.where(batch_comps['target_sentence'][i+j] == 0)
+        batch_comps['target_sentence'][i+j][aa] = -1
     batch_index = len(self.filenames)
     filename = '%s/batch_%d.h5' % (self.output_dir, batch_index)
     self.filenames.append(filename)
@@ -120,9 +127,9 @@ class HDF5SequenceWriter():
       h5dataset[:] = batch
     h5file.close()
 
-  def write_to_exhaustion(self):
+  def write_to_exhaustion(self, min_sent_length=1):
     while not self.generator.streams_exhausted():
-      self.write_batch(stop_at_exhaustion=True)
+      self.write_batch(min_sent_length=min_sent_length, stop_at_exhaustion=True)
 
   def write_filelists(self):
     assert self.filenames is not None
