@@ -58,7 +58,12 @@ class CaptionExperiment():
       self.descriptors = np.load(descriptor_filename)['descriptors']
     else:
       self.descriptors = self.captioner.compute_descriptors(self.images,self.sg.feats_bool, output_name=output_name)
-      np.savez_compressed(descriptor_filename, descriptors=self.descriptors)
+    if 'image_id_array' not in np.load(descriptor_filename).keys():
+      #should also save image ids...
+      image_id_array = np.zeros((len(self.images),))
+      for i, im in enumerate(self.images):
+        image_id_array[i] = int(im.split('_')[-1].split('.jpg')[0])
+      np.savez_compressed(descriptor_filename, descriptors=self.descriptors, image_id_array=image_id_array)
 
   def score_captions(self, image_index, output_name='probs'):
     assert image_index < len(self.images)
@@ -209,8 +214,9 @@ class CaptionExperiment():
     word_idx = self.sg.vocabulary[fill_word] 
     captions = [c for c in self.captions if word_idx+1 in c['caption']]
     for cw in cooccur_words:
-      cw_idx = self.sg.vocabulary[cw]
-      captions = [c for c in captions if cw_idx+1 in c['caption']]
+      if cw:
+        cw_idx = self.sg.vocabulary[cw]
+        captions = [c for c in captions if cw_idx+1 in c['caption']]
  
     num_captions = len(captions)
     print '%d/%d sentences include query word %s and cooccur words.\n' %(num_captions, len(self.captions), fill_word)
@@ -239,12 +245,13 @@ class CaptionExperiment():
     #   (3) Top five filler words (e.g. to see if black is being confused with red)
 
     mean_index = 0
+    all_dists_maximizing = -1./(all_dists+0.000000001)
     for ci in range(num_captions):
-      mean_index += min((np.argsort(all_dists[ci,:])[::-1]).tolist().index(word_idx+1), beam_size)
+      mean_index += min((np.argsort(all_dists_maximizing[ci,:])[::-1]).tolist().index(word_idx+1), beam_size)
 
     mean_index = mean_index/float(num_captions)
     mean_prob = np.mean(all_dists[:,word_idx+1])
-    top_words = np.argsort(np.sum(all_dists,0))[-10:]
+    top_words = np.argsort(np.sum(all_dists_maximizing,0))[-10:]
 
     print '\nFor fill word %s and cooccur words %s:\n' %(fill_word, cooccur_words)
     print 'Mean ranking of filler word %s:' %(fill_word)
@@ -252,10 +259,17 @@ class CaptionExperiment():
     print 'Mean probability of filler word: %s' %(fill_word)
     print mean_prob
     print 'Top ranked words'
-    print [(self.sg.vocabulary_inverted[idx-1], np.sum(all_dists,0)[idx]/num_captions) for idx in np.argsort(np.sum(all_dists,0))[-10:]]
+    print [(self.sg.vocabulary_inverted[idx-1], np.sum(all_dists,0)[idx]/num_captions) for idx in np.argsort(np.sum(all_dists_maximizing,0))[-10:]]
  
     return mean_index, mean_prob, top_words 
 
+  def score_generation(self, json_filename):
+    generation_result = self.sg.coco.loadRes(json_filename)
+    coco_evaluator = COCOEvalCap(self.sg.coco, generation_result)
+    coco_image_ids = [self.sg.image_path_to_id[image_path]
+                      for image_path in self.images]
+    coco_evaluator.params['image_id'] = coco_image_ids
+    coco_evaluator.evaluate()
 
   def generation_experiment(self, strategy, max_batch_size=1000):
     # Compute image descriptors.
@@ -284,7 +298,7 @@ class CaptionExperiment():
         else:
           temp = strategy['temp'] if 'temp' in strategy else 1
         output_captions, output_probs = self.captioner.sample_captions(
-            self.descriptors[image_index:batch_end_index], temp=temp)
+            self.descriptors[image_index:batch_end_index], temp=temp, min_length = 2)
         for batch_index, output in zip(range(image_index, batch_end_index),
                                        output_captions):
           all_captions[batch_index] = output
@@ -359,12 +373,14 @@ def gen_stats(prob):
     stats['perplex_word'] = float('inf')
   return stats
 
-def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='vocabulary', feats_bool_in=True):
+def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='vocabulary', feats_bool_in=False, experiment={'type': 'generation'}):
   #model_name is the trained model: path relative to /home/lisa/caffe-LSTM-video
   #image_net is the model to extract length 1000 image features: path relative to snapshots folder; do not need to include "caffemodel"
   #dataset_name indicates which dataset to look at
   #vocab indicates which vocabulary file to look at
   #feats_bool is whether or not the images are saved as pickle feature files or if they are normal images
+  #experiment: dict which has all info needed for experiments.  Must have field type which will indicate madlib versus generation expt.   
+
   MAX_IMAGES = -1  # -1 to use all images
   TAG = 'coco_2layer_factored'
   if MAX_IMAGES >= 0:
@@ -419,7 +435,10 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
   if MAX_IMAGES < 0: MAX_IMAGES = len(dataset.keys())
   captioner = Captioner(MODEL_FILE, IMAGE_NET_FILE, LSTM_NET_FILE, VOCAB_FILE,
                         device_id=DEVICE_ID)
-  beam_size = 1
+  if 'beam_size' in experiment.keys():
+    beam_size = experiment['beam_size']
+  else:
+    beam_size = 1
   generation_strategy = {'type': 'beam', 'beam_size': beam_size}
   if generation_strategy['type'] == 'beam':
     strategy_name = 'beam%d' % generation_strategy['beam_size']
@@ -430,14 +449,27 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
   CACHE_DIR = '%s/%s' % (DATASET_CACHE_DIR, strategy_name)
   experimenter = CaptionExperiment(captioner, dataset, DATASET_CACHE_DIR, CACHE_DIR, sg)
   captioner.set_image_batch_size(min(100, MAX_IMAGES))
-#  for c in ['black', 'blue', 'red', 'yellow', 'green']:
-#    for o in ['bike', 'train', 'car', 'shirt']:
-#      experimenter.madlib_experiment(c, [o])
-  experimenter.generation_experiment(generation_strategy)
+  if experiment['type'] == 'madlib':
+    all_mean_index = []
+    all_mean_prob = []
+    all_top_words = []
+    for fw in experiment['fill_words']:
+      for cw in experiment['cooccur_words']:
+        mean_index, mean_prob, top_words = experimenter.madlib_experiment(fw, [cw])
+        all_mean_index.append(mean_index)
+        all_mean_prob.append(mean_prob)
+        all_top_words.append(top_words)
+    return all_mean_index, all_mean_prob, all_top_words 
+  if experiment['type'] == 'generation':
+    experimenter.generation_experiment(generation_strategy)
+  if experiment['type'] == 'score_generation':
+    experimenter.score_generation(experiment['json_file'])
   #captioner.set_caption_batch_size(min(MAX_IMAGES * 5, 1000))
   #experimenter.retrieval_experiment()
 
 if __name__ == "__main__":
   #input to main: model_name, image_net, LM_net, dataset_name, vocab, feats_bool
   #examples: ./retrieval_experiment.py lrcn_alex_black_bike.blue_train.red_car.yellow_shirt.green_car_iter_110000  /examples/coco_caption/lm /models/bvlc_reference_caffenet/deploy.prototxt black_bike.blue_train.red_car.yellow_shirt.green_car.val vocabulary
-  main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], False)
+  #experiment = {'type': 'madlib', 'fill_words': ['zebra'], 'cooccur_words':[[]]}
+  experiment = {'type': 'generation'}
+  main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], experiment=experiment)

@@ -103,10 +103,10 @@ class HDF5SequenceWriter():
     self.verbose = verbose
     self.filenames = []
 
-  def write_batch(self, min_sent_length=1, stop_at_exhaustion=False):
+  def write_batch(self, min_sent_length=-1, stop_at_exhaustion=False):
     batch_comps, cont_indicators = self.generator.get_next_batch()
     #assert that senteces must be of a certain length
-    for i in range(0,self.generator.batch_stream_length, MAX_WORDS):
+    for i in range(0,batch_comps['target_sentence'].shape[0], MAX_WORDS):
       for j in range(min_sent_length+1):
         aa = np.where(batch_comps['target_sentence'][i+j] == 0)
         batch_comps['target_sentence'][i+j][aa] = -1

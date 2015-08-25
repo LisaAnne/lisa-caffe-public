@@ -15,8 +15,8 @@ layer {
     mirror: true
   }
   image_data_param {
-    source: "utils_trainAttributes/attributes_JJ100_NN300_VB100_imageList_train.txt"
-    root_folder: "/y/lisaanne/coco/images/train2014/"
+    source: "utils_trainAttributes/attributes_JJ100_NN300_VB100_noZebra_imageList_train.txt"
+    root_folder: "../../data/coco/coco/images/train2014/"
     new_height: 256
     new_width: 256
     batch_size: 256
@@ -38,8 +38,8 @@ layer {
     mirror: true
   }
   image_data_param {
-    source: "utils_trainAttributes/attributes_JJ100_NN300_VB100_imageList_val.txt"
-    root_folder: "/y/lisaanne/coco/images/val2014/"
+    source: "utils_trainAttributes/attributes_JJ100_NN300_VB100_noZebra_imageList_val.txt"
+    root_folder: "../../data/coco/coco/images/val2014/"
     new_height: 256
     new_width: 256
     batch_size: 50
@@ -52,7 +52,7 @@ layer{
   #top: "image_id"
   include: { phase: TRAIN}
   hdf5_data_param {
-    source: "utils_trainAttributes/attributes_JJ100_NN300_VB100_train.h5.txt"
+    source: "utils_trainAttributes/attributes_JJ100_NN300_VB100_noZebra_train.h5.txt"
     batch_size: 256
   }
 }
@@ -63,7 +63,7 @@ layer {
   #top: "image_id"
   include: { phase: TEST}
   hdf5_data_param {
-    source: "utils_trainAttributes/attributes_JJ100_NN300_VB100_val.h5.txt"
+    source: "utils_trainAttributes/attributes_JJ100_NN300_VB100_noZebra_val.h5.txt"
     batch_size: 50
   }
 }
@@ -423,4 +423,7 @@ layer {
   bottom: "fc8"
   bottom: "labels"
   top: "loss"
+  loss_param{
+    ignore_label: -1
+  }
 }

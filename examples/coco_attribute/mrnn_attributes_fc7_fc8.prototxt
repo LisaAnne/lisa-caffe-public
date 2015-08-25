@@ -893,7 +893,7 @@ layer {
     decay_mult: 0
   }
   inner_product_param {
-    num_output: 2048 
+    num_output: 1024 
     weight_filler {
       type: "uniform"
       min: -0.08
@@ -905,6 +905,12 @@ layer {
     }
     axis: 2
   }
+}
+layer {
+  name: "sigmoid-multimodal"
+  type: "Sigmoid"
+  bottom: "multimodal"
+  top: "multimodal"
 }
 #takes from embedding space to one hot vector
 layer {

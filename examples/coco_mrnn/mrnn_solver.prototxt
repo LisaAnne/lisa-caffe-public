@@ -1,4 +1,4 @@
-net: "/home/lisa/caffe-LSTM-video/examples/coco_mrnn/mrnn.prototxt"
+net: "mrnn_conv5_noPool.prototxt"
 
 train_state: { stage: 'freeze-convnet' }
 test_iter: 25
@@ -15,7 +15,7 @@ max_iter: 110000
 momentum: 0.9
 weight_decay: 0.00000
 snapshot: 5000
-snapshot_prefix: "snapshots/mrnn_NC-updates_lr0p01_cg10_s20k_powerLayer_fc8_LSTM512_div512_lrp01_step40k"
+snapshot_prefix: "snapshots/mrnn_conv5_noPool_Bottleneck"
 solver_mode: GPU
 random_seed: 1701
 average_loss: 100

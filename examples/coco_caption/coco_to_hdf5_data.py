@@ -371,7 +371,7 @@ def add_dataset(tag, split):
                           vocab=vocab, aligned=aligned)
 
 if __name__ == "__main__":
-  process_coco('augment_train_noShortEOS_', False, False)
+  process_coco('rmZebraSents', False, False)
   #process_coco('only_noun_sentences_noZebra', False, False)
 #  tag = 'captions_augment_train_set_NN300_noZebra_train' 
 #  add_dataset(tag, 'vocab_dicts/captions_augment_train_set_NN300_noZebra_train_vocab.p')

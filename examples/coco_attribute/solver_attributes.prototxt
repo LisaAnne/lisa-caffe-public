@@ -1,17 +1,17 @@
-net: "train_test_attributes.prototxt"
+net: "train_test_attributes_lr0.prototxt"
 
-test_iter: 25
+test_iter: 1
 test_interval: 1000
 base_lr: 0.0001
 lr_policy: "step"
 gamma: 0.5
 stepsize: 20000
-display: 1
+display: 10
 max_iter: 50000
 momentum: 0.9
 weight_decay: 0.005
 snapshot: 5000
-snapshot_prefix: "snapshots/attributes_NN300"
+snapshot_prefix: "snapshots/attributes_JJ100_NN300_VB100_noZebra_lr0"
 solver_mode: GPU
 random_seed: 1701
 average_loss: 100

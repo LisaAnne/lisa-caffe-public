@@ -148,7 +148,7 @@ def match_words(rm_words, words):
   return any(list_matches)
 
 #add "dumb" captions to new_train_json
-def augment_captions(train_dict, rm_word=None, rm_all_object_sents=False, all_object_sents=False): 
+def augment_captions(train_dict, rm_word=None, rm_all_object_sents=False, all_object_sents=False, no_annotations=False): 
   #go through each iamge
   #look at annotations
   #for each image find words that are in NN attribute list
@@ -156,11 +156,13 @@ def augment_captions(train_dict, rm_word=None, rm_all_object_sents=False, all_ob
   #rm_word can be rm_words -- multiple words
   #rm_all_object_sents: If this is True, then for sentences with rm_word, then augmented captions will include captions for all nouns in sentence ('A zebra in the field') --> 'A zebra.' 'A field.'
   #all_object_sents: If this is true, then all training sentences are augmented with noun-captions.
+  #no_annotations: remove annotations tht include and of the rm_word
 
   nouns = pkl.load(open('../coco_attribute/attribute_lists/attributes_NN300.pkl','rb')) 
   anno_ids = [train_dict['annotations'][i]['image_id'] for i in range(len(train_dict['annotations']))] 
   id_count = 500000
   rm_ids = []
+  rm_image_ids = []
   for count_im, im in enumerate(train_dict['images']):
     if count_im % 50 == 0:
       sys.stdout.write("\rAdding sentences for im %d/%d" % (count_im, len(train_dict['images'])))
@@ -177,11 +179,13 @@ def augment_captions(train_dict, rm_word=None, rm_all_object_sents=False, all_ob
     if mw: #If match word (match_word will return false if rm_word is None) 
       rm_ids.extend(anno_idxs)
       #Right now there are multiple sentences with objects in the image that are *not* zebra; this is not quite right
+      if no_annotations:
+        rm_image_ids.append(count_im)
       if not rm_all_object_sents:  #This will make the only sentences associated with an image the label
         #option2 of rm_words...
         words = rm_word 
 
-    if mw | all_object_sents: #if match words or if inserting augmented sentences for all train sentences
+    if (mw | all_object_sents) & (not no_annotations): #if match words or if inserting augmented sentences for all train sentences and annotations
       word_sentences = ['A %s.' %(word) for word in words if word in nouns]
       for ws in word_sentences:
         new_annotation = {} 
@@ -193,6 +197,9 @@ def augment_captions(train_dict, rm_word=None, rm_all_object_sents=False, all_ob
   if rm_word:
     for rm_id in sorted(rm_ids)[::-1]:
       a = train_dict['annotations'].pop(rm_id)
+  if no_annotations:
+    for rm_image_id in sorted(rm_image_ids)[::-1]:
+      a = train_dict['images'].pop(rm_image_id)
   random.shuffle(train_dict['annotations'])  
   return train_dict
 
@@ -260,14 +267,14 @@ if __name__ == "__main__":
 
   #This will make a train set in which all 'real' zebra captions are removed
   #tag = 'augment_train_noMotorcycle_'
-  tag = 'only_noun_sentences_noZebra'
+  tag = 'rmZebraSents'
 
   rm_words = ['zebra', 'zebras']
   #rm_words = ['motor', 'cycle', 'motorcycle', 'motors', 'cycles', 'motorcycles']
 
   #baseline
   #rm_words = None
-  augment_captions = augment_captions(train_captions, rm_words, rm_all_object_sents=False, all_object_sents=False)
+  augment_captions = augment_captions(train_captions, rm_words, rm_all_object_sents=False, all_object_sents=False, no_annotations=True)
 
   save_files(augment_captions, tag + 'train')
 #  save_files(val_captions, tag+'val')

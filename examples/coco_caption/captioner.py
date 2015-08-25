@@ -11,6 +11,10 @@ import sys
 import pickle as pkl
 import copy
 
+from PIL import Image
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+
 home_dir = '/home/lisaanne/caffe-LSTM/'
 sys.path.append(home_dir + '/python/')
 import caffe
@@ -71,7 +75,15 @@ class Captioner():
 
   def preprocess_image(self, image, verbose=False):
     if type(image) in (str, unicode):
-      image = plt.imread(image)
+      try:
+        image = plt.imread(image)
+      except: 
+        print "Loading image with PIL"
+        img = Image.open(str(image))
+        b = type(np.array(img))
+        a = np.array(img)
+        del img
+        img = a.astype(np.float32)
     crop_edge_ratio = (256. - 227.) / 256. / 2
     ch = int(image.shape[0] * crop_edge_ratio + 0.5)
     cw = int(image.shape[1] * crop_edge_ratio + 0.5)
@@ -186,7 +198,6 @@ class Captioner():
   def predict_missing_word_from_all_words(self, descriptor, previous_words, next_words, word_idx, beam_size, prob_output_name='probs'):
     #input: list of descriptors, previous_words next_words, word_idxs
 
-    #num_sentences = len(descriptor)
     num_sentences = 1
     batch_size = beam_size*num_sentences
  
@@ -194,52 +205,38 @@ class Captioner():
     net = self.lstm_net
     outputs = []
     output_captions = [[] for b in range(batch_size)]
-    output_probs = [[] for b in range(batch_size)]
-
-    def put_items_in_list(in_list, items):
-      for i in range(num_sentences):
-        in_list[i*beam_size:i*beam_size+beam_size] = items[i]  
-      return in_list
 
     #prep the lstm with previous words  
-    missing_word_probs = np.zeros((batch_size,))
 
     batch_end = min(len(self.vocab), batch_size)
     self.set_caption_batch_size(batch_size)
     cont_input = np.zeros_like(net.blobs['cont_sentence'].data)
     word_input = np.zeros_like(net.blobs['input_sentence'].data)
     image_features = np.zeros_like(net.blobs['image_features'].data)
-    #image_features = put_items_in_list(image_features, descriptor) 
     image_features[:] = descriptor
     previous_words = [0] + previous_words
+    log_probs = np.zeros((batch_size,)) 
+
     for wi in range(len(previous_words)):
       if wi == 0:
         cont_input[:] = 0
       else:
         cont_input[:] = 1
-#      word_input = put_items_in_list(word_input, map(lambda x: previous_words[x][wi], range(num_sentences))
       word_input[:] = previous_words[wi]
       net.forward(image_features=image_features, cont_sentence=cont_input, input_sentence=word_input) 
+      if wi < len(previous_words)-1:
+        log_probs[:] += np.log(net.blobs[prob_output_name].data[0,0,previous_words[wi+1]])
 
     probs = net.blobs[prob_output_name].data[0]
 
     track_idxs = np.argsort(probs[0,:])[-beam_size:]
     if not np.where(track_idxs == word_idx)[0]:
       track_idxs = np.append(track_idxs, word_idx)
+      log_probs = np.append(log_probs, log_probs[-1])
       batch_size += 1
       batch_end = min(len(self.vocab), batch_size)
 
-#    track_idxs = np.array(())
-#    for it in range(1, num_sentences):
-#      ti_tmp = np.argsort(probs[ti*beam_size,:])[-beam_size:]
-#    
-#      if not np.where(ti_tmp == word_idx)[0]:
-#        ti_tmp = np.append(ti_tmp, word_idx)
-#        batch_size += 1
-#        batch_end = min(len(self.vocab), batch_size)
-#      track_idxs = np.concatenate((track_idxs, ti_tmp))
-
-    missing_word_probs = probs[0,track_idxs] #p(word|prev_word)
+    log_probs += np.log(probs[0,track_idxs]) #p(word|prev_word)
     final_words = next_words + [0]
 
     self.set_caption_batch_size(batch_size)
@@ -251,16 +248,16 @@ class Captioner():
     cont_input[:] = 1
     word_input[0,:batch_end] = track_idxs 
     net.forward(image_features=image_features, cont_sentence=cont_input, input_sentence=word_input)
-    missing_word_probs[:batch_end] *= net.blobs[prob_output_name].data[0, 0:batch_end, final_words[0]] 
+    log_probs[:batch_end] += np.log(net.blobs[prob_output_name].data[0, 0:batch_end, final_words[0]]) 
     for wi in range(len(final_words)-1):
       word_input[:] = final_words[wi]
       net.forward(image_features=image_features, cont_sentence=cont_input, input_sentence=word_input) 
-      missing_word_probs[:batch_end] *= net.blobs[prob_output_name].data[0, 0:batch_end, final_words[wi+1]] 
-    if np.sum(missing_word_probs) > 0:
-      missing_word_probs = missing_word_probs/np.sum(missing_word_probs)
+      log_probs[:batch_end] += np.log(net.blobs[prob_output_name].data[0, 0:batch_end, final_words[wi+1]]) 
+#    if np.sum(missing_word_probs) > 0:
+#      missing_word_probs = missing_word_probs/np.sum(missing_word_probs)
     missing_word_probs_all = np.zeros((net.blobs[prob_output_name].data.shape[2],))
     for ix, idx in enumerate(track_idxs):
-      missing_word_probs_all[idx] = missing_word_probs[ix] 
+      missing_word_probs_all[idx] = log_probs[ix] 
     return missing_word_probs_all
        
   def fill_caption(self, descriptor, caption, word_idx, beam_size):
