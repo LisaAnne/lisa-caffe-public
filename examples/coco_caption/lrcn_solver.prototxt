@@ -23,7 +23,8 @@ max_iter: 10
 momentum: 0.9
 weight_decay: 0.0000
 snapshot: 5000
-snapshot_prefix: "snapshots/check_concat_1"
+snapshot_prefix: "snapshots/check_rebase_debug_info"
+debug_info: true
 solver_mode: GPU
 random_seed: 1701
 average_loss: 100

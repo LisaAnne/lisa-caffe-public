@@ -21,9 +21,6 @@ void AccuracyLayer<Dtype>::LayerSetUp(
     ignore_label_ = this->layer_param_.accuracy_param().ignore_label();
   }
 
-  denominator_ = this->layer_param_.accuracy_param().denominator();
-  CHECK_GE(denominator_, 0)
-      << "Denominator must be positive; or 0, for the batch size.";
 }
 
 template <typename Dtype>

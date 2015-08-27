@@ -113,8 +113,6 @@ void EltwiseLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
   const int* mask = NULL;
   const int count = top[0]->count();
-  const int num = top[0]->num();
-  const int dim = count / num;
   const Dtype* top_data = top[0]->gpu_data();
   for (int i = 0; i < bottom.size() - coeff_blob_; ++i) {
     if (propagate_down[i]) {
@@ -141,7 +139,7 @@ void EltwiseLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         caffe_gpu_mul(count, bottom_diff, top_diff, bottom_diff);
         break;
       case EltwiseParameter_EltwiseOp_SUM:
-        CoeffSum<Dtype>  // NOLINT_NEXT_LINE(whitespace/operators)
+        CoeffSum<Dtype>;  // NOLINT_NEXT_LINE(whitespace/operators)
         if (coeff_blob_) {
           const int num = bottom[i]->num();
           const int dim = bottom[i]->count() / num;

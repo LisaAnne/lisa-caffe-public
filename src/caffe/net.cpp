@@ -291,7 +291,6 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
   for (size_t layer_id = 0; layer_id < layer_names_.size(); ++layer_id) {
     layer_names_index_[layer_names_[layer_id]] = layer_id;
   }
-  GetLearningRateAndWeightDecay();
   ShareWeights();
   debug_info_ = param.debug_info();
   if (Caffe::root_solver()) {
@@ -581,21 +580,6 @@ void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
         has_params_decay_[learnable_param_id] = true;
         params_weight_decay_[learnable_param_id] = param_spec->decay_mult();
       }
-  }
-}
-
-template <typename Dtype>
-void Net<Dtype>::GetLearningRateAndWeightDecay() {
-  LOG(INFO) << "Collecting Learning Rate and Weight Decay.";
-  ParamSpec default_param_spec;
-  for (int i = 0; i < layers_.size(); ++i) {
-    vector<shared_ptr<Blob<Dtype> > >& layer_blobs = layers_[i]->blobs();
-    for (int j = 0; j < layer_blobs.size(); ++j) {
-      const ParamSpec* param_spec =
-          (layers_[i]->layer_param().param_size() > j) ?
-          &layers_[i]->layer_param().param(j) : &default_param_spec;
-      params_lr_.push_back(param_spec->lr_mult());
-      params_weight_decay_.push_back(param_spec->decay_mult());
     }
   }
 }
