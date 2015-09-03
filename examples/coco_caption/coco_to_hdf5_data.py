@@ -224,7 +224,7 @@ COCO_ANNO_PATH = '%s/annotations/captions_%%s2014.json' % COCO_PATH
 COCO_IMAGE_PATTERN = '%s/%s/%%s2014' % (COCO_PATH, COCO_IM_FOLDER)
 COCO_IMAGE_ID_PATTERN = 'COCO_%s2014_%%012d.jpg'
 
-BUFFER_SIZE = 100
+BUFFER_SIZE = 50
 OUTPUT_DIR = 'h5_data/buffer_%d' % BUFFER_SIZE
 SPLITS_PATTERN = '/home/lisaanne/caffe-LSTM/data/coco/coco2014_cocoid.%s.txt'
 OUTPUT_DIR_PATTERN = '%s/%%s_batches' % OUTPUT_DIR
@@ -250,7 +250,7 @@ def process_dataset(split_name, coco_split_name, batch_stream_length,
     sg.dump_vocabulary(vocab_out_path)
   sg.batch_stream_length = batch_stream_length
   writer = HDF5SequenceWriter(sg, output_dir=output_path)
-  writer.write_to_exhaustion(min_sent_length=2)
+  writer.write_to_exhaustion()
   writer.write_filelists()
   image_out_path = '%s/image_list.txt' % output_path
   image_dummy_labels_out_path = '%s/image_list.with_dummy_labels.txt' % output_path
@@ -341,10 +341,10 @@ def process_coco(tag='', include_val = True, include_trainval=False):
       (tag+'train', 'trainval', 100000, True)]
   if include_val:
       datasets += [
-      (tag+'val', 'val', 100000, True),
-      (tag+'val_train', 'val', 100000, True),
-      (tag+'val_novel', 'val', 100000, True),
-      (tag+'test', 'test', 100000, True)]
+      (tag+'val', 'val', 100000, True)]
+      #(tag+'test', 'test', 100000, True)]
+      #(tag+'val_train', 'val', 100000, True),
+      #(tag+'val_novel', 'val', 100000, True),
       # Write unaligned datasets as well:
 #      ('train', 'train', 100000, False),
 #      ('val', 'val', 100000, False),
@@ -371,7 +371,8 @@ def add_dataset(tag, split):
                           vocab=vocab, aligned=aligned)
 
 if __name__ == "__main__":
-  process_coco('rmZebraSents', False, False)
+  process_coco()
+  #process_coco('rmZebraSents', False, False)
   #process_coco('only_noun_sentences_noZebra', False, False)
 #  tag = 'captions_augment_train_set_NN300_noZebra_train' 
 #  add_dataset(tag, 'vocab_dicts/captions_augment_train_set_NN300_noZebra_train_vocab.p')

@@ -7,9 +7,11 @@ import pprint
 import cPickle as pickle
 import string
 import sys
-home_dir = '/home/lisaanne/caffe-LSTM'
+sys.path.insert(0, '../coco_caption/')
+from init_workspace import *
 sys.path.insert(0,home_dir + '/python/')
 sys.path.insert(0, home_dir + '/examples/coco_caption/')
+import glob
 
 # seed the RNG so we evaluate on the same subset each time
 np.random.seed(seed=0)
@@ -17,8 +19,6 @@ np.random.seed(seed=0)
 from coco_to_hdf5_data import *
 from captioner import Captioner
 
-home_dir = '/home/lisa/caffe-LSTM-video'
-sys.path.append(home_dir + '/python/')
 import caffe
 COCO_EVAL_PATH = '../../data/coco/coco-caption-eval/'
 sys.path.insert(0,COCO_EVAL_PATH)
@@ -40,6 +40,13 @@ class CaptionExperiment():
     self.caption_scores = [None] * len(self.images)
     print 'Initialized caption experiment: %d images, %d captions' % \
         (len(self.images), len(self.captions))
+    #output_name = 'fc8'
+    output_name = 'flatten_pool5'
+    #output_name = 'conv5-bottleneck'
+    #output_name = 'prob-attributes'
+    #output_name = 'reshape-pool5'
+    #output_name = 'fc8-concat'
+    self.output_name = output_name
 
   def init_caption_list(self, dataset):
     self.captions = []
@@ -49,15 +56,25 @@ class CaptionExperiment():
     # Sort by length for performance.
     self.captions.sort(key=lambda c: len(c['caption']))
 
-  def compute_descriptors(self):
-    output_name = 'fc8'
-    #output_name = 'prob-attributes'
-    #output_name = 'fc8-concat'
-    descriptor_filename = '%s/descriptors.npz' % self.dataset_cache_dir
+  def compute_num_descriptor_files(self):
+    num_images = len(self.images) 
+    shape_descriptor = (len(self.images), ) + \
+                       (self.captioner.image_net.blobs[self.output_name].data.shape[-1], )     
+    size_descriptor = 1
+    for s in shape_descriptor: size_descriptor*= s
+    max_size = 1000*50000.
+    return int(np.ceil(size_descriptor/max_size))
+      
+  def compute_descriptors(self, des_file_idx=0):
+    descriptor_filename = '%s/descriptors_%d.npz' % (self.dataset_cache_dir, des_file_idx)
     if os.path.exists(descriptor_filename):
       self.descriptors = np.load(descriptor_filename)['descriptors']
     else:
-      self.descriptors = self.captioner.compute_descriptors(self.images,self.sg.feats_bool, output_name=output_name)
+      num_des_files = self.compute_num_descriptor_files()
+      start_image = (len(self.images)/num_des_files)*des_file_idx
+      end_image = min((len(self.images)/num_des_files)*(des_file_idx+1), len(self.images)) 
+      self.descriptors = self.captioner.compute_descriptors(self.images[start_image:end_image],self.sg.feats_bool, output_name=self.output_name)
+      np.savez_compressed(descriptor_filename, descriptors=self.descriptors)
     if 'image_id_array' not in np.load(descriptor_filename).keys():
       #should also save image ids...
       image_id_array = np.zeros((len(self.images),))
@@ -77,7 +94,7 @@ class CaptionExperiment():
         outputs = pickle.load(caption_scores_file)
     else:
       outputs = self.captioner.score_captions(self.descriptors[image_index],
-          self.captions, output_name=output_name, caption_source='gt',
+          self.captions, output_name=self.output_name, caption_source='gt',
           verbose=False)
       self.caption_stats(image_index, outputs)
       with open(caption_scores_filename, 'wb') as caption_scores_file:
@@ -273,46 +290,56 @@ class CaptionExperiment():
 
   def generation_experiment(self, strategy, max_batch_size=1000):
     # Compute image descriptors.
-    print 'Computing image descriptors'
-    self.compute_descriptors()
 
+    num_des_files = self.compute_num_descriptor_files()
+    num_images = len(self.images)
     do_batches = (strategy['type'] == 'beam' and strategy['beam_size'] == 1) or \
         (strategy['type'] == 'sample' and
          ('temp' not in strategy or strategy['temp'] in (1, float('inf'))) and
          ('num' not in strategy or strategy['num'] == 1))
-
-    num_images = len(self.images)
     batch_size = min(max_batch_size, num_images) if do_batches else 1
-
-    # Generate captions for all images.
     all_captions = [None] * num_images
-    for image_index in xrange(0, num_images, batch_size):
-      batch_end_index = min(image_index + batch_size, num_images)
-      sys.stdout.write("\rGenerating captions for image %d/%d" %
-                       (image_index, num_images))
-      sys.stdout.flush()
-      if do_batches:
-        if strategy['type'] == 'beam' or \
-            ('temp' in strategy and strategy['temp'] == float('inf')):
-          temp = float('inf')
+    image_index = 0
+ 
+    for i in range(0, num_des_files):
+
+      print 'Computing image descriptors'
+      self.compute_descriptors(i)
+      num_descriptors = self.descriptors.shape[0]
+
+
+      # Generate captions for all images.
+      for descriptor_index in xrange(0, num_descriptors, batch_size):
+        batch_end_index = min(descriptor_index + batch_size, num_images)
+        sys.stdout.write("\rGenerating captions for image %d/%d" %
+                         (image_index, num_images))
+        if image_index == 40000:
+          print 'stop point'
+        sys.stdout.flush()
+        if do_batches:
+          if strategy['type'] == 'beam' or \
+              ('temp' in strategy and strategy['temp'] == float('inf')):
+            temp = float('inf')
+          else:
+            temp = strategy['temp'] if 'temp' in strategy else 1
+          output_captions, output_probs = self.captioner.sample_captions(
+              self.descriptors[descriptor_index:batch_end_index], temp=temp, min_length = 2)
+          for batch_index, output in zip(range(descriptor_index, batch_end_index),
+                                         output_captions):
+            all_captions[image_index] = output
+            image_index += 1
         else:
-          temp = strategy['temp'] if 'temp' in strategy else 1
-        output_captions, output_probs = self.captioner.sample_captions(
-            self.descriptors[image_index:batch_end_index], temp=temp, min_length = 2)
-        for batch_index, output in zip(range(image_index, batch_end_index),
-                                       output_captions):
-          all_captions[batch_index] = output
-      else:
-        for batch_image_index in xrange(image_index, batch_end_index):
-          captions, caption_probs = self.captioner.predict_caption(
-              self.descriptors[batch_image_index], strategy=strategy)
-          best_caption, max_log_prob = None, None
-          for caption, probs in zip(captions, caption_probs):
-            log_prob = gen_stats(probs)['log_p']
-            if best_caption is None or \
-                (best_caption is not None and log_prob > max_log_prob):
-              best_caption, max_log_prob = caption, log_prob
-          all_captions[batch_image_index] = best_caption
+          for batch_image_index in xrange(descriptor_index, batch_end_index):
+            captions, caption_probs = self.captioner.predict_caption(
+                self.descriptors[batch_image_index], strategy=strategy)
+            best_caption, max_log_prob = None, None
+            for caption, probs in zip(captions, caption_probs):
+              log_prob = gen_stats(probs)['log_p']
+              if best_caption is None or \
+                  (best_caption is not None and log_prob > max_log_prob):
+                best_caption, max_log_prob = caption, log_prob
+            all_captions[image_index] = best_caption
+            image_index += 1
     sys.stdout.write('\n')
 
     # Compute the number of reference files as the maximum number of ground

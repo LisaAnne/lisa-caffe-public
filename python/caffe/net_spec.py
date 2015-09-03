@@ -70,7 +70,8 @@ def assign_proto(proto, name, val):
         for k, v in six.iteritems(val):
             assign_proto(getattr(proto, name), k, v)
     else:
-        setattr(proto, name, val)
+        if val is not None:
+          setattr(proto, name, val)
 
 
 class Top(object):
@@ -149,7 +150,10 @@ class Function(object):
                     assign_proto(getattr(layer,
                         _param_names[self.type_name] + '_param'), k, v)
                 except (AttributeError, KeyError):
-                    assign_proto(layer, k, v)
+                    if v:
+                      assign_proto(layer, k, v)
+                    else:
+                      print "For layer %s did not assign %s a value." %(layer.name, k)
 
         layers[self] = layer
 
@@ -174,6 +178,10 @@ class NetSpec(object):
         autonames = Counter()
         layers = OrderedDict()
         for name, top in six.iteritems(self.tops):
+            if hasattr(top, 'fn'):
+              if hasattr(top.fn, 'inputs'):
+                if top.fn.inputs == ('wt_1', 'reshape_z_1', 'h_transform_1'):
+                  print 'stop_place' 
             top._to_proto(layers, names, autonames)
         net = caffe_pb2.NetParameter()
         net.layer.extend(layers.values())

@@ -64,6 +64,10 @@ class Captioner():
     dim = len(self.lstm_net.blobs['image_features'].data.shape)
     self.lstm_net.blobs['cont_sentence'].reshape(1, batch_size)
     self.lstm_net.blobs['input_sentence'].reshape(1, batch_size)
+    if 'hidden_unit_in' in self.lstm_net.blobs.keys():
+      self.lstm_net.blobs['hidden_unit_in'].reshape(batch_size, *self.lstm_net.blobs['hidden_unit_in'].data.shape[1:])
+      self.lstm_net.blobs['cell_unit_in'].reshape(batch_size, *self.lstm_net.blobs['cell_unit_in'].data.shape[1:])
+
     if dim == 2:
       self.lstm_net.blobs['image_features'].reshape(batch_size,
           *self.lstm_net.blobs['image_features'].data.shape[1:])
@@ -374,12 +378,12 @@ class Captioner():
     if feats_bool:
       image_feats = [feature_path + x.split('/')[-1].split('.jpg')[0] + '_vgg_fc7Feat.p' for x in image_list]
       image_list = image_feats   
- 
+
     batch = np.zeros_like(self.image_net.blobs['data'].data)
     batch_shape = batch.shape
     batch_size = batch_shape[0]
     descriptors_shape = (len(image_list), ) + \
-        self.image_net.blobs[output_name].data.shape[1:]
+        (self.image_net.blobs[output_name].data.shape[-1], )
     descriptors = np.zeros(descriptors_shape)
     for batch_start_index in range(0, len(image_list), batch_size):
       batch_list = image_list[batch_start_index:(batch_start_index + batch_size)]
@@ -463,12 +467,18 @@ class Captioner():
     cont_input = np.zeros_like(net.blobs['cont_sentence'].data)
     word_input = np.zeros_like(net.blobs['input_sentence'].data)
     image_features = np.zeros_like(net.blobs['image_features'].data)
+    if 'hidden_unit_in' in net.blobs.keys():
+      hidden_unit_in = np.zeros_like(net.blobs['hidden_unit_in'].data)
+      cell_unit_in = np.zeros_like(net.blobs['cell_unit_in'].data)
+
     image_features[:] = descriptor
     outputs = []
     output_captions = [[] for b in range(batch_size)]
     output_probs = [[] for b in range(batch_size)]
     caption_index = 0
     num_done = 0
+    hidden_unit_in[:] = 0
+    cell_unit_in[:] = 0
     while num_done < batch_size and caption_index < max_length:
       if caption_index == 0:
         cont_input[:] = 0
@@ -481,8 +491,14 @@ class Captioner():
           word_input[0, index] = \
               output_captions[index][caption_index - 1] if \
               caption_index <= len(output_captions[index]) else 0
-      net.forward(image_features=image_features, cont_sentence=cont_input,
-                  input_sentence=word_input)
+      if not 'hidden_unit_in' in net.blobs.keys():
+        net.forward(image_features=image_features, cont_sentence=cont_input,
+                    input_sentence=word_input)
+      else:
+        net.forward(image_features=image_features, cont_sentence=cont_input,
+                    input_sentence=word_input, hidden_unit_in=hidden_unit_in, cell_unit_in=cell_unit_in)
+        hidden_unit_in[:] = net.blobs['lstm_output'].data 
+        cell_unit_in[:] = net.blobs['cell_unit'].data 
       if temp == 1.0 or temp == float('inf'):
         net_output_probs = net.blobs[prob_output_name].data[0]
         no_EOS = False if (caption_index > min_length) else True

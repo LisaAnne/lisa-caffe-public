@@ -127,7 +127,7 @@ class HDF5SequenceWriter():
       h5dataset[:] = batch
     h5file.close()
 
-  def write_to_exhaustion(self, min_sent_length=1):
+  def write_to_exhaustion(self, min_sent_length=-1):
     while not self.generator.streams_exhausted():
       self.write_batch(min_sent_length=min_sent_length, stop_at_exhaustion=True)
 
