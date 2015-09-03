@@ -470,6 +470,8 @@ class Captioner():
     if 'hidden_unit_in' in net.blobs.keys():
       hidden_unit_in = np.zeros_like(net.blobs['hidden_unit_in'].data)
       cell_unit_in = np.zeros_like(net.blobs['cell_unit_in'].data)
+      hidden_unit_in[:] = 0
+      cell_unit_in[:] = 0
 
     image_features[:] = descriptor
     outputs = []
@@ -477,8 +479,6 @@ class Captioner():
     output_probs = [[] for b in range(batch_size)]
     caption_index = 0
     num_done = 0
-    hidden_unit_in[:] = 0
-    cell_unit_in[:] = 0
     while num_done < batch_size and caption_index < max_length:
       if caption_index == 0:
         cont_input[:] = 0

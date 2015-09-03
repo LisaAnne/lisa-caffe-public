@@ -1,5 +1,7 @@
 import unittest
 import tempfile
+import sys
+sys.path.insert(0, '/home/lisaanne/caffe-LSTM/python/')
 import caffe
 from caffe import layers as L
 from caffe import params as P
@@ -80,3 +82,5 @@ class TestNetSpec(unittest.TestCase):
         net_proto = silent_net()
         net = self.load_net(net_proto)
         self.assertEqual(len(net.forward()), 0)
+
+silent_net()

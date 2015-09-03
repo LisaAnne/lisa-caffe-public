@@ -224,7 +224,7 @@ COCO_ANNO_PATH = '%s/annotations/captions_%%s2014.json' % COCO_PATH
 COCO_IMAGE_PATTERN = '%s/%s/%%s2014' % (COCO_PATH, COCO_IM_FOLDER)
 COCO_IMAGE_ID_PATTERN = 'COCO_%s2014_%%012d.jpg'
 
-BUFFER_SIZE = 50
+BUFFER_SIZE = 25
 OUTPUT_DIR = 'h5_data/buffer_%d' % BUFFER_SIZE
 SPLITS_PATTERN = '/home/lisaanne/caffe-LSTM/data/coco/coco2014_cocoid.%s.txt'
 OUTPUT_DIR_PATTERN = '%s/%%s_batches' % OUTPUT_DIR
@@ -371,8 +371,8 @@ def add_dataset(tag, split):
                           vocab=vocab, aligned=aligned)
 
 if __name__ == "__main__":
-  process_coco()
-  #process_coco('rmZebraSents', False, False)
+  #process_coco()
+  process_coco('rmZebraSents', False, False)
   #process_coco('only_noun_sentences_noZebra', False, False)
 #  tag = 'captions_augment_train_set_NN300_noZebra_train' 
 #  add_dataset(tag, 'vocab_dicts/captions_augment_train_set_NN300_noZebra_train_vocab.p')

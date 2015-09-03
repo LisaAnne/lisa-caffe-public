@@ -538,17 +538,17 @@ def make_mrnn_net(data_tag, prototxt_tag, test_net=True):
 
 def make_sat_net(data_tag, prototxt_tag, test_net=True, batch_size=100):
 
-  save_file = 'attention_nets/sat_build_clean_%s_%d.prototxt' %(prototxt_tag, batch_size)
+  save_file = 'attention_nets/sat_build_clean_noDoubly_%s_%d.prototxt' %(prototxt_tag, batch_size)
   image_data = home_dir + 'examples/coco_caption/h5_data/buffer_%d/' %batch_size + '%s_aligned_20_batches/image_list.with_dummy_labels.txt' %data_tag
   sentence_data= home_dir + 'examples/coco_caption/h5_data/buffer_%d/' %batch_size + '%s_aligned_20_batches/hdf5_chunk_list.txt' %data_tag
 
-  n_attention = caption_attention_model(1, 20, 8801)
+  n_attention = caption_attention_model(batch_size, 20, 8801)
   n_attention.show_attend_tell(image_data, sentence_data, test_net) 
 
   with open(save_file, 'w') as f:
     print(n_attention.n.to_proto(), file=f)
 
 if __name__ == '__main__':
-    make_sat_net('train', 'train-on-train', test_net=False, batch_size=1)
-    make_sat_net('train', 'test-on-train', test_net=True, batch_size=1)
-    make_sat_net('val', 'test-on-val', test_net=True, batch_size=1)
+    make_sat_net('train', 'train-on-train', test_net=False, batch_size=25)
+    make_sat_net('train', 'test-on-train', test_net=True, batch_size=25)
+    make_sat_net('val', 'test-on-val', test_net=True, batch_size=25)

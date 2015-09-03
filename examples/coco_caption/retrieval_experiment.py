@@ -40,8 +40,8 @@ class CaptionExperiment():
     self.caption_scores = [None] * len(self.images)
     print 'Initialized caption experiment: %d images, %d captions' % \
         (len(self.images), len(self.captions))
-    #output_name = 'fc8'
-    output_name = 'flatten_pool5'
+    output_name = 'fc8'
+    #output_name = 'flatten_pool5'
     #output_name = 'conv5-bottleneck'
     #output_name = 'prob-attributes'
     #output_name = 'reshape-pool5'
@@ -422,7 +422,7 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
     DATASET_NAME = dataset_name
   TAG += '_%s' % DATASET_NAME
   #MODEL_DIR = home_dir + '/examples/coco_caption/snapshots'
-  MODEL_DIR = 'snapshots'
+  MODEL_DIR = './'
   MODEL_FILE = '%s/%s.caffemodel' % (MODEL_DIR, MODEL_FILENAME)
   #IMAGE_NET_FILE = home_dir + '/models/bvlc_reference_caffenet/deploy.prototxt'
   IMAGE_NET_FILE = home_dir + image_net 
