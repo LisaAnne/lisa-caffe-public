@@ -40,7 +40,8 @@ class CaptionExperiment():
     self.caption_scores = [None] * len(self.images)
     print 'Initialized caption experiment: %d images, %d captions' % \
         (len(self.images), len(self.captions))
-    output_name = 'fc8'
+    #output_name = 'fc8'
+    output_name = 'flatten_conv4_3'
     #output_name = 'flatten_pool5'
     #output_name = 'conv5-bottleneck'
     #output_name = 'prob-attributes'
@@ -65,10 +66,13 @@ class CaptionExperiment():
     max_size = 1000*50000.
     return int(np.ceil(size_descriptor/max_size))
       
-  def compute_descriptors(self, des_file_idx=0):
+  def compute_descriptors(self, des_file_idx=0, file_load=True):
     descriptor_filename = '%s/descriptors_%d.npz' % (self.dataset_cache_dir, des_file_idx)
     if os.path.exists(descriptor_filename):
-      self.descriptors = np.load(descriptor_filename)['descriptors']
+      if file_load:
+        self.descriptors = np.load(descriptor_filename)['descriptors']
+      else:
+        return
     else:
       num_des_files = self.compute_num_descriptor_files()
       start_image = (len(self.images)/num_des_files)*des_file_idx
@@ -292,6 +296,10 @@ class CaptionExperiment():
     # Compute image descriptors.
 
     num_des_files = self.compute_num_descriptor_files()
+    for i in range(0, num_des_files):
+      print 'Computing image descriptors (%d/%d)' %(i, num_des_files)
+      self.compute_descriptors(i, file_load=False)
+     
     num_images = len(self.images)
     do_batches = (strategy['type'] == 'beam' and strategy['beam_size'] == 1) or \
         (strategy['type'] == 'sample' and
@@ -313,8 +321,6 @@ class CaptionExperiment():
         batch_end_index = min(descriptor_index + batch_size, num_images)
         sys.stdout.write("\rGenerating captions for image %d/%d" %
                          (image_index, num_images))
-        if image_index == 40000:
-          print 'stop point'
         sys.stdout.flush()
         if do_batches:
           if strategy['type'] == 'beam' or \
@@ -422,8 +428,8 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
     DATASET_NAME = dataset_name
   TAG += '_%s' % DATASET_NAME
   #MODEL_DIR = home_dir + '/examples/coco_caption/snapshots'
-  MODEL_DIR = './'
-  MODEL_FILE = '%s/%s.caffemodel' % (MODEL_DIR, MODEL_FILENAME)
+  MODEL_DIR = ''
+  MODEL_FILE = '%s.caffemodel.h5' % (MODEL_FILENAME)
   #IMAGE_NET_FILE = home_dir + '/models/bvlc_reference_caffenet/deploy.prototxt'
   IMAGE_NET_FILE = home_dir + image_net 
   #LSTM_NET_FILE = home_dir + '/examples/coco_caption/lrcn_word_to_preds.deploy.prototxt'
@@ -488,7 +494,7 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
         all_top_words.append(top_words)
     return all_mean_index, all_mean_prob, all_top_words 
   if experiment['type'] == 'generation':
-    experimenter.generation_experiment(generation_strategy)
+    experimenter.generation_experiment(generation_strategy, 500)
   if experiment['type'] == 'score_generation':
     experimenter.score_generation(experiment['json_file'])
   #captioner.set_caption_batch_size(min(MAX_IMAGES * 5, 1000))

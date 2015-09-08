@@ -66,7 +66,7 @@ layer {
   bottom: "multimodal_concat"
   top: "multimodal"
   inner_product_param {
-    num_output: 1024 
+    num_output: 2048 
     axis: 2
   }
 }

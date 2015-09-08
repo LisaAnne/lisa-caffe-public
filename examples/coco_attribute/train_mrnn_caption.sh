@@ -23,12 +23,12 @@ fi
 #    -snapshot $WEIGHTS \
 #    -gpu $GPU_ID
 ##########fc8
-#GPU_ID=0
-#WEIGHTS=snapshots/attributes_JJ100_NN300_VB100_noZebra_iter_50000.caffemodel
-#../../build/tools/caffe train \
-#    -solver ../../examples/coco_attribute/attribute_mrnn_solver_fc8.prototxt \
-#    -weights $WEIGHTS \
-#    -gpu $GPU_ID
+GPU_ID=0
+WEIGHTS=snapshots/attributes_JJ100_NN300_VB100_noZebra_iter_50000.caffemodel
+../../build/tools/caffe train \
+    -solver ../../examples/coco_attribute/attribute_mrnn_solver_fc8.prototxt \
+    -weights $WEIGHTS \
+    -gpu $GPU_ID
 ##########fc8 and fc7
 #GPU_ID=2
 #WEIGHTS=snapshots/attributes_JJ100_NN300_VB100_iter_50000.caffemodel

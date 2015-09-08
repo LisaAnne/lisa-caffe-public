@@ -1,4 +1,4 @@
-net: "mrnn_conv5.prototxt"
+net: "mrnn.prototxt"
 
 train_state: { stage: 'freeze-convnet' }
 test_iter: 25
@@ -15,7 +15,7 @@ max_iter: 190000
 momentum: 0.9
 weight_decay: 0.00000
 snapshot: 5000
-snapshot_prefix: "snapshots/mrnn_conv5_bottleneck_mm1024_ss60k_mi19k"
+snapshot_prefix: "snapshots/mrnn_rm_zebra_try2"
 solver_mode: GPU
 random_seed: 1701
 average_loss: 100

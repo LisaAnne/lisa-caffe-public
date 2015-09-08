@@ -21,7 +21,7 @@ import caffe
 feature_path ='/y/lisaanne/image_captioning/coco_features/' 
 class Captioner():
   def __init__(self, weights_path, image_net_proto, lstm_net_proto,
-               vocab_path, device_id=-1):
+               vocab_path, device_id=1):
     if device_id >= 0:
       caffe.set_mode_gpu()
       caffe.set_device(device_id)
@@ -457,9 +457,27 @@ class Captioner():
         output['source'] = caption_source
         outputs.append(output)
     return outputs
-  
+ 
+  def init_zeros(self, descriptor):
+    hidden_unit_in = np.zeros_like(self.lstm_net.blobs['hidden_unit_in'].data)
+    cell_unit_in = np.zeros_like(self.lstm_net.blobs['cell_unit_in'].data)
+    return hidden_unit_in, cell_unit_in
+
+  def init_average(self, descriptor):
+     d_reshape = descriptor.reshape((descriptor.shape[0], 512, 28,28))
+     feat_average = np.sum(d_reshape, axis=3)
+     feat_average = np.sum(feat_average, axis=2)
+     hidden_unit_W = self.lstm_net.params['HiddenUnitInitialization'][0].data
+     hidden_unit_b = self.lstm_net.params['HiddenUnitInitialization'][1].data
+     cell_unit_W = self.lstm_net.params['CellInitialization'][0].data
+     cell_unit_b = self.lstm_net.params['CellInitialization'][1].data
+     hidden_unit_in = np.dot(feat_average, hidden_unit_W.T) + np.tile(hidden_unit_b, (feat_average.shape[0],1)) 
+     cell_unit_in = np.dot(feat_average, cell_unit_W.T) + np.tile(cell_unit_b, (feat_average.shape[0],1)) 
+     return hidden_unit_in, cell_unit_in
+ 
   def sample_captions(self, descriptor, prob_output_name='probs',
-                      pred_output_name='predict', temp=1, max_length=50, min_length=2):
+                      pred_output_name='predict', temp=1, max_length=50, 
+                      min_length=2, hidden_init=None):
     descriptor = np.array(descriptor)
     batch_size = descriptor.shape[0]
     self.set_caption_batch_size(batch_size)
@@ -468,10 +486,8 @@ class Captioner():
     word_input = np.zeros_like(net.blobs['input_sentence'].data)
     image_features = np.zeros_like(net.blobs['image_features'].data)
     if 'hidden_unit_in' in net.blobs.keys():
-      hidden_unit_in = np.zeros_like(net.blobs['hidden_unit_in'].data)
-      cell_unit_in = np.zeros_like(net.blobs['cell_unit_in'].data)
-      hidden_unit_in[:] = 0
-      cell_unit_in[:] = 0
+      hidden_unit_in, cell_unit_in = self.init_average(descriptor)
+      #hidden_unit_in, cell_unit_in = self.init_zeros(descriptor)   
 
     image_features[:] = descriptor
     outputs = []
@@ -497,8 +513,8 @@ class Captioner():
       else:
         net.forward(image_features=image_features, cont_sentence=cont_input,
                     input_sentence=word_input, hidden_unit_in=hidden_unit_in, cell_unit_in=cell_unit_in)
-        hidden_unit_in[:] = net.blobs['lstm_output'].data 
-        cell_unit_in[:] = net.blobs['cell_unit'].data 
+        hidden_unit_in[:] = net.blobs['hidden_unit_1'].data 
+        cell_unit_in[:] = net.blobs['cell_unit_1'].data 
       if temp == 1.0 or temp == float('inf'):
         net_output_probs = net.blobs[prob_output_name].data[0]
         no_EOS = False if (caption_index > min_length) else True

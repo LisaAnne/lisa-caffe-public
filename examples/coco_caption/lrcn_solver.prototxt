@@ -19,12 +19,11 @@ lr_policy: "step"
 gamma: 0.5
 stepsize: 20000
 display: 1
-max_iter: 10
+max_iter: 110000
 momentum: 0.9
 weight_decay: 0.0000
 snapshot: 5000
-snapshot_prefix: "snapshots/check_rebase_debug_info"
-debug_info: true
+snapshot_prefix: "snapshots/rm_zebra_try2"
 solver_mode: GPU
 random_seed: 1701
 average_loss: 100

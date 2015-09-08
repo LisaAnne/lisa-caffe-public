@@ -36,6 +36,7 @@ class caption_attention_model(object):
     self.weight_filler_gaussian = dict(type='gaussian', std=0.01)
     self.weight_filler_constant = dict(type='uniform', min=-.08, max=0.08)
     self.weight_filler_constant_1 = dict(type='constant', value=1)
+    self.weight_filler_msra = dict(type='msra')
     self.bias_filler = dict(type='constant', value=0)
     self.num_vis_feature = 512
     self.num_vis_loc = 784
@@ -44,6 +45,7 @@ class caption_attention_model(object):
     self.visual_feature = 'relu4_3'
     self.visual_feature_reshape = 'relu4_3_reshape'
     self.constant_alpha = False
+    self.attention_alpha = 250 
 
   def conv_relu(self,  bottom, ks, nout, stride=1, pad=0, group=1, weight_filler=None, bias_filler=None,learning_param=None):
     self.n.conv = L.Convolution(bottom, kernel_size=ks, stride=stride, num_output=nout, 
@@ -92,7 +94,7 @@ class caption_attention_model(object):
 
     if not self.constant_alpha:
       #hidden unit
-      self.n.tops['h_a_transform_'+str(t-1)] = L.InnerProduct(self.n.tops['hidden_unit_'+str(t-1)], param=[dict(name="W_ha", lr_mult=1, decay_mult=1), dict(name="W_ha_b", lr_mult=2, decay_mult=0)], axis=2, num_output=50, weight_filler=weight_filler, bias_filler=bias_filler, name='HiddenAttentionTransform_'+str(t-1))
+      self.n.tops['h_a_transform_'+str(t-1)] = L.InnerProduct(self.n.tops['hidden_unit_'+str(t-1)], param=[dict(name="W_ha", lr_mult=1, decay_mult=1), dict(name="W_ha_b", lr_mult=2, decay_mult=0)], axis=2, num_output=self.attention_alpha, weight_filler=weight_filler, bias_filler=bias_filler, name='HiddenAttentionTransform_'+str(t-1))
       self.n.tops['h_a_unit_'+str(t-1)] = L.TanH(self.n.tops['h_a_transform_'+str(t-1)],  name='HiddenAttentionUnit_'+str(t-1))
       self.n.tops['h_a_unit_reshape_'+str(t-1)] = L.Reshape(self.n.tops['h_a_unit_'+str(t-1)], shape=dict(dim=[self.batch_size, -1, 1, 1]), name='haUnitReshape_'+str(t-1))  
       self.n.tops['h_a_unit_tile1_'+str(t-1)] = L.Tile(self.n.tops['h_a_unit_reshape_'+str(t-1)], tiles=int(np.sqrt(self.num_vis_loc)), axis=2, name='TileHiddenAttentionUnit1_'+str(t-1))
@@ -328,12 +330,12 @@ class caption_attention_model(object):
     
     #Prep visual unit
     self.n.tops[self.visual_feature_reshape] = L.Reshape(self.n.tops[self.visual_feature], shape=dict(dim=[self.batch_size, self.num_vis_feature, self.num_vis_loc]), name='VisualFeatureReshape')
-    self.n.tops['vt'] = L.Convolution(self.n.tops[self.visual_feature], param=[dict(name="W_va")], kernel_size=1, num_output=50, weight_filler=self.weight_filler_constant, bias_filler=self.bias_filler, name='AttentionVisualTransform') 
+    self.n.tops['vt'] = L.Convolution(self.n.tops[self.visual_feature], param=[dict(name="W_va")], kernel_size=1, num_output=self.attention_alpha, weight_filler=self.weight_filler_constant, bias_filler=self.bias_filler, name='AttentionVisualTransform') 
     self.n.tops['visual_unit'] = L.TanH(self.n.tops['vt'], name='AttentionVisualUnit')
 
     for t in range(1, T+1):
       self.t = t
-      self.attention(nout=50, weight_filler=self.weight_filler_constant, bias_filler=self.bias_filler)   
+      self.attention(nout=self.attention_alpha, weight_filler=self.weight_filler_msra, bias_filler=self.bias_filler)   
       self.lstm_unit(nout=4000, weight_filler=self.weight_filler_constant, lstm_inputs=lstm_inputs, lstm_transform=lstm_transform)
 
     self.n.silence_cell = L.Silence(self.n.tops['cell_unit_'+str(T)], ntop=0)
@@ -345,7 +347,7 @@ class caption_attention_model(object):
     T = self.T
 
     #input to LSTM is embedded word 
-    self.n.tops['wt'] = L.InnerProduct(self.n.tops['input_embed'], param=[dict(name="W_xc")], num_output=4000, axis=2, weight_filler=self.weight_filler_constant, bias_filler=self.bias_filler)
+    self.n.tops['wt'] = L.InnerProduct(self.n.tops['input_embed'], param=[dict(name="W_xc")], num_output=4000, axis=2, weight_filler=self.weight_filler_msra, bias_filler=self.bias_filler)
     wt_slice = L.Slice(self.n.tops['wt'], ntop=T, axis=0)
     self.rename_tops(wt_slice, 'wt_', 1, T+1, name='wtSlice')
 
@@ -361,12 +363,12 @@ class caption_attention_model(object):
     
     #vt_reshape and vt_slice are for attention model
     self.n.tops[self.visual_feature_reshape] = L.Reshape(self.n.tops[self.visual_feature], shape=dict(dim=[self.batch_size,self.num_vis_feature, self.num_vis_loc]), name='VisualFeatureReshape')
-    self.n.tops['vt'] = L.InnerProduct(self.n.tops[self.visual_feature_reshape], param=[dict(name="W_va")], axis=2, num_output=50, weight_filler=self.weight_filler_constant, bias_filler=self.bias_filler, name='AttentionVisualTransform') 
+    self.n.tops['vt'] = L.InnerProduct(self.n.tops[self.visual_feature_reshape], param=[dict(name="W_va")], axis=2, num_output=self.attention_alpha, weight_filler=self.weight_filler_msra, bias_filler=self.bias_filler, name='AttentionVisualTransform') 
     self.n.tops['visual_unit'] = L.TanH(self.n.tops['vt'], name='AttentionVisualUnit')
     
     for t in range(1, T+1):
       self.t = t
-      self.attention(nout=50, weight_filler=self.weight_filler_constant, bias_filler=self.bias_filler)   
+      self.attention(nout=self.attention_alpha, weight_filler=self.weight_filler_msra, bias_filler=self.bias_filler)   
     
     self.n.tops['z_units'] = L.Concat(*([self.n.tops['reshape_z_'+str(t)] for t in range(1,self.T+1)]), axis=0, name='ConcatVisualFeatures')
 
@@ -375,7 +377,8 @@ class caption_attention_model(object):
     T = self.T
     vocab_size = self.vocab_size
     self.n.tops['multimodal'] = L.InnerProduct(self.n.tops['multimodal_concat'],num_output=multimodal_size, weight_filler=weight_filler, bias_filler=bias_filler, param=[self.lpd_weights, self.lpd_bias], axis=2, name='MultimodalUnit')
-    self.n.tops['predict'] = L.InnerProduct(self.n.tops['multimodal'],num_output=vocab_size, weight_filler=weight_filler, bias_filler=bias_filler, param=[self.lpd_weights, self.lpd_bias], axis=2, name='Predict')
+    self.n.tops['multimodal-nonlin'] = L.ReLU(self.n.tops['multimodal'], in_place=True)
+    self.n.tops['predict'] = L.InnerProduct(self.n.tops['multimodal-nonlin'],num_output=vocab_size, weight_filler=weight_filler, bias_filler=bias_filler, param=[self.lpd_weights, self.lpd_bias], axis=2, name='Predict')
   
   def rename_tops(self, top_list, tag, start, end, name=None):
     for ix, t in enumerate(range(start, end)): setattr(self.n, tag+str(t), top_list[ix]) 
@@ -384,8 +387,8 @@ class caption_attention_model(object):
           
   def compute_beta(self):
     t = self.t
-    self.n.tops['hidden_unit_2d_'+str(t-1)] = L.Reshape(self.n.tops['hidden_unit_'+str(t-1)], shape=dict(dim=[-1, 1000]), name='HiddenInit2d')
-    self.n.tops['beta_'+str(t)] = L.InnerProduct(self.n.tops['hidden_unit_2d_'+str(t-1)], num_output=1, weight_filler=self.weight_filler_constant, bias_filler=self.bias_filler, param=[self.lpd_weights, self.lpd_bias], name='beta_'+str(t))
+    self.n.tops['hidden_unit_2d_'+str(t-1)] = L.Reshape(self.n.tops['hidden_unit_'+str(t-1)], shape=dict(dim=[-1, 1000]), name='HiddenInit2d'+str(t-1))
+    self.n.tops['beta_'+str(t)] = L.InnerProduct(self.n.tops['hidden_unit_2d_'+str(t-1)], num_output=1, weight_filler=self.weight_filler_msra, bias_filler=self.bias_filler, param=[self.lpd_weights, self.lpd_bias], name='beta_'+str(t))
     self.n.tops['beta_n_'+str(t)] = L.Sigmoid(self.n.tops['beta_'+str(t)], name='beta_sigmoid_'+str(t))
     self.n.tops['beta_n_tile_'+str(t)] = L.Tile(self.n.tops['beta_n_'+str(t)], tiles=self.num_vis_loc, name='tile_beta_'+str(t))
 
@@ -398,8 +401,8 @@ class caption_attention_model(object):
     self.n.tops['a_vec_t_regularization'] = L.InnerProduct(self.n.tops['a_vec_concat'], num_output=self.num_vis_loc, bias_term=False, weight_filler=self.weight_filler_constant_1, param=[dict(lr_mult=0, decay_mult=0)], axis=1, name='a_vec_t_regularization')
     self.n.tops['regularization_ones'] = L.DummyData(shape=[dict(dim=[self.batch_size, self.num_vis_loc])], data_filler=[dict(type='constant', value=1)], name='regularization_ones')
     self.n.tops['Euclidean_loss'] = L.EuclideanLoss(self.n.tops['a_vec_t_regularization'], self.n.tops['regularization_ones'])
- 
-  def show_attend_tell(self, image_data, hdf_data, test_net=True, deploy=False):
+  
+  def show_attend_tell_2(self, image_data, hdf_data, test_net=True, deploy=False):
     T = self.T 
     vocab_size = self.vocab_size
 
@@ -408,8 +411,7 @@ class caption_attention_model(object):
     self.n.tops['cont_sentence'], self.n.tops['input_sentence'], self.n.tops['target_sentence'] = L.HDF5Data(source=hdf_data, batch_size=20, ntop=3, name='sentence_data')
     self.n.silence_label = L.Silence(self.n.tops['label'], ntop=0)
 
-    self.n.tops['input_embed_1'] = L.Embed(self.n.tops['input_sentence'], input_dim=vocab_size, bias_term=False, num_output=512, weight_filler=self.weight_filler_constant,  name='embedding1')   
-    self.n.tops['input_embed'] = L.InnerProduct(self.n.tops['input_embed_1'], axis=2, param=[self.lpd_weights, self.lpd_bias], weight_filler=self.weight_filler_constant, num_output=512, name='embedding2')   
+    self.n.tops['input_embed'] = L.Embed(self.n.tops['input_sentence'], input_dim=vocab_size, bias_term=False, num_output=100, weight_filler=self.weight_filler_msra)   
  
     #vgg
     self.vgg(learning_param=self.lp_zero_base*2, stop_layer=self.visual_feature)
@@ -428,12 +430,48 @@ class caption_attention_model(object):
     #prep for multimodal
     self.n.tops['multimodal_concat'] = L.Concat(self.n.tops['z_units'], self.n.tops['lstm_output'], self.n.tops['input_embed'], axis=2, name='ConcatVisualWordFeatures')
     #multimodal unit
-    self.multimodal(multimodal_size=1024, weight_filler=self.weight_filler_constant, bias_filler=self.bias_filler)
+    self.multimodal(multimodal_size=512, weight_filler=self.weight_filler_msra, bias_filler=self.bias_filler)
  
     #loss and accuracy
     self.n.tops['loss'] = L.SoftmaxWithLoss(self.n.tops['predict'], self.n.tops['target_sentence'], loss_weight=[20], softmax_param=dict(axis=2), loss_param=dict(ignore_label=-1))
   
-    self.doubly_stochastic_loss()
+    #self.doubly_stochastic_loss()
+ 
+  def show_attend_tell(self, image_data, hdf_data, test_net=True, deploy=False):
+    T = self.T 
+    vocab_size = self.vocab_size
+
+    #data input
+    self.n.tops['data'], self.n.tops['label'] = L.ImageData(source=image_data, batch_size=self.batch_size, new_height=256, new_width=256, transform_param=dict(mirror=True, crop_size=224, mean_value=[104,117,123]), ntop=2, name='image_data_')
+    self.n.tops['cont_sentence'], self.n.tops['input_sentence'], self.n.tops['target_sentence'] = L.HDF5Data(source=hdf_data, batch_size=20, ntop=3, name='sentence_data')
+    self.n.silence_label = L.Silence(self.n.tops['label'], ntop=0)
+
+    self.n.tops['input_embed_1'] = L.Embed(self.n.tops['input_sentence'], input_dim=vocab_size, bias_term=False, num_output=512, weight_filler=self.weight_filler_msra,  name='embedding1')   
+    self.n.tops['input_embed'] = L.InnerProduct(self.n.tops['input_embed_1'], axis=2, param=[self.lpd_weights, self.lpd_bias], weight_filler=self.weight_filler_msra, num_output=512, name='embedding2')   
+ 
+    #vgg
+    self.vgg(learning_param=self.lp_zero_base*2, stop_layer=self.visual_feature)
+
+    self.init_percept_input()
+
+    #Prep for LSTM
+    self.n.tops['cont_reshape'] = L.Reshape(self.n.tops['cont_sentence'], shape=dict(dim=[1,self.T, self.batch_size]), name='cont_reshape')
+    cont_slice = L.Slice(self.n.tops['cont_reshape'], axis=1, ntop=T)
+    self.rename_tops(cont_slice, 'cont_', 1, T+1, name='SliceCont')
+    
+    # unroll attention and LSTM at the same time
+    self.use_beta = True
+    self.unroll_attention_and_recurrent(lstm_inputs=['wt_', 'reshape_z_transform_'], lstm_transform=['reshape_z_'])
+    
+    #prep for multimodal
+    self.n.tops['multimodal_concat'] = L.Concat(self.n.tops['z_units'], self.n.tops['lstm_output'], self.n.tops['input_embed'], axis=2, name='ConcatVisualWordFeatures')
+    #multimodal unit
+    self.multimodal(multimodal_size=1024, weight_filler=self.weight_filler_msra, bias_filler=self.bias_filler)
+ 
+    #loss and accuracy
+    self.n.tops['loss'] = L.SoftmaxWithLoss(self.n.tops['predict'], self.n.tops['target_sentence'], loss_weight=[20], softmax_param=dict(axis=2), loss_param=dict(ignore_label=-1))
+  
+    #self.doubly_stochastic_loss()
   
     if test_net:
       self.n.tops['accuracy'] = L.Accuracy(self.n.tops['predict'], self.n.tops['target_sentence'], axis=2, ignore_label=-1)
@@ -447,8 +485,8 @@ class caption_attention_model(object):
     self.n.tops['cont_sentence'], self.n.tops['input_sentence'], self.n.tops['target_sentence'] = L.HDF5Data(source=hdf_data, batch_size=20, ntop=3, name='sentence_data')
     self.n.silence_label = L.Silence(self.n.tops['label'], ntop=0)
 
-    self.n.tops['input_embed_1'] = L.Embed(self.n.tops['input_sentence'], input_dim=vocab_size, bias_term=False, num_output=512, weight_filler=self.weight_filler_constant,  name='embedding1')   
-    self.n.tops['input_embed'] = L.InnerProduct(self.n.tops['input_embed_1'], axis=2, param=[self.lpd_weights, self.lpd_bias], weight_filler=self.weight_filler_constant, num_output=512, name='embedding2')   
+    self.n.tops['input_embed_1'] = L.Embed(self.n.tops['input_sentence'], input_dim=vocab_size, bias_term=False, num_output=512, weight_filler=self.weight_filler_msra,  name='embedding1')   
+    self.n.tops['input_embed'] = L.InnerProduct(self.n.tops['input_embed_1'], axis=2, param=[self.lpd_weights, self.lpd_bias], weight_filler=self.weight_filler_msra, num_output=512, name='embedding2')   
  
     #caffenet
     self.caffenet(learning_param=self.lp_zero_base*2, stop_layer=self.visual_feature)
@@ -466,7 +504,7 @@ class caption_attention_model(object):
     #prep for multimodal
     self.n.tops['multimodal_concat'] = L.Concat(self.n.tops['z_units'], self.n.tops['lstm_output'], axis=2, name='ConcatVisualWordFeatures')
     #multimodal unit
-    self.multimodal(multimodal_size=1024, weight_filler=self.weight_filler_constant, bias_filler=self.bias_filler)
+    self.multimodal(multimodal_size=1024, weight_filler=self.weight_filler_msra, bias_filler=self.bias_filler)
  
     #loss and accuracy
     self.n.tops['loss'] = L.SoftmaxWithLoss(self.n.tops['predict'], self.n.tops['target_sentence'], loss_weight=[20], softmax_param=dict(axis=2), loss_param=dict(ignore_label=-1))
@@ -482,8 +520,8 @@ class caption_attention_model(object):
     self.n.tops['cont_sentence'], self.n.tops['input_sentence'], self.n.tops['target_sentence'] = L.HDF5Data(source=hdf_data, batch_size=20, ntop=3, name='sentence_data')
     self.n.silence_label = L.Silence(self.n.tops['label'], ntop=0)
 
-    self.n.tops['input_embed_1'] = L.Embed(self.n.tops['input_sentence'], input_dim=vocab_size, bias_term=False, num_output=512, weight_filler=self.weight_filler_constant,  name='embedding1')   
-    self.n.tops['input_embed'] = L.InnerProduct(self.n.tops['input_embed_1'], axis=2, param=[self.lpd_weights, self.lpd_bias], weight_filler=self.weight_filler_constant, num_output=512, name='embedding2')   
+    self.n.tops['input_embed_1'] = L.Embed(self.n.tops['input_sentence'], input_dim=vocab_size, bias_term=False, num_output=512, weight_filler=self.weight_filler_msra,  name='embedding1')   
+    self.n.tops['input_embed'] = L.InnerProduct(self.n.tops['input_embed_1'], axis=2, param=[self.lpd_weights, self.lpd_bias], weight_filler=self.weight_filler_msra, num_output=512, name='embedding2')   
  
 
     #caffenet
@@ -505,7 +543,7 @@ class caption_attention_model(object):
     self.n.tops['fc8_rep'] = L.Tile(self.n.tops['fc8_reshape'], axis=0, tiles=self.T) 
     self.n.tops['multimodal_concat'] = L.Concat(self.n.tops['fc8_rep'], self.n.tops['input_embed'], self.n.tops['lstm_output'], axis=2, name='ConcatVisualWordFeatures')
 
-    self.multimodal(multimodal_size=1024, weight_filler=self.weight_filler_constant, bias_filler=self.bias_filler)
+    self.multimodal(multimodal_size=1024, weight_filler=self.weight_filler_msra, bias_filler=self.bias_filler)
  
     #loss and accuracy
     self.n.tops['loss'] = L.SoftmaxWithLoss(self.n.tops['predict'], self.n.tops['target_sentence'], loss_weight=[20], softmax_param=dict(axis=2), loss_param=dict(ignore_label=-1))
@@ -538,17 +576,17 @@ def make_mrnn_net(data_tag, prototxt_tag, test_net=True):
 
 def make_sat_net(data_tag, prototxt_tag, test_net=True, batch_size=100):
 
-  save_file = 'attention_nets/sat_build_clean_noDoubly_%s_%d.prototxt' %(prototxt_tag, batch_size)
+  save_file = 'attention_nets/sat_build_clean_noDoubly_MontrealParams_att250_mRelu_MSRA_consLSTM_%s_%d.prototxt' %(prototxt_tag, batch_size)
   image_data = home_dir + 'examples/coco_caption/h5_data/buffer_%d/' %batch_size + '%s_aligned_20_batches/image_list.with_dummy_labels.txt' %data_tag
   sentence_data= home_dir + 'examples/coco_caption/h5_data/buffer_%d/' %batch_size + '%s_aligned_20_batches/hdf5_chunk_list.txt' %data_tag
 
   n_attention = caption_attention_model(batch_size, 20, 8801)
-  n_attention.show_attend_tell(image_data, sentence_data, test_net) 
+  n_attention.show_attend_tell_2(image_data, sentence_data, test_net) 
 
   with open(save_file, 'w') as f:
     print(n_attention.n.to_proto(), file=f)
 
 if __name__ == '__main__':
-    make_sat_net('train', 'train-on-train', test_net=False, batch_size=25)
-    make_sat_net('train', 'test-on-train', test_net=True, batch_size=25)
-    make_sat_net('val', 'test-on-val', test_net=True, batch_size=25)
+    make_sat_net('train', 'train-on-train', test_net=False, batch_size=16)
+    make_sat_net('train', 'test-on-train', test_net=True, batch_size=16)
+    make_sat_net('val', 'test-on-val', test_net=True, batch_size=16)
