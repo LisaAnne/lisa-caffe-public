@@ -21,7 +21,7 @@ import caffe
 feature_path ='/y/lisaanne/image_captioning/coco_features/' 
 class Captioner():
   def __init__(self, weights_path, image_net_proto, lstm_net_proto,
-               vocab_path, device_id=1):
+               vocab_path, device_id=0):
     if device_id >= 0:
       caffe.set_mode_gpu()
       caffe.set_device(device_id)
@@ -477,11 +477,12 @@ class Captioner():
  
   def sample_captions(self, descriptor, prob_output_name='probs',
                       pred_output_name='predict', temp=1, max_length=50, 
-                      min_length=2, hidden_init=None):
+                      min_length=2, hidden_init=None, forward_model = ''):
     descriptor = np.array(descriptor)
     batch_size = descriptor.shape[0]
     self.set_caption_batch_size(batch_size)
     net = self.lstm_net
+
     cont_input = np.zeros_like(net.blobs['cont_sentence'].data)
     word_input = np.zeros_like(net.blobs['input_sentence'].data)
     image_features = np.zeros_like(net.blobs['image_features'].data)
@@ -507,7 +508,21 @@ class Captioner():
           word_input[0, index] = \
               output_captions[index][caption_index - 1] if \
               caption_index <= len(output_captions[index]) else 0
-      if not 'hidden_unit_in' in net.blobs.keys():
+      if forward_model == 'sat_rough':
+        t = caption_index + 1
+        print t
+        if t == 1:
+          net.forward(image_features=image_features, cont_sentence=cont_input,
+                      input_sentence=word_input, end="LSTMUnit_1")
+        else:
+          net.forward(image_features=image_features, cont_sentence=cont_input,
+                      input_sentence=word_input, end="wtSplit")
+          net.forward(start="HiddenAttentionTransform_"+str(t-1), end="LSTMUnit_"+str(t))
+        net.blobs['reshape_z_20'].data[:] = net.blobs['reshape_z_'+str(t)].data
+        net.blobs['hidden_unit_20'].data[:] = net.blobs['hidden_unit_'+str(t)].data
+        net.forward(start="ConcatVisualWordFeatures")
+
+      elif not 'hidden_unit_in' in net.blobs.keys():
         net.forward(image_features=image_features, cont_sentence=cont_input,
                     input_sentence=word_input)
       else:

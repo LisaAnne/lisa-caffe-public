@@ -212,3 +212,12 @@ layer {
   bottom: "fc8"
   top: "prob"
 }
+layer {
+  name: "fc8-zero"
+  bottom: "fc8"
+  top: "fc8-zero"
+  type: "Power"
+  power_param {
+    scale: 0
+  }
+}

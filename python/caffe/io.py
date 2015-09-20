@@ -5,8 +5,8 @@ from scipy.ndimage import zoom
 from skimage.transform import resize
 
 #needed to deal with weird IO issue
-import Image
-import ImageFile
+from PIL import Image
+from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 try:
@@ -300,8 +300,8 @@ def load_image(filename, color=True):
     except:
       print "Can't load with skimage, trying with PIL.\n"
       b = Image.open(filename)
-      junk = type(np.array(v))
-      a = np.array(v)
+      junk = type(np.array(b))
+      a = np.array(b)
       img = a.astype(np.float32) 
     if img.ndim == 2:
         img = img[:, :, np.newaxis]

@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 
-GPU_ID=0
+GPU_ID=1
 WEIGHTS=\
-../../models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel
+/x/lisaanne/mrnn/snapshots/mrnn_lm_dropout_iter_110000.caffemodel,../../models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel
+#../../models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel
+#/x/lisaanne/mrnn/snapshots/pretrain_coco_lm_iter_60000.caffemodel,../../models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel
+#/x/lisaanne/mrnn/snapshots/mrnn_relu_nonlin_iter_20000.solverstate
 DATA_DIR=../coco_caption/h5_data/
 if [ ! -d $DATA_DIR ]; then
     echo "Data directory not found: $DATA_DIR"

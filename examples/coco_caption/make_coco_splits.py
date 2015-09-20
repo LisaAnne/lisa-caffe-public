@@ -122,7 +122,7 @@ def make_split(word_groups):
     new_val_json_oldVocab = add_json_dict(vi, new_val_json_oldVocab) 
   return new_train_json, new_val_json, new_val_json_newVocab, new_val_json_oldVocab
 
-def write_txt_file(save_file, im_dir, json_dict):
+def write_txt_file(save_file, im_dir, json_dict, new_im_folder=False):
   write_file = open(save_file, 'wb')
   known_ids = []
   im_dir_full = '../../data/coco/coco/images/%s2014' % im_dir
@@ -131,9 +131,10 @@ def write_txt_file(save_file, im_dir, json_dict):
     if str(im['id']) not in known_ids:
       known_ids.append(str(im['id']))
       val_or_train = im['file_name'].split('_')[1]
-      real_path = '/home/lisaanne/caffe-LSTM/data/coco/coco/images/%s/%s'  %(val_or_train, im['file_name'])
-      link_path = '%s/%s' % (im_dir_full, im['file_name'])
-      os.symlink(real_path, link_path) 
+      if new_im_folder:
+        real_path = '/home/lisaanne/caffe-LSTM/data/coco/coco/images/%s/%s'  %(val_or_train, im['file_name'])
+        link_path = '%s/%s' % (im_dir_full, im['file_name'])
+        os.symlink(real_path, link_path) 
       write_file.writelines('%s\n' %str(im['id']))
   write_file.close() 
 
@@ -156,7 +157,7 @@ def augment_captions(train_dict, rm_word=None, rm_all_object_sents=False, all_ob
   #rm_word can be rm_words -- multiple words
   #rm_all_object_sents: If this is True, then for sentences with rm_word, then augmented captions will include captions for all nouns in sentence ('A zebra in the field') --> 'A zebra.' 'A field.'
   #all_object_sents: If this is true, then all training sentences are augmented with noun-captions.
-  #no_annotations: remove annotations tht include and of the rm_word
+  #no_annotations: remove annotations that include and of the rm_word
 
   nouns = pkl.load(open('../coco_attribute/attribute_lists/attributes_NN300.pkl','rb')) 
   anno_ids = [train_dict['annotations'][i]['image_id'] for i in range(len(train_dict['annotations']))] 
@@ -243,6 +244,23 @@ def separate_val_set(val_dict, rm_word=None):
   print '\n'
   return val_dict_novel, val_dict_train
 
+def vocab_pretrain(train_dict):
+  random.shuffle(train_dict['images'])  
+  train_dict['images'] = train_dict['images'][0:int(len(train_dict['images'])*0.75)]
+  train_im_ids = [t['id'] for t in train_dict['images']]
+  rm_c_ids = []
+  for cix, c in enumerate(train_dict['annotations']):
+    if cix % 50 == 0:
+      sys.stdout.write("\rAdding sentences for im %d/%d" % (cix, len(train_dict['annotations'])))
+      sys.stdout.flush()
+    if c['image_id'] not in train_im_ids:
+      rm_c_ids.append(cix)
+  print '\n'
+  for rm_c_id in sorted(rm_c_ids)[::-1]:
+    a = train_dict['annotations'].pop(rm_c_id)
+  random.shuffle(train_dict['annotations'])
+  return train_dict
+
 def save_files(dump_json, identifier):
   file_save = coco_anno_path %(identifier)
   txt_save = coco_txt_path %(identifier)
@@ -266,19 +284,31 @@ if __name__ == "__main__":
   test_captions = json.loads(test_json) 
 
   #This will make a train set in which all 'real' zebra captions are removed
-  #tag = 'augment_train_noMotorcycle_'
-  tag = 'rmZebraSents'
+  #sentences with A noun.
+  tag = 'no_caption_motorcycle_'
 
-  rm_words = ['zebra', 'zebras']
-  #rm_words = ['motor', 'cycle', 'motorcycle', 'motors', 'cycles', 'motorcycles']
+  #rm_words = ['zebra', 'zebras']
+  rm_words = ['motor', 'cycle', 'motorcycle', 'motors', 'cycles', 'motorcycles']
 
   #baseline
   #rm_words = None
+
+  #augment_captions:
+	# ex sentence: 'A zebra in the field', 'A cow in the grass'
+        #rm word: zebra
+        #rm_all_object_sents (True) --> 'A zebra.'  'A field.' 'A cow in the grass.'
+        #all_object_sents (True) --> 'A zebra.' 'A field.' 'A cow.' 'A grass.' 'A cow in the grass.'
+        #no_annotations (True) --> 'A cow in the grass.'
+  #basic captions
+  #augment_captions = augment_captions(train_captions, rm_words, rm_all_object_sents=False, all_object_sents=False, no_annotations=False)
+  #no captions
   augment_captions = augment_captions(train_captions, rm_words, rm_all_object_sents=False, all_object_sents=False, no_annotations=True)
 
-  save_files(augment_captions, tag + 'train')
-#  save_files(val_captions, tag+'val')
-#  save_files(test_captions, tag+'test')
+  #make smaller train set for training vocab
+  #vocab_pretrain = vocab_pretrain(train_captions) 
+ 
+  save_files(augment_captions, tag + '_train')
+
 #  val_captions_novel, val_captions_train = separate_val_set(val_captions, rm_words)
 #  save_files(val_captions_novel, tag+'val_novel')
 #  save_files(val_captions_train, tag+'val_train')

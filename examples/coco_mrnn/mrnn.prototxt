@@ -22,7 +22,7 @@ layer {
     mean_value: 123
   }
   image_data_param {
-    source: "../coco_caption/h5_data/buffer_100/augment_train_noZebra_train_aligned_20_batches/image_list.with_dummy_labels.txt"
+    source: "../coco_caption/h5_data/buffer_100/only_noun_sentences_noZebratrain_aligned_20_batches/image_list.with_dummy_labels.txt"
     batch_size: 100
     new_height: 256
     new_width: 256
@@ -36,7 +36,7 @@ layer {
   top: "target_sentence"
   include { phase: TRAIN  not_stage: 'trainval' }
   hdf5_data_param {
-    source: "../coco_caption/h5_data/buffer_100/augment_train_noZebra_train_aligned_20_batches/hdf5_chunk_list.txt"
+    source: "../coco_caption/h5_data/buffer_100/only_noun_sentences_noZebratrain_aligned_20_batches/hdf5_chunk_list.txt"
     batch_size: 20
   }
 }
@@ -93,7 +93,7 @@ layer {
     mean_value: 123
   }
   image_data_param {
-    source: "../coco_caption/h5_data/buffer_100/augment_train_noZebra_train_aligned_20_batches/image_list.with_dummy_labels.txt"
+    source: "../coco_caption/h5_data/buffer_100/only_noun_sentences_noZebratrain_aligned_20_batches/image_list.with_dummy_labels.txt"
     batch_size: 100
     new_height: 256
     new_width: 256
@@ -110,7 +110,7 @@ layer {
     stage: "test-on-train"
   }
   hdf5_data_param {
-    source: "../coco_caption/h5_data/buffer_100/augment_train_noZebra_train_aligned_20_batches/hdf5_chunk_list.txt"
+    source: "../coco_caption/h5_data/buffer_100/only_noun_sentences_noZebratrain_aligned_20_batches/hdf5_chunk_list.txt"
     batch_size: 20
   }
 }
@@ -799,8 +799,8 @@ layer {
   }
 }
 #layer {
-#  name: "sigmoid-multimodal"
-#  type: "Sigmoid"
+#  name: "relu-multimodal"
+#  type: "ReLU"
 #  bottom: "multimodal"
 #  top: "multimodal"
 #}

@@ -66,16 +66,16 @@ layer {
   bottom: "multimodal_concat"
   top: "multimodal"
   inner_product_param {
-    num_output: 2048 
+    num_output: 1024 
     axis: 2
   }
 }
-#layer {
-#  name: "sigmoid-multimodal"
-#  type: "Sigmoid"
-#  bottom: "multimodal"
-#  top: "multimodal"
-#}
+layer {
+  name: "relu-multimodal"
+  type: "ReLU"
+  bottom: "multimodal"
+  top: "multimodal"
+}
 layer {
   name: "predict"
   type: "InnerProduct"

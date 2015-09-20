@@ -224,7 +224,7 @@ COCO_ANNO_PATH = '%s/annotations/captions_%%s2014.json' % COCO_PATH
 COCO_IMAGE_PATTERN = '%s/%s/%%s2014' % (COCO_PATH, COCO_IM_FOLDER)
 COCO_IMAGE_ID_PATTERN = 'COCO_%s2014_%%012d.jpg'
 
-BUFFER_SIZE = 16
+BUFFER_SIZE = 100
 OUTPUT_DIR = 'h5_data/buffer_%d' % BUFFER_SIZE
 SPLITS_PATTERN = '/home/lisaanne/caffe-LSTM/data/coco/coco2014_cocoid.%s.txt'
 OUTPUT_DIR_PATTERN = '%s/%%s_batches' % OUTPUT_DIR
@@ -326,7 +326,8 @@ def write_im_hdf5(im_list, save_name):
     count_feats += 1
   if not (ix-1) % ims_per_file == 0: # need to write remainder of items
     write_feats = full_feat[:count_feats,:]
-    save_name_full = '%s_%d.h5' %(save_name, (ix/ims_per_file)+1)
+    save_name_full = '%s/%s_%d.h5' %(home_dir, save_name, ix/ims_per_file+1)
+    #save_name_full = '%s_%d.h5' %(save_name, (ix/ims_per_file)+1)
     f = h5py.File(save_name_full)
     f.create_dataset('label', data=np.ones((min(len(im_list), ims_per_file))))
     f.create_dataset('data', data=full_feat)
@@ -335,20 +336,23 @@ def write_im_hdf5(im_list, save_name):
 
   h5_file.close() 
 
-def process_coco(tag='', include_val = True, include_trainval=False):
-  vocab = None
+def readVocab(vocab_file):
+  if not vocab_file:
+    return None
+  else:
+    vocab_txt = open(vocab_file, 'rb')
+    vocab_lines = vocab_txt.readlines()
+    return map(str.strip, vocab_lines)
+
+def process_coco(tag='', include_val = True, include_trainval=False, vocab_file=None):
+  vocab = readVocab(vocab_file)
+  #datasets = [(tag+'test', 'val', 100000, True)]
   datasets = [
       (tag+'train', 'trainval', 100000, True)]
   if include_val:
       datasets += [
       (tag+'val', 'val', 100000, True)]
-      #(tag+'test', 'test', 100000, True)]
-      #(tag+'val_train', 'val', 100000, True),
-      #(tag+'val_novel', 'val', 100000, True),
-      # Write unaligned datasets as well:
-#      ('train', 'train', 100000, False),
-#      ('val', 'val', 100000, False),
-#      ('test', 'val', 100000, False),
+#      (tag+'test', 'test', 100000, True)]
   # Also create a 'trainval' set if include_trainval is set.
   # ./data/coco/make_trainval.py must have been run for this to work.
   if include_trainval:
@@ -359,7 +363,6 @@ def process_coco(tag='', include_val = True, include_trainval=False):
   for split_name, coco_split_name, batch_stream_length, aligned in datasets:
     vocab = process_dataset(split_name, coco_split_name, batch_stream_length,
                             vocab=vocab, vocab_tag=tag, aligned=aligned)
-  pkl.dump(vocab, open(('vocab_dicts/%s_vocab.p' %tag),'wb'))  
 
 def add_dataset(tag, split):
   vocab = pkl.load(open(('vocab_dicts/%s_vocab.p' %tag), 'rb'))
@@ -372,7 +375,7 @@ def add_dataset(tag, split):
 
 if __name__ == "__main__":
   #process_coco()
-  process_coco('', False, False)
+  process_coco('no_caption_zebra_', False, False, 'h5_data/buffer_100/vocabulary.txt')
   #process_coco('only_noun_sentences_noZebra', False, False)
 #  tag = 'captions_augment_train_set_NN300_noZebra_train' 
 #  add_dataset(tag, 'vocab_dicts/captions_augment_train_set_NN300_noZebra_train_vocab.p')

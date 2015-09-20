@@ -81,11 +81,21 @@ template <typename Dtype>
 void InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
   const Dtype* bottom_data = bottom[0]->cpu_data();
+  bool transpose_weights = false;
+  //bool transpose_weights = this->layer_param_.inner_product_param().tanspose_weights(); 
   Dtype* top_data = top[0]->mutable_cpu_data();
   const Dtype* weight = this->blobs_[0]->cpu_data();
-  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, N_, K_, (Dtype)1.,
-      bottom_data, weight, (Dtype)0., top_data);
+  if (transpose_weights == false) {
+    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasTrans, M_, N_, K_, (Dtype)1.,
+        bottom_data, weight, (Dtype)0., top_data);
+  } else {
+    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_, K_, (Dtype)1.,
+        bottom_data, weight, (Dtype)0., top_data);
+  }
   if (bias_term_) {
+    if (transpose_weights == true) {
+      LOG(ERROR) << "Cannot have bias and transpose weight!";
+    }
     caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_, 1, (Dtype)1.,
         bias_multiplier_.cpu_data(),
         this->blobs_[1]->cpu_data(), (Dtype)1., top_data);
@@ -96,16 +106,26 @@ template <typename Dtype>
 void InnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down,
     const vector<Blob<Dtype>*>& bottom) {
+  bool transpose_weights = false;
+  //bool transpose_weights = this->layer_param_.inner_product_param().tanspose_weights(); 
   if (this->param_propagate_down_[0]) {
     const Dtype* top_diff = top[0]->cpu_diff();
     const Dtype* bottom_data = bottom[0]->cpu_data();
     // Gradient with respect to weight
-    caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, M_, (Dtype)1.,
-        top_diff, bottom_data, (Dtype)1., this->blobs_[0]->mutable_cpu_diff());
+    if (transpose_weights == false){
+      caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans, N_, K_, M_, (Dtype)1.,
+          top_diff, bottom_data, (Dtype)1., this->blobs_[0]->mutable_cpu_diff());
+    } else {
+      caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, N_, K_, M_, (Dtype)1.,
+          top_diff, bottom_data, (Dtype)1., this->blobs_[0]->mutable_cpu_diff());
+    }
   }
   if (bias_term_ && this->param_propagate_down_[1]) {
     const Dtype* top_diff = top[0]->cpu_diff();
     // Gradient with respect to bias
+    if (transpose_weights == true) {
+       LOG(ERROR) << "Cannot have transpose weights and bias";
+    }
     caffe_cpu_gemv<Dtype>(CblasTrans, M_, N_, (Dtype)1., top_diff,
         bias_multiplier_.cpu_data(), (Dtype)1.,
         this->blobs_[1]->mutable_cpu_diff());

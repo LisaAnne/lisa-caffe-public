@@ -78,15 +78,17 @@ def _Net_forward(self, blobs=None, start=None, end=None, **kwargs):
     """
     if blobs is None:
         blobs = []
-
+    #NOTE LISA CHANGED STUFF!
+    list_layers = [self._layer_names[ix] for ix in range(len(self._layer_names))]  #CHANGED
     if start is not None:
-        start_ind = list(self._layer_names).index(start)
+        start_ind = list_layers.index(start) #CHANGED
     else:
         start_ind = 0
 
     if end is not None:
-        end_ind = list(self._layer_names).index(end)
-        outputs = set([end] + blobs)
+        end_ind = list_layers.index(end)  #CHANGED
+        #outputs = set([end] + blobs)
+        outputs = set(blobs)
     else:
         end_ind = len(self.layers) - 1
         outputs = set(self.outputs + blobs)

@@ -40,8 +40,9 @@ class CaptionExperiment():
     self.caption_scores = [None] * len(self.images)
     print 'Initialized caption experiment: %d images, %d captions' % \
         (len(self.images), len(self.captions))
-    #output_name = 'fc8'
-    output_name = 'flatten_conv4_3'
+    output_name = 'fc8'
+    #output_name = 'fc8-zero'
+    #output_name = 'flatten_conv4_3'
     #output_name = 'flatten_pool5'
     #output_name = 'conv5-bottleneck'
     #output_name = 'prob-attributes'
@@ -429,7 +430,7 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
   TAG += '_%s' % DATASET_NAME
   #MODEL_DIR = home_dir + '/examples/coco_caption/snapshots'
   MODEL_DIR = ''
-  MODEL_FILE = '%s.caffemodel.h5' % (MODEL_FILENAME)
+  MODEL_FILE = '%s.caffemodel' % (MODEL_FILENAME)
   #IMAGE_NET_FILE = home_dir + '/models/bvlc_reference_caffenet/deploy.prototxt'
   IMAGE_NET_FILE = home_dir + image_net 
   #LSTM_NET_FILE = home_dir + '/examples/coco_caption/lrcn_word_to_preds.deploy.prototxt'
@@ -437,9 +438,10 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
   NET_TAG = '%s_%s' % (TAG, MODEL_FILENAME)
   DATASET_SUBDIR = '%s/%s_ims' % (DATASET_NAME,
       str(MAX_IMAGES) if MAX_IMAGES >= 0 else 'all')
-  DATASET_CACHE_DIR = home_dir + '/retrieval_cache/%s/%s' % (DATASET_SUBDIR, MODEL_FILENAME)
+  #DATASET_CACHE_DIR = home_dir + '/retrieval_cache/%s/%s' % (DATASET_SUBDIR, MODEL_FILENAME)
+  DATASET_CACHE_DIR = '/x/lisaanne/retrieval_cache/%s/%s' % (DATASET_SUBDIR, MODEL_FILENAME)
   VOCAB_FILE = '../../examples/coco_caption/h5_data/buffer_100/%s.txt' %vocab
-  DEVICE_ID = 1
+  DEVICE_ID = 0
   with open(VOCAB_FILE, 'r') as vocab_file:
     vocab = [line.strip() for line in vocab_file.readlines()]
   coco = COCO(COCO_ANNO_PATH % DATASET_NAME)
@@ -494,7 +496,7 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
         all_top_words.append(top_words)
     return all_mean_index, all_mean_prob, all_top_words 
   if experiment['type'] == 'generation':
-    experimenter.generation_experiment(generation_strategy, 500)
+    experimenter.generation_experiment(generation_strategy, 1000)
   if experiment['type'] == 'score_generation':
     experimenter.score_generation(experiment['json_file'])
   #captioner.set_caption_batch_size(min(MAX_IMAGES * 5, 1000))
