@@ -45,10 +45,17 @@ class Captioner():
       print "Warning: did not set transformer; assume that image features do not need to be transformed.\n"
     # Setup sentence prediction net.
     self.lstm_net = caffe.Net(lstm_net_proto, weights_path, phase)
+    if 'hidden_unit_in' in self.lstm_net.blobs.keys():
+      #SO HACKY!!!
+      lstm_net_tmp = caffe.Net('mrnn_wtd_deploy_lm_im.prototxt', weights_path, phase)
+      self.lstm_net.params['lstm1_x_transform'][0].data[:] = copy.deepcopy(lstm_net_tmp.params['lstm1'][0].data)
+      self.lstm_net.params['lstm1_x_transform'][1].data[:] = copy.deepcopy(lstm_net_tmp.params['lstm1'][1].data)
+      self.lstm_net.params['lstm1_transform'][0].data[:] = copy.deepcopy(lstm_net_tmp.params['lstm1'][2].data)
+      del lstm_net_tmp
     self.vocab = ['<EOS>']
     with open(vocab_path, 'r') as vocab_file:
       self.vocab += [word.strip() for word in vocab_file.readlines()]
-    net_vocab_size = self.lstm_net.blobs['predict'].data.shape[2]
+    net_vocab_size = self.lstm_net.blobs['predict-im'].data.shape[2]
     if len(self.vocab) != net_vocab_size:
       raise Exception('Invalid vocab file: contains %d words; '
           'net expects vocab with %d words' % (len(self.vocab), net_vocab_size))
@@ -65,8 +72,8 @@ class Captioner():
     self.lstm_net.blobs['cont_sentence'].reshape(1, batch_size)
     self.lstm_net.blobs['input_sentence'].reshape(1, batch_size)
     if 'hidden_unit_in' in self.lstm_net.blobs.keys():
-      self.lstm_net.blobs['hidden_unit_in'].reshape(batch_size, *self.lstm_net.blobs['hidden_unit_in'].data.shape[1:])
-      self.lstm_net.blobs['cell_unit_in'].reshape(batch_size, *self.lstm_net.blobs['cell_unit_in'].data.shape[1:])
+      self.lstm_net.blobs['hidden_unit_in'].reshape(1, batch_size, self.lstm_net.blobs['hidden_unit_in'].data.shape[-1])
+      self.lstm_net.blobs['cell_unit_in'].reshape(1, batch_size, self.lstm_net.blobs['cell_unit_in'].data.shape[-1])
 
     if dim == 2:
       self.lstm_net.blobs['image_features'].reshape(batch_size,
@@ -487,8 +494,8 @@ class Captioner():
     word_input = np.zeros_like(net.blobs['input_sentence'].data)
     image_features = np.zeros_like(net.blobs['image_features'].data)
     if 'hidden_unit_in' in net.blobs.keys():
-      hidden_unit_in, cell_unit_in = self.init_average(descriptor)
-      #hidden_unit_in, cell_unit_in = self.init_zeros(descriptor)   
+      #hidden_unit_in, cell_unit_in = self.init_average(descriptor)
+      hidden_unit_in, cell_unit_in = self.init_zeros(descriptor)   
 
     image_features[:] = descriptor
     outputs = []
@@ -528,8 +535,8 @@ class Captioner():
       else:
         net.forward(image_features=image_features, cont_sentence=cont_input,
                     input_sentence=word_input, hidden_unit_in=hidden_unit_in, cell_unit_in=cell_unit_in)
-        hidden_unit_in[:] = net.blobs['hidden_unit_1'].data 
-        cell_unit_in[:] = net.blobs['cell_unit_1'].data 
+        hidden_unit_in[:] = net.blobs['hidden_unit_out'].data 
+        cell_unit_in[:] = net.blobs['cell_unit_out'].data 
       if temp == 1.0 or temp == float('inf'):
         net_output_probs = net.blobs[prob_output_name].data[0]
         no_EOS = False if (caption_index > min_length) else True

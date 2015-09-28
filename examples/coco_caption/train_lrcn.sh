@@ -16,7 +16,7 @@ fi
 #    -weights $WEIGHTS \
 #    -gpu $GPU_ID
 
-../../build/tools/caffe train \
+gdb --args ../../build/tools/caffe train \
     -solver ../coco_caption/lrcn_solver.prototxt \
     -weights $WEIGHTS \
     -gpu $GPU_ID

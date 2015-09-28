@@ -2,7 +2,7 @@
 
 GPU_ID=1
 WEIGHTS=\
-/x/lisaanne/mrnn/snapshots/mrnn_lm_dropout_iter_110000.caffemodel,../../models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel
+#/x/lisaanne/mrnn/snapshots/mrnn_lm_dropout_iter_110000.caffemodel,../../models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel
 #../../models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel
 #/x/lisaanne/mrnn/snapshots/pretrain_coco_lm_iter_60000.caffemodel,../../models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel
 #/x/lisaanne/mrnn/snapshots/mrnn_relu_nonlin_iter_20000.solverstate
@@ -21,8 +21,8 @@ fi
 
 ../../build/tools/caffe train \
     -solver mrnn_solver.prototxt \
-    -weights $WEIGHTS \
     -gpu $GPU_ID
+    #-weights $WEIGHTS \
 #    -snapshot /home/lisa/caffe-LSTM-video/examples/coco_caption/snapshots/mrnn_alex_black_bike.blue_train.red_car.yellow_shirt.green_car_lr0.01_fixVocab.fixFlag_iter_30000.solverstate \
 #    -snapshot /home/lisa/caffe-LSTM-video/examples/coco_caption/snapshots/mrnn_vgg_fromImages_iter_50000.solverstate \
 #    -weights /home/lisa/caffe-LSTM-video/examples/extract_fc6_fc7/coco/VGG_ILSVRC_16_layers.caffemodel,/home/lisa/caffe-LSTM-video/examples/coco_caption/snapshots/mrnn_vgg_fromFeats_iter_110000.caffemodel \

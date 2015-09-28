@@ -1,4 +1,4 @@
-net: "mrnn.from_lm.prototxt"
+net: "mrnn.lm.direct.prototxt"
 
 train_state: { stage: 'freeze-convnet' }
 test_iter: 25
@@ -15,7 +15,7 @@ max_iter: 110000
 momentum: 0.9
 weight_decay: 0.00000
 snapshot: 5000
-snapshot_prefix: "/x/lisaanne/mrnn/snapshots/mrnn_from_lm_drop_basic_zebra"
+snapshot_prefix: "/x/lisaanne/mrnn/snapshots/mrnn.direct"
 solver_mode: GPU
 random_seed: 1701
 average_loss: 100

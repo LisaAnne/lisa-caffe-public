@@ -36,6 +36,7 @@ def sort_keys(word_dict):
 def create_image_dict(attributes, json_captions, image_dict_pkl=None, save_name=None):
   if image_dict_pkl:
     image_dict = pkl.load(open(image_dict_pkl,'rb'))
+    return image_dict
   else:
     image_dict = {}
     for ix, caption in enumerate(json_captions['annotations']):
@@ -66,6 +67,46 @@ def write_hdf5_file(my_dict, h5_file):
   f.create_dataset('image_id', data=image_id)
   f.close()
 
+def write_hdf5_file_vocab(my_dict, h5_file, attributes, vocab_file, im_list, new_word=None):
+  #exact same as above but shares a vocabulary for sentnece generation
+
+  batch_size = 10000
+
+  #read vocab
+  vocab_lines = open(vocab_file, 'rb').readlines()
+  vocab_lines = [v.strip() for v in vocab_lines]
+  vocab_lines = ['<EOS>'] + vocab_lines
+
+  #read im list
+  im_list_lines = open(im_list, 'rb').readlines()
+  im_list_lines = [i.split(' ')[0] for i in im_list_lines]
+
+  attribute_to_vocab_idx = [None]*len(attributes)
+  for ix, attribute in enumerate(attributes):
+    attribute_to_vocab_idx[ix] = vocab_lines.index(attribute)
+  
+  if new_word:
+    new_word_idx = attributes.index(new_word)
+
+  for i in range(0, len(im_list_lines), batch_size): 
+    print 'On batch %d of %d.' %(i, len(im_list_lines)/batch_size)
+    batch_end = min(i+batch_size, len(im_list_lines))
+    labels = np.ones((batch_end-i, len(vocab_lines)))*-1
+    for ix, im in enumerate(im_list_lines[i:batch_end]):
+      im_id = int(im.split('/')[-1].split('_')[-1].split('.jpg')[0])
+      if new_word:
+        if my_dict[im_id][new_word_idx] == 1:
+          labels[ix, vocab_lines.index(new_word)] = 1
+        else: 
+          labels[ix, attribute_to_vocab_idx] = my_dict[im_id]
+      else: 
+        labels[ix, attribute_to_vocab_idx] = my_dict[im_id]
+      image_id = filter(int,my_dict.keys())
+    f = h5py.File('%s_%s.h5' %(h5_file, i/batch_size))
+    f.create_dataset('labels', data=labels)
+    f.create_dataset('image_id', data=image_id)
+    f.close()
+
 def write_image_list(my_dict, image_list_txt, json_captions):
   jpg_dict = {}
   for images in json_captions['images']:
@@ -76,17 +117,17 @@ def write_image_list(my_dict, image_list_txt, json_captions):
   txt_save.close()
  
 #Step 1: Sort words by type determined by classifier
-txt_file = 'train_captions_parse.out'
-read_txt = open(txt_file, 'rb')
-lines = read_txt.readlines()
+#txt_file = 'train_captions_parse.out'
+#read_txt = open(txt_file, 'rb')
+#lines = read_txt.readlines()
 #word_dict = make_word_dict(lines)
 #pkl.dump(word_dict, open('word_dict.pkl','wb'))
-word_dict = pkl.load(open('attribute_lists/word_dict.pkl','rb'))
-
-attribute_pos = ['JJ', 'NN', 'VB'] #which parts of speech to keep in attribute layer
-sorted_keys_dict = {}
-for a in attribute_pos:
-  sorted_keys_dict[a] = sort_keys(word_dict[a])
+#word_dict = pkl.load(open('attribute_lists/word_dict.pkl','rb'))
+#
+#attribute_pos = ['JJ', 'NN', 'VB'] #which parts of speech to keep in attribute layer
+#sorted_keys_dict = {}
+#for a in attribute_pos:
+#  sorted_keys_dict[a] = sort_keys(word_dict[a])
 
 #Determine attributes
 ##########################################################################
@@ -106,13 +147,11 @@ attributes = pkl.load(open('attribute_lists/attributes_JJ100_NN300_VB100.pkl','r
 ##########################################################################
 #Second attempt:
 #somewhat arbitrarily picked the following words:
-#  first 100 verbs.  100th most used verb 'tell' only appears 22 times in the gt sentences
-#  first 100 adj.  100th most used adj 'cluttered' appears 381 times
 #  first 300 nouns.  300th most used noun appears 476 times.
 #  I chose this set to have some amount of evenness between how frequently words will be seen
-attributes = sorted_keys_dict['NN'][-300:]
-attributes = list(set(attributes))
-pkl.dump(attributes, open('attributes_NN300.pkl','wb'))
+#attributes = sorted_keys_dict['NN'][-300:]
+#attributes = list(set(attributes)) 
+#pkl.dump(attributes, open('attributes_NN300.pkl','wb'))
 #attributes = pkl.load(open('attribute_lists/attributes_JJ100_NN300_VB100.pkl','rb'))
 ##########################################################################
 
@@ -126,27 +165,30 @@ json_open_val = open(json_file_val).read()
 json_captions_val = json.loads(json_open_val)
 json_open_test = open(json_file_test).read()
 json_captions_test = json.loads(json_open_test)
-image_dict_train = create_image_dict(attributes, json_captions_train, save_name='image_dict_train_NN300.pkl')
-image_dict_val = create_image_dict(attributes, json_captions_val, save_name='image_dict_val_NN300.pkl')
-image_dict_test = create_image_dict(attributes, json_captions_test, save_name='image_dict_test_NN300.pkl')
+tag = 'basic_caption_zebra_'
+image_dict_train = create_image_dict(attributes, json_captions_train, image_dict_pkl='image_dict_train_JJ100_NN300_VB100.pkl')
+#image_dict_val = create_image_dict(attributes, json_captions_val, image_dict_pkl='image_dict_%sval_JJ100_NN300_VB100.pkl' %tag)
+#image_dict_test = create_image_dict(attributes, json_captions_test, image_dict_pkl='image_dict_%stest_JJ100_NN300_VB100.pkl' %tag)
 
 #save h5 files and txt files
-h5_file_train = 'utils_trainAttributes/attributes_NN300_train.h5'
-h5_file_val = 'utils_trainAttributes/attributes_NN300_val.h5'
-h5_file_test = 'utils_trainAttributes/attributes_NN300_test.h5'
-image_list_txt_train = 'utils_trainAttributes/attributes_NN300_imageList_train.txt'
-image_list_txt_val = 'utils_trainAttributes/attributes_NN300_imageList_val.txt'
-image_list_txt_test = 'utils_trainAttributes/attributes_NN300_imageList_test.txt'
+h5_file_train = '/x/lisaanne/coco_attribute/utils_trainAttributes/attributes_vocab8800_JJ100_NN300_VB100_train_basic_caption'
+h5_file_val = 'utils_trainAttributes/attributes_vocab8800_JJ100_NN300_VB100_val'
+h5_file_test = 'utils_trainAttributes/attributes_vocab8800_JJ100_NN300_VB100_test'
+image_list_txt_train = 'utils_trainAttributes/attributes_vocab8800_JJ100_NN300_VB100_imageList_train.txt'
+image_list_txt_val = 'utils_trainAttributes/attributes_vocab8800_JJ100_NN300_VB100_imageList_val.txt'
+image_list_txt_test = 'utils_trainAttributes/attributes_vocab8800_JJ100_NN300_VB100_imageList_test.txt'
+vocab_file = '../coco_caption/h5_data/buffer_100/vocabulary.txt'
+image_list_base = '../coco_caption/h5_data/buffer_100/%s%s_aligned_20_batches/image_list.with_dummy_labels.txt'
 
-write_hdf5_file(image_dict_train, h5_file_train)
+write_hdf5_file_vocab(image_dict_train, h5_file_train, attributes, vocab_file, image_list_base %(tag, 'train'), new_word='zebra')
 print 'Wrote hdf5 file to %s.\n' %h5_file_train
-write_hdf5_file(image_dict_val, h5_file_val)
-print 'Wrote hdf5 file to %s.\n' %h5_file_val
-write_hdf5_file(image_dict_test, h5_file_test)
-print 'Wrote hdf5 file to %s.\n' %h5_file_test
-write_image_list(image_dict_train, image_list_txt_train, json_captions_train)
-print 'Wrote image list train text to %s.\n' %image_list_txt_train
-write_image_list(image_dict_val, image_list_txt_val, json_captions_val)
-print 'Wrote image list train text to %s.\n' %image_list_txt_val
-write_image_list(image_dict_test, image_list_txt_test, json_captions_test)
-print 'Wrote image list test text to %s.\n' %image_list_txt_test
+#write_hdf5_file_vocab(image_dict_val, h5_file_val, attributes, vocab_file, image_list_base %(tag, 'val'))
+#print 'Wrote hdf5 file to %s.\n' %h5_file_val
+#write_hdf5_file_vocab(image_dict_test, h5_file_test)
+#print 'Wrote hdf5 file to %s.\n' %h5_file_test
+#write_image_list(image_dict_train, image_list_txt_train, json_captions_train)
+#print 'Wrote image list train text to %s.\n' %image_list_txt_train
+#write_image_list(image_dict_val, image_list_txt_val, json_captions_val)
+#print 'Wrote image list train text to %s.\n' %image_list_txt_val
+#write_image_list(image_dict_test, image_list_txt_test, json_captions_test)
+#print 'Wrote image list test text to %s.\n' %image_list_txt_test

@@ -40,12 +40,12 @@ class CaptionExperiment():
     self.caption_scores = [None] * len(self.images)
     print 'Initialized caption experiment: %d images, %d captions' % \
         (len(self.images), len(self.captions))
-    output_name = 'fc8'
+    #output_name = 'fc8'
     #output_name = 'fc8-zero'
     #output_name = 'flatten_conv4_3'
     #output_name = 'flatten_pool5'
     #output_name = 'conv5-bottleneck'
-    #output_name = 'prob-attributes'
+    output_name = 'prob-attributes'
     #output_name = 'reshape-pool5'
     #output_name = 'fc8-concat'
     self.output_name = output_name
@@ -285,8 +285,11 @@ class CaptionExperiment():
  
     return mean_index, mean_prob, top_words 
 
-  def score_generation(self, json_filename):
-    generation_result = self.sg.coco.loadRes(json_filename)
+  def score_generation(self, json_filename, read_file=True):
+    if read_file:
+      generation_result = self.sg.coco.loadRes(json_filename)
+    else:
+      generation_result = json_filename
     coco_evaluator = COCOEvalCap(self.sg.coco, generation_result)
     coco_image_ids = [self.sg.image_path_to_id[image_path]
                       for image_path in self.images]
@@ -448,7 +451,8 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
   #COCO_IMAGE_PATTERN = '/y/lisaanne/coco/images/%s2014' 
   COCO_IMAGE_PATTERN = '../../data/coco/coco/images/%s2014' 
   #COCO_IMAGE_PATTERN = '/y/lisaanne/coco/images2/%s2014' 
-  image_root = COCO_IMAGE_PATTERN % DATASET_NAME
+  #image_root = COCO_IMAGE_PATTERN % DATASET_NAME
+  image_root = COCO_IMAGE_PATTERN % 'val'
   sg = CocoSequenceGenerator(coco, BUFFER_SIZE, image_root, vocab=vocab,
                              max_words=MAX_WORDS, align=False, shuffle=False,  
                              gt_captions=True, pad=True, truncate=True, 
@@ -498,7 +502,9 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
   if experiment['type'] == 'generation':
     experimenter.generation_experiment(generation_strategy, 1000)
   if experiment['type'] == 'score_generation':
-    experimenter.score_generation(experiment['json_file'])
+    if 'read_file' in experiment.keys(): read_file=experiment['read_file']
+    else: read_file=True
+    experimenter.score_generation(experiment['json_file'], read_file)
   #captioner.set_caption_batch_size(min(MAX_IMAGES * 5, 1000))
   #experimenter.retrieval_experiment()
 

@@ -285,10 +285,10 @@ if __name__ == "__main__":
 
   #This will make a train set in which all 'real' zebra captions are removed
   #sentences with A noun.
-  tag = 'no_caption_motorcycle_'
+  tag = 'split_set_zebra_'
 
-  #rm_words = ['zebra', 'zebras']
-  rm_words = ['motor', 'cycle', 'motorcycle', 'motors', 'cycles', 'motorcycles']
+  rm_words = ['zebra', 'zebras']
+  #rm_words = ['motor', 'cycle', 'motorcycle', 'motors', 'cycles', 'motorcycles']
 
   #baseline
   #rm_words = None
@@ -302,16 +302,16 @@ if __name__ == "__main__":
   #basic captions
   #augment_captions = augment_captions(train_captions, rm_words, rm_all_object_sents=False, all_object_sents=False, no_annotations=False)
   #no captions
-  augment_captions = augment_captions(train_captions, rm_words, rm_all_object_sents=False, all_object_sents=False, no_annotations=True)
+  #augment_captions = augment_captions(train_captions, rm_words, rm_all_object_sents=False, all_object_sents=False, no_annotations=True)
 
   #make smaller train set for training vocab
   #vocab_pretrain = vocab_pretrain(train_captions) 
  
-  save_files(augment_captions, tag + '_train')
+  #save_files(augment_captions, tag + '_train')
 
-#  val_captions_novel, val_captions_train = separate_val_set(val_captions, rm_words)
-#  save_files(val_captions_novel, tag+'val_novel')
-#  save_files(val_captions_train, tag+'val_train')
+  val_captions_novel, val_captions_train = separate_val_set(val_captions, rm_words)
+  save_files(val_captions_novel, tag+'_val_novel')
+  save_files(val_captions_train, tag+'_val_train')
 
 #################################################################################################################
 

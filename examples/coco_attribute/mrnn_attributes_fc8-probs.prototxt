@@ -662,7 +662,7 @@ layer {
   }
   embed_param {
     bias_term: false
-    input_dim: 8748 
+    input_dim: 8801 
     num_output: 512
     weight_filler {
       type: "uniform"
@@ -845,7 +845,7 @@ layer {
     decay_mult: 0
   }
   inner_product_param {
-    num_output: 8748
+    num_output: 8801
     weight_filler {
       type: "uniform"
       min: -0.08

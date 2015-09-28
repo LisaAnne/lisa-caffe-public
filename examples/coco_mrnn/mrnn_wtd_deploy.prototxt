@@ -41,6 +41,12 @@ layer {
   }
 }
 layer {
+  name: "relu8"
+  type: "ReLU"
+  bottom: "image_features"
+  top: "image_features"
+}
+layer {
   name: "div-fc8"
   type: "Power"
   power_param{
