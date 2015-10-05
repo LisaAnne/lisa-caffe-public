@@ -15,7 +15,7 @@ test_iter: 25
 test_state: { stage: 'freeze-convnet' stage: 'factored' stage: '2-layer' stage: 'test-on-val' }
 test_interval: 1000
 base_lr: 0.01
-weight_decay: 0.005
+weight_decay: 0.000
 lr_policy: "step"
 gamma: 0.5
 stepsize: 30000
@@ -23,7 +23,7 @@ display: 10
 max_iter: 110000
 momentum: 0.9
 snapshot: 5000
-snapshot_prefix: "/x/lisaanne/mrnn/snapshots/mrnn_attribute_all_captions_find_best_train_setting_wd0p005"
+snapshot_prefix: "/x/lisaanne/mrnn/snapshots/mrnn_attributes_zebra_transfer0928_onlyZebraClassifier"
 solver_mode: GPU
 random_seed: 1701
 average_loss: 100

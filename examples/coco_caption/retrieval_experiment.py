@@ -410,13 +410,16 @@ def gen_stats(prob):
     stats['perplex_word'] = float('inf')
   return stats
 
-def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='vocabulary', feats_bool_in=False, experiment={'type': 'generation'}):
+def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='vocabulary', precomputed_feats=None,feats_bool_in=False, experiment={'type': 'generation'}):
   #model_name is the trained model: path relative to /home/lisa/caffe-LSTM-video
   #image_net is the model to extract length 1000 image features: path relative to snapshots folder; do not need to include "caffemodel"
   #dataset_name indicates which dataset to look at
   #vocab indicates which vocabulary file to look at
   #feats_bool is whether or not the images are saved as pickle feature files or if they are normal images
   #experiment: dict which has all info needed for experiments.  Must have field type which will indicate madlib versus generation expt.   
+
+  if not precomputed_feats:
+    precomputed_feats = model_name  
 
   MAX_IMAGES = -1  # -1 to use all images
   TAG = 'coco_2layer_factored'
@@ -443,6 +446,7 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
       str(MAX_IMAGES) if MAX_IMAGES >= 0 else 'all')
   #DATASET_CACHE_DIR = home_dir + '/retrieval_cache/%s/%s' % (DATASET_SUBDIR, MODEL_FILENAME)
   DATASET_CACHE_DIR = '/x/lisaanne/retrieval_cache/%s/%s' % (DATASET_SUBDIR, MODEL_FILENAME)
+  FEATURE_CACHE_DIR = '/x/lisaanne/retrieval_cache/%s/%s' % (DATASET_SUBDIR, precomputed_feats)
   VOCAB_FILE = '../../examples/coco_caption/h5_data/buffer_100/%s.txt' %vocab
   DEVICE_ID = 0
   with open(VOCAB_FILE, 'r') as vocab_file:
@@ -486,7 +490,7 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
   else:
     raise Exception('Unknown generation strategy type: %s' % generation_strategy['type'])
   CACHE_DIR = '%s/%s' % (DATASET_CACHE_DIR, strategy_name)
-  experimenter = CaptionExperiment(captioner, dataset, DATASET_CACHE_DIR, CACHE_DIR, sg)
+  experimenter = CaptionExperiment(captioner, dataset, FEATURE_CACHE_DIR, CACHE_DIR, sg)
   captioner.set_image_batch_size(min(100, MAX_IMAGES))
   if experiment['type'] == 'madlib':
     all_mean_index = []

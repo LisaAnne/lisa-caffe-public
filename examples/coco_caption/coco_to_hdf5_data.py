@@ -375,7 +375,7 @@ def add_dataset(tag, split):
 
 if __name__ == "__main__":
   #process_coco()
-  process_coco('no_caption_zebra_', False, False, 'h5_data/buffer_100/vocabulary.txt')
+  process_coco('basic_caption_luggage_', False, False, 'h5_data/buffer_100/vocabulary.txt')
   #process_coco('only_noun_sentences_noZebra', False, False)
 #  tag = 'captions_augment_train_set_NN300_noZebra_train' 
 #  add_dataset(tag, 'vocab_dicts/captions_augment_train_set_NN300_noZebra_train_vocab.p')

@@ -57,10 +57,21 @@ def create_image_dict(attributes, json_captions, image_dict_pkl=None, save_name=
     pkl.dump(image_dict, open(save_name, 'wb'))
   return image_dict
 
-def write_hdf5_file(my_dict, h5_file):
-  labels = np.zeros((len(my_dict.keys()), len(my_dict[my_dict.keys()[0]])))
+def write_hdf5_file(my_dict, h5_file, rm_word=None):
+  labels = np.ones((len(my_dict.keys()), len(my_dict[my_dict.keys()[0]])))*-1
   for ix, key in enumerate(my_dict.keys()):
-    labels[ix,:] = my_dict[key]
+      if ix % 50 == 0:
+        sys.stdout.write("\rOn image %d/%d" %(ix, len(my_dict.keys())))
+        sys.stdout.flush()
+      if rm_word:
+        rm_words_present = [my_dict[key][rw] for rw in rm_word]
+        if any(rm_words_present) == 1:
+          labels[ix, rm_word] = 1
+        else: 
+          labels[ix, :] = my_dict[key]
+      else: 
+        labels[ix, :] = my_dict[key]
+  print '\n'
   image_id = filter(int,my_dict.keys())
   f = h5py.File(h5_file)
   f.create_dataset('labels', data=labels)
@@ -115,7 +126,18 @@ def write_image_list(my_dict, image_list_txt, json_captions):
   for key in my_dict.keys():
     txt_save.writelines('%s %s\n' %(jpg_dict[key], key))
   txt_save.close()
- 
+
+def write_image_list_2(h5_file_train, image_list_txt, json_captions, coco_folder):
+  jpg_dict = {}
+  for images in json_captions['images']:
+    jpg_dict[images['id']] = images['file_name']
+  txt_save = open(image_list_txt, 'wb')
+  h5_file = h5py.File(h5_file_train, 'r')
+  for image_id in h5_file['image_id']:
+    txt_save.writelines('COCO_%s2014_%012d.jpg %s\n' %(coco_folder, image_id, image_id))
+  txt_save.close()
+  h5_file.close()  
+
 #Step 1: Sort words by type determined by classifier
 #txt_file = 'train_captions_parse.out'
 #read_txt = open(txt_file, 'rb')
@@ -159,36 +181,42 @@ attributes = pkl.load(open('attribute_lists/attributes_JJ100_NN300_VB100.pkl','r
 json_file_train = '/home/lisaanne/caffe-LSTM/data/coco/coco/annotations/captions_train2014.json'
 json_file_val = '/home/lisaanne/caffe-LSTM/data/coco/coco/annotations/captions_val2014.json'
 json_file_test = '/home/lisaanne/caffe-LSTM/data/coco/coco/annotations/captions_test2014.json'
+rm_words=[['zebra'], ['luggage'], ['bus'], ['motorcycle', 'motor'], ['pizza']]
 json_open_train = open(json_file_train).read()
 json_captions_train = json.loads(json_open_train)
 json_open_val = open(json_file_val).read()
 json_captions_val = json.loads(json_open_val)
 json_open_test = open(json_file_test).read()
 json_captions_test = json.loads(json_open_test)
-tag = 'basic_caption_zebra_'
-image_dict_train = create_image_dict(attributes, json_captions_train, image_dict_pkl='image_dict_train_JJ100_NN300_VB100.pkl')
-#image_dict_val = create_image_dict(attributes, json_captions_val, image_dict_pkl='image_dict_%sval_JJ100_NN300_VB100.pkl' %tag)
-#image_dict_test = create_image_dict(attributes, json_captions_test, image_dict_pkl='image_dict_%stest_JJ100_NN300_VB100.pkl' %tag)
+#image_dict_train = create_image_dict(attributes, json_captions_train, image_dict_pkl='image_dict_train_JJ100_NN300_VB100.pkl')
 
-#save h5 files and txt files
-h5_file_train = '/x/lisaanne/coco_attribute/utils_trainAttributes/attributes_vocab8800_JJ100_NN300_VB100_train_basic_caption'
-h5_file_val = 'utils_trainAttributes/attributes_vocab8800_JJ100_NN300_VB100_val'
-h5_file_test = 'utils_trainAttributes/attributes_vocab8800_JJ100_NN300_VB100_test'
-image_list_txt_train = 'utils_trainAttributes/attributes_vocab8800_JJ100_NN300_VB100_imageList_train.txt'
-image_list_txt_val = 'utils_trainAttributes/attributes_vocab8800_JJ100_NN300_VB100_imageList_val.txt'
-image_list_txt_test = 'utils_trainAttributes/attributes_vocab8800_JJ100_NN300_VB100_imageList_test.txt'
-vocab_file = '../coco_caption/h5_data/buffer_100/vocabulary.txt'
-image_list_base = '../coco_caption/h5_data/buffer_100/%s%s_aligned_20_batches/image_list.with_dummy_labels.txt'
-
-write_hdf5_file_vocab(image_dict_train, h5_file_train, attributes, vocab_file, image_list_base %(tag, 'train'), new_word='zebra')
-print 'Wrote hdf5 file to %s.\n' %h5_file_train
-#write_hdf5_file_vocab(image_dict_val, h5_file_val, attributes, vocab_file, image_list_base %(tag, 'val'))
-#print 'Wrote hdf5 file to %s.\n' %h5_file_val
-#write_hdf5_file_vocab(image_dict_test, h5_file_test)
-#print 'Wrote hdf5 file to %s.\n' %h5_file_test
-#write_image_list(image_dict_train, image_list_txt_train, json_captions_train)
-#print 'Wrote image list train text to %s.\n' %image_list_txt_train
-#write_image_list(image_dict_val, image_list_txt_val, json_captions_val)
-#print 'Wrote image list train text to %s.\n' %image_list_txt_val
-#write_image_list(image_dict_test, image_list_txt_test, json_captions_test)
-#print 'Wrote image list test text to %s.\n' %image_list_txt_test
+#rm_words = [['motorcycle', 'motor']]
+for rm_word in rm_words:
+  tag = 'rm_%s_' %rm_word[0]
+  #image_dict_val = create_image_dict(attributes, json_captions_val, image_dict_pkl='image_dict_%sval_JJ100_NN300_VB100.pkl' %tag)
+  #image_dict_test = create_image_dict(attributes, json_captions_test, image_dict_pkl='image_dict_%stest_JJ100_NN300_VB100.pkl' %tag)
+  
+  #save h5 files and txt files
+  h5_file_train = '/x/lisaanne/coco_attribute/utils_trainAttributes/attributes_rm%s_JJ100_NN300_VB100_train.h5' %rm_word[0]
+  h5_file_val = 'utils_trainAttributes/attributes_JJ100_NN300_VB100_val'
+  h5_file_test = 'utils_trainAttributes/attributes_JJ100_NN300_VB100_test'
+  image_list_txt_train = 'utils_trainAttributes/attributes_rm%s_JJ100_NN300_VB100_imageList_train.txt' %rm_word[0]
+  image_list_txt_val = 'utils_trainAttributes/attributes_JJ100_NN300_VB100_imageList_val.txt'
+  image_list_txt_test = 'utils_trainAttributes/attributes_JJ100_NN300_VB100_imageList_test.txt'
+  vocab_file = '../coco_caption/h5_data/buffer_100/vocabulary.txt'
+  image_list_base = '../coco_caption/h5_data/buffer_100/%s%s_aligned_20_batches/image_list.with_dummy_labels.txt'
+  
+  rm_word_idx = [attributes.index(rw) for rw in rm_word]
+  #write_hdf5_file(image_dict_train, h5_file_train, rm_word=rm_word_idx)
+  #print 'Wrote hdf5 file to %s.\n' %h5_file_train
+  #write_hdf5_file_vocab(image_dict_val, h5_file_val, attributes, vocab_file, image_list_base %(tag, 'val'))
+  #print 'Wrote hdf5 file to %s.\n' %h5_file_val
+  #write_hdf5_file_vocab(image_dict_test, h5_file_test)
+  #print 'Wrote hdf5 file to %s.\n' %h5_file_test
+  #write_image_list(image_dict_train, image_list_txt_train, json_captions_train)
+  write_image_list_2(h5_file_train, image_list_txt_train, json_captions_train, 'train')
+  print 'Wrote image list train text to %s.\n' %image_list_txt_train
+  #write_image_list(image_dict_val, image_list_txt_val, json_captions_val)
+  #print 'Wrote image list train text to %s.\n' %image_list_txt_val
+  #write_image_list(image_dict_test, image_list_txt_test, json_captions_test)
+  #print 'Wrote image list test text to %s.\n' %image_list_txt_test

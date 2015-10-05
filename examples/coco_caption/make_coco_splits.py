@@ -4,6 +4,7 @@ import random
 import json
 import os
 import pickle as pkl
+import re
 
 COCO_PATH = '../../data/coco/coco/'
 feature_dir = '/y/lisaanne/image_captioning/coco_features/'
@@ -148,6 +149,10 @@ def match_words(rm_words, words):
         list_matches[x] = True
   return any(list_matches)
 
+def split_sent(sent):
+  re.sub('[^A-Za-z0-9\s]+','',sent)
+  return sent.split(' ')
+
 #add "dumb" captions to new_train_json
 def augment_captions(train_dict, rm_word=None, rm_all_object_sents=False, all_object_sents=False, no_annotations=False): 
   #go through each iamge
@@ -173,8 +178,7 @@ def augment_captions(train_dict, rm_word=None, rm_all_object_sents=False, all_ob
     anno_idxs = [ix for ix, anno_id in enumerate(anno_ids) if anno_id == im_id]
     words = []
     for idx in anno_idxs:
-      c = train_dict['annotations'][idx]['caption'].replace('.','').replace(',','').replace("'",'').lower()
-      words.extend(c.split(' '))
+      words.extend(split_sent(train_dict['annotations'][idx]['caption']))
     words = list(set(words))
     mw = match_words(rm_word, words)
     if mw: #If match word (match_word will return false if rm_word is None) 
@@ -204,6 +208,39 @@ def augment_captions(train_dict, rm_word=None, rm_all_object_sents=False, all_ob
   random.shuffle(train_dict['annotations'])  
   return train_dict
 
+def make_val_test(val_dict):
+  val_dict_val = {}
+  val_dict_test = {}
+  val_dict_val = init(val_dict_val)
+  val_dict_test = init(val_dict_test)
+
+  images = [v for v in val_dict['images']]
+  random.shuffle(images)
+
+  images_val =  images[:len(images)/2]
+  images_test = images[len(images)/2:]
+
+  val_dict_val['images'] = images_val
+  val_dict_test['images'] = images_test
+
+  val_image_ids = [v['id'] for v in val_dict_val['images']]
+  test_image_ids = [v['id'] for v in val_dict_test['images']]
+
+  for ix, annotation in enumerate(val_dict['annotations']):
+    if ix % 50 == 0:
+      sys.stdout.write("\rAdding sentences for im %d/%d" % (ix, len(val_dict['annotations'])))
+      sys.stdout.flush()
+    if annotation['image_id'] in val_image_ids:
+      val_dict_val['annotations'].append(annotation) 
+    elif annotation['image_id'] in test_image_ids:
+      val_dict_test['annotations'].append(annotation)
+    else:
+      raise Exception 
+
+  print '\n' 
+  return val_dict_val, val_dict_test
+
+
 def separate_val_set(val_dict, rm_word=None):
   val_dict_train = {}
   val_dict_novel = {}
@@ -224,8 +261,7 @@ def separate_val_set(val_dict, rm_word=None):
     anno_idxs = [ix for ix, anno_id in enumerate(anno_ids) if anno_id == im_id]
     words = []
     for idx in anno_idxs:
-      c = val_dict['annotations'][idx]['caption'].replace('.','').replace(',','').replace("'",'').lower()
-      words.extend(c.split(' '))
+      words.extend(split_sent(val_dict['annotations'][idx]['caption']))
     words = list(set(words))
     if match_words(rm_word, words): 
       novel_annotation_ids.extend(anno_idxs)
@@ -279,16 +315,38 @@ if __name__ == "__main__":
   val_json = open(val_json_file).read()
   val_captions = json.loads(val_json) 
   
-  test_json_file = coco_anno_path %('test')  
-  test_json = open(test_json_file).read()
-  test_captions = json.loads(test_json) 
+#  test_json_file = coco_anno_path %('test')  
+#  test_json = open(test_json_file).read()
+#  test_captions = json.loads(test_json) 
+ 
+#  val_val_json_file = coco_anno_path %('val_val')  
+#  val_val_json = open(val_val_json_file).read()
+#  val_val = json.loads(val_val_json) 
+#
+#  val_test_json_file = coco_anno_path %('val_test')  
+#  val_test_json = open(val_test_json_file).read()
+#  val_test = json.loads(val_test_json) 
 
   #This will make a train set in which all 'real' zebra captions are removed
   #sentences with A noun.
-  tag = 'split_set_zebra_'
 
-  rm_words = ['zebra', 'zebras']
+  #rm_tag = 'bus'
+  #rm_words = ['bus', 'buss', 'buses', 'busses']
+
+  #rm_tag = 'zebra'
+  #rm_words = ['zebra', 'zebras']
+
+  #rm_tag = 'luggage'
+  #rm_words = ['luggage', 'luggages']
+
+  #rm_tag = 'pizza'
+  #rm_words = ['pizza', 'pizzas']
+
+  #rm_tag = 'motorcycle'
   #rm_words = ['motor', 'cycle', 'motorcycle', 'motors', 'cycles', 'motorcycles']
+
+  rm_tags = ['bus', 'zebra', 'luggage', 'pizza', 'motorcycle']
+  all_rm_words = [ ['bus', 'buss', 'buses', 'busses'], ['zebra', 'zebras'], ['luggage', 'luggages'],['pizza', 'pizzas'],['motor', 'cycle', 'motorcycle', 'motors', 'cycles', 'motorcycles']]
 
   #baseline
   #rm_words = None
@@ -300,50 +358,31 @@ if __name__ == "__main__":
         #all_object_sents (True) --> 'A zebra.' 'A field.' 'A cow.' 'A grass.' 'A cow in the grass.'
         #no_annotations (True) --> 'A cow in the grass.'
   #basic captions
-  #augment_captions = augment_captions(train_captions, rm_words, rm_all_object_sents=False, all_object_sents=False, no_annotations=False)
+  #augment_captions_out = augment_captions(train_captions, rm_words, rm_all_object_sents=False, all_object_sents=False, no_annotations=False)
+  #tag = 'basic_caption_%s_' %(rm_tag)
+  #save_files(augment_captions_out, tag + 'train')
+
   #no captions
-  #augment_captions = augment_captions(train_captions, rm_words, rm_all_object_sents=False, all_object_sents=False, no_annotations=True)
+  #augment_captions_out = augment_captions(train_captions, rm_words, rm_all_object_sents=False, all_object_sents=False, no_annotations=True)
+  #tag = 'no_caption_%s_' %(rm_tag)
+  #save_files(augment_captions_out, tag + 'train')
 
   #make smaller train set for training vocab
   #vocab_pretrain = vocab_pretrain(train_captions) 
- 
-  #save_files(augment_captions, tag + '_train')
 
-  val_captions_novel, val_captions_train = separate_val_set(val_captions, rm_words)
-  save_files(val_captions_novel, tag+'_val_novel')
-  save_files(val_captions_train, tag+'_val_train')
+  #make val_val and val_test splits
+  val_val, val_test = make_val_test(val_captions)
+  save_files(val_val, 'val_val')
+  save_files(val_test, 'val_test')
 
-#################################################################################################################
-
-
-#Make first compositionality split
-#  word_groups = [('black', 'bike'), ('blue', 'train'), ('red', 'car'), ('yellow', 'shirt'), ('green', 'car')]
-#  train_json, val_json, val_json_newVocab, val_json_oldVocab = make_split(word_groups)
-#  identifier = 'fixVocab.fixFlag.'
-#  for w in word_groups:
-#    identifier += '%s_%s.' %(w[0], w[1])
-#  file_train_save = coco_anno_path %(identifier + 'train')
-#  file_val_save = coco_anno_path %(identifier + 'val')
-#  file_val_save_new = coco_anno_path %(identifier + 'val_novel')
-#  file_val_save_old = coco_anno_path %(identifier + 'val_train')
-#  txt_train_save = coco_txt_path %(identifier + 'train')
-#  txt_val_save = coco_txt_path %(identifier + 'val')
-#  txt_val_save_new = coco_txt_path %(identifier + 'val_novel')
-#  txt_val_save_old = coco_txt_path %(identifier + 'val_train')
-#  
-#  with open(file_train_save,'w') as outfile:
-#    json.dump(train_json, outfile)
-#  with open(file_val_save,'w') as outfile:
-#    json.dump(val_json, outfile)
-#  with open(file_val_save_new,'w') as outfile:
-#    json.dump(val_json_newVocab, outfile)
-#  with open(file_val_save_old,'w') as outfile:
-#    json.dump(val_json_oldVocab, outfile)
-#
-#  #use json['images']['id'] to write text file for training with new dataset split  
-#  write_txt_file(txt_train_save, identifier+'train', train_json)
-#  write_txt_file(txt_val_save, identifier + 'val', val_json)
-#  write_txt_file(txt_val_save_new, identifier + 'val_novel', val_json_newVocab)  
-#  write_txt_file(txt_val_save_old, identifier + 'val_train', val_json_oldVocab)  
-
-
+#  split val into val_train and val_novel
+  for i in range(len(rm_tags)):
+    rm_tag = rm_tags[i]
+    rm_words = all_rm_words[i] 
+    tag = 'split_set_%s_' %(rm_tag)
+    val_captions_novel, val_captions_train = separate_val_set(val_val, rm_words)
+    save_files(val_captions_novel, tag+'val_val_novel')
+    save_files(val_captions_train, tag+'val_val_train')
+    val_captions_novel, val_captions_train = separate_val_set(val_test, rm_words)
+    save_files(val_captions_novel, tag+'val_test_novel')
+    save_files(val_captions_train, tag+'val_test_train')
