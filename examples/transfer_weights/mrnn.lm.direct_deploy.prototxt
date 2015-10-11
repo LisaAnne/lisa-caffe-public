@@ -1,0 +1,61 @@
+# The network is used for the image captioning experiments of LRCN [1].
+# Please consider citing LRCN [1] if you use this example in your work.
+#
+# [1] J. Donahue, L. A. Hendricks, S. Guadarrama, M. Rohrbach, S. Venugopalan,
+#     K. Saenko, T. Darrell. "Long-term Recurrent Convolutional Networks for
+#     Visual Recognition and Description." arXiv preprint arXiv:1411.4389 (2014).
+
+name: "mrnn_captioning"
+
+input: "cont_sentence"
+input_shape { dim: 1 dim: 1000}
+
+input: "input_sentence"
+input_shape { dim: 1 dim: 1000}
+
+layer {
+  name: "embedding"
+  type: "Embed"
+  bottom: "input_sentence"
+  top: "embedded_input_sentence_1"
+  param {
+    lr_mult: 1
+  }
+  embed_param {
+    bias_term: false
+    input_dim: 8801 
+    num_output: 512
+    weight_filler {
+      type: "uniform"
+      min: -0.08
+      max: 0.08
+    }
+  }
+}
+layer {
+  name: "embedding2"
+  type: "InnerProduct"
+  bottom: "embedded_input_sentence_1"
+  top: "embedded_input_sentence"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 0
+  }
+  inner_product_param {
+    num_output: 512
+    weight_filler {
+      type: "uniform"
+      min: -0.08
+      max: 0.08
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+    axis: 2
+  }
+}
