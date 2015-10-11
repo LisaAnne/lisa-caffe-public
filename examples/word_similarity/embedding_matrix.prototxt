@@ -1,0 +1,13 @@
+name: "EmbeddingMatrix"
+layer {
+  name: "embedding"
+  type: "Embed"
+  bottom: "input_sentence"
+  top: "embedded_input_sentence_1"
+  embed_param {
+    bias_term: false
+    input_dim: 8801 
+    num_output: 512
+  }
+}
+
