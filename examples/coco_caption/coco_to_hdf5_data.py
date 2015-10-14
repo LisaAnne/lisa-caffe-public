@@ -225,7 +225,7 @@ COCO_IMAGE_PATTERN = '%s/%s/%%s2014' % (COCO_PATH, COCO_IM_FOLDER)
 COCO_IMAGE_ID_PATTERN = 'COCO_%s2014_%%012d.jpg'
 
 BUFFER_SIZE = 100
-OUTPUT_DIR = 'h5_data/buffer_%d' % BUFFER_SIZE
+OUTPUT_DIR = 'h5_data_fixN/buffer_%d' % BUFFER_SIZE
 SPLITS_PATTERN = '/home/lisaanne/caffe-LSTM/data/coco/coco2014_cocoid.%s.txt'
 OUTPUT_DIR_PATTERN = '%s/%%s_batches' % OUTPUT_DIR
 
@@ -375,7 +375,7 @@ def add_dataset(tag, split):
 
 if __name__ == "__main__":
   #process_coco()
-  process_coco('basic_caption_luggage_', False, False, 'h5_data/buffer_100/vocabulary.txt')
+  process_coco('no_caption_zebra_', False, False, 'h5_data/buffer_100/vocabulary.txt')
   #process_coco('only_noun_sentences_noZebra', False, False)
 #  tag = 'captions_augment_train_set_NN300_noZebra_train' 
 #  add_dataset(tag, 'vocab_dicts/captions_augment_train_set_NN300_noZebra_train_vocab.p')
