@@ -1,0 +1,189 @@
+name: "mrnn_captioning"
+
+# train data layers
+input: "cont_sentence"
+input_shape { dim: 1 dim: 1000 }
+
+input: "input_sentence"
+input_shape { dim: 1 dim: 1000 }
+
+input: "image_features"
+input_shape { dim: 1 dim: 1000 dim: 471 }
+
+layer {
+  name: "embedding"
+  type: "Embed"
+  bottom: "input_sentence"
+  top: "embedded_input_sentence_1"
+  param {
+    lr_mult: 0
+  }
+  embed_param {
+    bias_term: false
+    input_dim: 80002 
+    num_output: 512
+    weight_filler {
+      type: "uniform"
+      min: -0.08
+      max: 0.08
+    }
+  }
+}
+layer {
+  name: "embedding2"
+  type: "InnerProduct"
+  bottom: "embedded_input_sentence_1"
+  top: "embedded_input_sentence"
+  param {
+    lr_mult: 0
+    decay_mult: 0
+  }
+  param {
+    lr_mult: 0
+    decay_mult: 0
+  }
+  inner_product_param {
+    num_output: 512
+    weight_filler {
+      type: "uniform"
+      min: -0.08
+      max: 0.08
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+    axis: 2
+  }
+}
+layer {
+  name: "lstm1"
+  type: "LSTM"
+  bottom: "embedded_input_sentence"
+  bottom: "cont_sentence"
+  top: "lstm1"
+  param {
+    lr_mult: 0
+    decay_mult: 0
+  }
+  param {
+    lr_mult: 0
+    decay_mult: 0
+  }
+  param {
+    lr_mult: 0
+    decay_mult: 0
+  }
+  recurrent_param {
+    num_output: 512
+    weight_filler {
+      type: "uniform"
+      min: -0.08
+      max: 0.08
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
+  name: "concat-lm"
+  type: "Concat"
+  concat_param{
+    axis: 2
+  }
+  bottom: "embedded_input_sentence"
+  bottom: "lstm1"
+  top: "concat_lm"
+}
+layer {
+  name: "predict"
+  type: "InnerProduct"
+  bottom: "concat_lm"
+  top: "predict-lm"
+  param {
+    lr_mult: 0
+    decay_mult: 0
+  }
+  param {
+    lr_mult: 0
+    decay_mult: 0
+  }
+  inner_product_param {
+    num_output: 80002
+    weight_filler {
+      type: "uniform"
+      min: -0.08
+      max: 0.08
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+    axis: 2
+  }
+}
+layer {
+  name: "power-lm"
+  type: "Power"
+  bottom: "predict-lm"
+  top: "power-lm"
+  power_param {
+    scale: 0.5
+  }
+}
+layer {
+  name: "predict-im"
+  type: "InnerProduct"
+  bottom: "image_features"
+  top: "predict-im"
+  param {
+    lr_mult: 10
+    decay_mult: 10 
+  }
+  param {
+    lr_mult: 10
+    decay_mult: 20
+  }
+  inner_product_param {
+    num_output: 80002
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+    axis: 2
+  }
+}
+layer {
+  name: "power-im"
+  type: "Power"
+  bottom: "predict-im"
+  top: "power-im"
+  power_param {
+    scale: 0.5
+  }
+}
+layer {
+  name: "add-predictions"
+  type: "Eltwise"
+  bottom: "power-lm"
+  bottom: "power-im"
+  top: "predict-multimodal"
+  eltwise_param {
+   operation: SUM
+  }
+}
+layer {
+  name: "probs"
+  type: "Softmax"
+  bottom: "predict-multimodal"
+  top: "probs"
+  softmax_param {
+    axis: 2
+  }
+}
