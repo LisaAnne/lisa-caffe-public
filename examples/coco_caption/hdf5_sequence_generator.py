@@ -110,6 +110,8 @@ class HDF5SequenceWriter():
       for j in range(min_sent_length+1):
         aa = np.where(batch_comps['target_sentence'][i+j] == 0)
         batch_comps['target_sentence'][i+j][aa] = -1
+    
+    batch_comps['input_sentence'][batch_comps['input_sentence'] == -1] = 0
     batch_index = len(self.filenames)
     filename = '%s/batch_%d.h5' % (self.output_dir, batch_index)
     self.filenames.append(filename)
