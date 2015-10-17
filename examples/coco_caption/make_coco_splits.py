@@ -319,13 +319,13 @@ if __name__ == "__main__":
 #  test_json = open(test_json_file).read()
 #  test_captions = json.loads(test_json) 
  
-#  val_val_json_file = coco_anno_path %('val_val')  
-#  val_val_json = open(val_val_json_file).read()
-#  val_val = json.loads(val_val_json) 
-#
-#  val_test_json_file = coco_anno_path %('val_test')  
-#  val_test_json = open(val_test_json_file).read()
-#  val_test = json.loads(val_test_json) 
+  val_val_json_file = coco_anno_path %('val_val')  
+  val_val_json = open(val_val_json_file).read()
+  val_val = json.loads(val_val_json) 
+
+  val_test_json_file = coco_anno_path %('val_test')  
+  val_test_json = open(val_test_json_file).read()
+  val_test = json.loads(val_test_json) 
 
   #This will make a train set in which all 'real' zebra captions are removed
   #sentences with A noun.
@@ -345,8 +345,17 @@ if __name__ == "__main__":
   #rm_tag = 'motorcycle'
   #rm_words = ['motor', 'cycle', 'motorcycle', 'motors', 'cycles', 'motorcycles']
 
-  rm_tags = ['bus', 'zebra', 'luggage', 'pizza', 'motorcycle']
-  all_rm_words = [ ['bus', 'buss', 'buses', 'busses'], ['zebra', 'zebras'], ['luggage', 'luggages'],['pizza', 'pizzas'],['motor', 'cycle', 'motorcycle', 'motors', 'cycles', 'motorcycles']]
+  rm_words = ['rm3_zpm']
+  all_rm_words = [['motor', 'cycle', 'motorcycle', 'motor', 'cycles', 'motorcycles', 'pizza', 'pizzas', 'zebra', 'zebras']]
+
+  #rm_tags = ['giraffe']
+  #rm_words = [['giraffe','giraffes','girafee', 'giraffee', 'giraff']]
+
+  #rm_tags = ['rm10_randSplit1']
+  #rm_words = [['racquet', 'racquets', 'racket', 'rackets','rackett','silver', 'silverware', 'coffee', 'coffe', 'market', 'marketplace', 'markets', 'families', 'family', 'pair', 'pairs', 'dinner', 'bench', 'benches', 'field', 'fields', 'baseball', 'baseballs']]
+
+  #rm_tags = ['bus', 'zebra', 'luggage', 'pizza', 'motorcycle']
+  #all_rm_words = [ ['bus', 'buss', 'buses', 'busses'], ['zebra', 'zebras'], ['luggage', 'luggages'],['pizza', 'pizzas'],['motor', 'cycle', 'motorcycle', 'motors', 'cycles', 'motorcycles']]
 
   #baseline
   #rm_words = None
@@ -363,19 +372,20 @@ if __name__ == "__main__":
   #save_files(augment_captions_out, tag + 'train')
 
   #no captions
-  #augment_captions_out = augment_captions(train_captions, rm_words, rm_all_object_sents=False, all_object_sents=False, no_annotations=True)
-  #tag = 'no_caption_%s_' %(rm_tag)
-  #save_files(augment_captions_out, tag + 'train')
+  augment_captions_out = augment_captions(train_captions, rm_words[0], rm_all_object_sents=False, all_object_sents=False, no_annotations=True)
+  tag = 'no_caption_%s_' %(rm_tags[0])
+  save_files(augment_captions_out, tag + 'train')
 
   #make smaller train set for training vocab
   #vocab_pretrain = vocab_pretrain(train_captions) 
 
   #make val_val and val_test splits
-  val_val, val_test = make_val_test(val_captions)
-  save_files(val_val, 'val_val')
-  save_files(val_test, 'val_test')
+  #val_val, val_test = make_val_test(val_captions)
+  #save_files(val_val, 'val_val')
+  #save_files(val_test, 'val_test')
 
 #  split val into val_train and val_novel
+  all_rm_words = rm_words
   for i in range(len(rm_tags)):
     rm_tag = rm_tags[i]
     rm_words = all_rm_words[i] 

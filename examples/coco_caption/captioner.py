@@ -21,7 +21,7 @@ import caffe
 feature_path ='/y/lisaanne/image_captioning/coco_features/' 
 class Captioner():
   def __init__(self, weights_path, image_net_proto, lstm_net_proto,
-               vocab_path, device_id=0):
+               vocab_path, device_id=0, precomputed_feats=None):
     if device_id >= 0:
       caffe.set_mode_gpu()
       caffe.set_device(device_id)
@@ -60,9 +60,13 @@ class Captioner():
       raise Exception('Invalid vocab file: contains %d words; '
           'net expects vocab with %d words' % (len(self.vocab), net_vocab_size))
 
+    self.h5_file = precomputed_feats
+
   def set_image_batch_size(self, batch_size):
     self.image_net.blobs['data'].reshape(batch_size,
         *self.image_net.blobs['data'].data.shape[1:])
+
+
 
   def caption_batch_size(self):
     return self.lstm_net.blobs['cont_sentence'].data.shape[1]
@@ -383,8 +387,12 @@ class Captioner():
 
   def compute_descriptors(self, image_list, feats_bool=False, output_name='fc8'):
     if feats_bool:
-      image_feats = [feature_path + x.split('/')[-1].split('.jpg')[0] + '_vgg_fc7Feat.p' for x in image_list]
-      image_list = image_feats   
+      #load image from h5 file and make into a dict
+      f = h5py.File(self.h5_file, 'r')
+      extracted_features = {}
+      for feature, im in zip(f['features'], f['ims']):
+        im_key = im.split('_')[-1].split('.jpg')[0]
+        extracted_features[im_key] = feature
 
     batch = np.zeros_like(self.image_net.blobs['data'].data)
     batch_shape = batch.shape
@@ -396,8 +404,8 @@ class Captioner():
       batch_list = image_list[batch_start_index:(batch_start_index + batch_size)]
       for batch_index, image_path in enumerate(batch_list):
         if feats_bool:
-          tmp_feat = pkl.load(open(str(image_path), 'rb'))
-          batch[batch_index:(batch_index+1),:,0,0] = tmp_feat['fc7'] 
+          im_key = image_path.split('_')[-1].split('.jpg')[0]
+          batch[batch_index:(batch_index+1),:] = extracted_features[im_key] 
         else:
           batch[batch_index:(batch_index + 1)] = self.preprocess_image(image_path)
       current_batch_size = min(batch_size, len(image_list) - batch_start_index)

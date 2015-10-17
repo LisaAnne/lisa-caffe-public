@@ -12,6 +12,7 @@ from init_workspace import *
 sys.path.insert(0,home_dir + '/python/')
 sys.path.insert(0, home_dir + '/examples/coco_caption/')
 import glob
+sys.path.insert(0, '.')
 
 # seed the RNG so we evaluate on the same subset each time
 np.random.seed(seed=0)
@@ -27,7 +28,7 @@ from pycocoevalcap.eval import COCOEvalCap
 class CaptionExperiment():
   # captioner is an initialized Captioner (captioner.py)
   # dataset is a dict: image path -> [caption1, caption2, ...]
-  def __init__(self, captioner, dataset, dataset_cache_dir, cache_dir, sg):
+  def __init__(self, captioner, dataset, dataset_cache_dir, cache_dir, sg, feats_bool):
     self.captioner = captioner
     self.sg = sg
     self.dataset_cache_dir = dataset_cache_dir
@@ -40,6 +41,7 @@ class CaptionExperiment():
     self.caption_scores = [None] * len(self.images)
     print 'Initialized caption experiment: %d images, %d captions' % \
         (len(self.images), len(self.captions))
+    #output_name = 'data'
     #output_name = 'fc8'
     #output_name = 'fc8-zero'
     #output_name = 'flatten_conv4_3'
@@ -49,6 +51,7 @@ class CaptionExperiment():
     #output_name = 'reshape-pool5'
     #output_name = 'fc8-concat'
     self.output_name = output_name
+    self.feats_bool = feats_bool
 
   def init_caption_list(self, dataset):
     self.captions = []
@@ -410,7 +413,7 @@ def gen_stats(prob):
     stats['perplex_word'] = float('inf')
   return stats
 
-def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='vocabulary', precomputed_feats=None,feats_bool_in=False, experiment={'type': 'generation'}):
+def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='vocabulary', precomputed_feats=None,feats_bool_in=False, precomputed_h5=None, experiment={'type': 'generation'}):
   #model_name is the trained model: path relative to /home/lisa/caffe-LSTM-video
   #image_net is the model to extract length 1000 image features: path relative to snapshots folder; do not need to include "caffemodel"
   #dataset_name indicates which dataset to look at
@@ -477,7 +480,7 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
     print 'Reduced dataset to %d images' % len(dataset.keys())
   if MAX_IMAGES < 0: MAX_IMAGES = len(dataset.keys())
   captioner = Captioner(MODEL_FILE, IMAGE_NET_FILE, LSTM_NET_FILE, VOCAB_FILE,
-                        device_id=DEVICE_ID)
+                        device_id=DEVICE_ID, precomputed_feats=precomputed_h5)
   if 'beam_size' in experiment.keys():
     beam_size = experiment['beam_size']
   else:
@@ -490,7 +493,7 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
   else:
     raise Exception('Unknown generation strategy type: %s' % generation_strategy['type'])
   CACHE_DIR = '%s/%s' % (DATASET_CACHE_DIR, strategy_name)
-  experimenter = CaptionExperiment(captioner, dataset, FEATURE_CACHE_DIR, CACHE_DIR, sg)
+  experimenter = CaptionExperiment(captioner, dataset, FEATURE_CACHE_DIR, CACHE_DIR, sg, feats_bool_in)
   captioner.set_image_batch_size(min(100, MAX_IMAGES))
   if experiment['type'] == 'madlib':
     all_mean_index = []
@@ -517,4 +520,4 @@ if __name__ == "__main__":
   #examples: ./retrieval_experiment.py lrcn_alex_black_bike.blue_train.red_car.yellow_shirt.green_car_iter_110000  /examples/coco_caption/lm /models/bvlc_reference_caffenet/deploy.prototxt black_bike.blue_train.red_car.yellow_shirt.green_car.val vocabulary
   #experiment = {'type': 'madlib', 'fill_words': ['zebra'], 'cooccur_words':[[]]}
   experiment = {'type': 'generation'}
-  main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], experiment=experiment)
+  main(model_name=sys.argv[1], image_net=sys.argv[2], LM_net=sys.argv[3], dataset_name=sys.argv[4], vocab=sys.argv[5], precomputed_feats=None, feats_bool_in=True, precomputed_h5=sys.argv[6], experiment=experiment)

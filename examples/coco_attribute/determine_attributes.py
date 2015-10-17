@@ -180,35 +180,42 @@ attributes = pkl.load(open('attribute_lists/attributes_JJ100_NN300_VB100.pkl','r
 #create image dict which combines image ids with labels
 json_file_train = '/home/lisaanne/caffe-LSTM/data/coco/coco/annotations/captions_train2014.json'
 json_file_val = '/home/lisaanne/caffe-LSTM/data/coco/coco/annotations/captions_val2014.json'
+json_file_val = '/home/lisaanne/caffe-LSTM/data/coco/coco/annotations/captions_val_val2014.json'
 json_file_test = '/home/lisaanne/caffe-LSTM/data/coco/coco/annotations/captions_test2014.json'
-rm_words=[['zebra'], ['luggage'], ['bus'], ['motorcycle', 'motor'], ['pizza']]
+#rm_words=[['zebra'], ['luggage'], ['bus'], ['motorcycle', 'motor'], ['pizza']]
+set_name = ['3_zpm']
+rm_words = [['motor', 'motorcycle', 'pizza', 'zebra']]
+#set_name = ['10_randSplit1']
+#rm_words = [['racquet', 'racket', 'silver', 'coffee', 'market', 'family', 'pair', 'dinner', 'bench', 'field', 'baseball']]
 json_open_train = open(json_file_train).read()
 json_captions_train = json.loads(json_open_train)
 json_open_val = open(json_file_val).read()
 json_captions_val = json.loads(json_open_val)
 json_open_test = open(json_file_test).read()
 json_captions_test = json.loads(json_open_test)
+json_open_val_val = open(json_file_val).read()
+json_captions_val_val = json.loads(json_open_val_val)
 #image_dict_train = create_image_dict(attributes, json_captions_train, image_dict_pkl='image_dict_train_JJ100_NN300_VB100.pkl')
+image_dict_val_val = create_image_dict(attributes, json_captions_val_val, save_name='image_dict_val_val_JJ100_NN300_VB100.pkl')
+#image_dict_test = create_image_dict(attributes, json_captions_test, image_dict_pkl='image_dict_%stest_JJ100_NN300_VB100.pkl' %tag)
 
 #rm_words = [['motorcycle', 'motor']]
-for rm_word in rm_words:
+for ix, rm_word in enumerate(rm_words):
   tag = 'rm_%s_' %rm_word[0]
-  #image_dict_val = create_image_dict(attributes, json_captions_val, image_dict_pkl='image_dict_%sval_JJ100_NN300_VB100.pkl' %tag)
-  #image_dict_test = create_image_dict(attributes, json_captions_test, image_dict_pkl='image_dict_%stest_JJ100_NN300_VB100.pkl' %tag)
   
   #save h5 files and txt files
-  h5_file_train = '/x/lisaanne/coco_attribute/utils_trainAttributes/attributes_rm%s_JJ100_NN300_VB100_train.h5' %rm_word[0]
+  h5_file_train = '/x/lisaanne/coco_attribute/utils_trainAttributes/attributes_rm%s_JJ100_NN300_VB100_train.h5' %set_name[ix]
   h5_file_val = 'utils_trainAttributes/attributes_JJ100_NN300_VB100_val'
   h5_file_test = 'utils_trainAttributes/attributes_JJ100_NN300_VB100_test'
-  image_list_txt_train = 'utils_trainAttributes/attributes_rm%s_JJ100_NN300_VB100_imageList_train.txt' %rm_word[0]
+  image_list_txt_train = 'utils_trainAttributes/attributes_rm%s_JJ100_NN300_VB100_imageList_train.txt' %set_name[ix]
   image_list_txt_val = 'utils_trainAttributes/attributes_JJ100_NN300_VB100_imageList_val.txt'
   image_list_txt_test = 'utils_trainAttributes/attributes_JJ100_NN300_VB100_imageList_test.txt'
   vocab_file = '../coco_caption/h5_data/buffer_100/vocabulary.txt'
   image_list_base = '../coco_caption/h5_data/buffer_100/%s%s_aligned_20_batches/image_list.with_dummy_labels.txt'
   
   rm_word_idx = [attributes.index(rw) for rw in rm_word]
-  #write_hdf5_file(image_dict_train, h5_file_train, rm_word=rm_word_idx)
-  #print 'Wrote hdf5 file to %s.\n' %h5_file_train
+  write_hdf5_file(image_dict_train, h5_file_train, rm_word=rm_word_idx)
+  print 'Wrote hdf5 file to %s.\n' %h5_file_train
   #write_hdf5_file_vocab(image_dict_val, h5_file_val, attributes, vocab_file, image_list_base %(tag, 'val'))
   #print 'Wrote hdf5 file to %s.\n' %h5_file_val
   #write_hdf5_file_vocab(image_dict_test, h5_file_test)

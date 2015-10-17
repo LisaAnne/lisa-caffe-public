@@ -6,27 +6,29 @@ import copy
 import pickle as pkl
 import find_close_words
 
-save_tag = 'transfer_closest_im_lm.commonWords1000'
+save_tag = 'transfer_food'
 num_close_words_im = 1
 num_close_words_lm = 1
 
 #zebra
 #model_weights = '/x/lisaanne/mrnn/snapshots_final/mrnn_attribute_JJ100_NN300_VB100_fc8_direct_no_zebra_captions_no_pretrain_lm_iter_110000'
 #model_weights = '/x/lisaanne/mrnn/snapshots/mrnn_attributes_zebra_transfer0928_onlyZebraClassifier_iter_15000'
-model_weights = '/x/lisaanne/mrnn/snapshots/mrnn_attributes_zebra_transfer0928_onlyZebraClassifier_ft_all_iter_110000'
-add_words = {'words': ['zebra', 'zebras'], 'classifiers': ['zebra', 'zebra'], 'illegal_words': ['zebra', 'zebras']}
+#model_weights = '/x/lisaanne/mrnn/snapshots/mrnn_attributes_zebra_transfer0928_onlyZebraClassifier_ft_last_iter_110000'
+#model_weights = '/x/lisaanne/mrnn/snapshots/mrnn_attributes_zebra_withImagenet_iter_110000'
+#add_words = {'words': ['zebra', 'zebras'], 'classifiers': ['zebra', 'zebra'], 'illegal_words': ['zebra', 'zebras']}
 
 #motorcycle
 #model_weights = '/x/lisaanne/mrnn/snapshots/mrnn_attributes_no_motorcycle_transfer0928_iter_110000'
-#model_weights = '/x/lisaanne/mrnn/snapshots/mrnn_attributes_zebra_transfer0928_onlyMotorcycleClassifier_ft_all_iter_90000'
+#model_weights = '/x/lisaanne/mrnn/snapshots/mrnn_attributes_zebra_transfer0928_onlyMotorcycleClassifier_ft_all_iter_110000'
 #add_words = {'words':['motorcycle', 'motorcycles', 'motor', 'cycle', 'cycles'], 'classifiers':['motorcycle', 'motorcycle', 'motorcycle', 'motorcycle', 'motorcycle'], 'illegal_words': ['motorcycle', 'motorcycles', 'motor', 'cycle', 'cycles']}
 
 #pizza
 #model_weights = '/x/lisaanne/mrnn/snapshots/mrnn_attributes_no_pizza_transfer0928_iter_110000'
-#feature_word = 'pizza'
-#add_words = ['pizza', 'pizzas']
+model_weights = '/x/lisaanne/mrnn/snapshots/mrnn_attributes_pizza_transfer0928_onlyPizzaClassifier_ft_all_iter_110000'
+add_words = {'words':['pizza', 'pizzas'], 'classifiers':['pizza', 'pizza'], 'illegal_words': ['pizza','pizzas']}
 
 model='../coco_attribute/mrnn_attributes_fc8-probs.direct.prototxt'
+#model='../coco_imagenet/mrnn_attributes_fc8-probs.direct.prototxt'
 net = caffe.Net(model, model_weights + '.caffemodel', caffe.TRAIN)
 att_weights = copy.deepcopy(net.params['fc8-attributes'][0].data)
 
@@ -40,14 +42,21 @@ def closeness_classifier_weights(new_word, illegal_words, num_close_words):
   norm_atts = att_weights/np.tile(np.linalg.norm(att_weights, axis=1), (4096,1)).T
   euc_dist = np.linalg.norm(norm_atts[new_word_idx,:] - norm_atts, axis=1) 
   for iw in illegal_words_idx: euc_dist[iw] = 10001
+  #euc_dist[470:] = 10001
   return [attributes[ed] for ed in np.argsort(euc_dist)[:num_close_words]], np.sort(euc_dist)[:num_close_words]
 
-closeness_metric_lm = closeness_embedding 
-closeness_metric_im = closeness_classifier_weights
+def return_constant(new_word, illegal_words, num_close_words):
+  return ['food'], [1]
+
+#closeness_metric_lm = closeness_embedding 
+#closeness_metric_im = closeness_classifier_weights
+
+closeness_metric_lm = return_constant
+closeness_metric_im = return_constant
 
 close_words_im = {}
 close_words_lm = {}
-attributes = pkl.load(open('../coco_attribute/attribute_lists/attributes_JJ100_NN300_VB100.pkl','rb'))
+attributes = pkl.load(open('../coco_attribute/attribute_lists/attributes_JJ100_NN300_VB100_imagenetZebra.pkl','rb'))
 
 for aw, word in enumerate(add_words['words']):
   close_words_im[word] = {}
