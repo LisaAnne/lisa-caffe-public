@@ -480,12 +480,12 @@ class captionClassifierImageData(caffe.Layer):
     print 'Reading json image dicts takes: ', time.time() - t
 
     #filter image labels and set up
-    #pdb.set_trace() 
     images = open(self.images, 'rb').readlines()
     images = [(im.split(' ')[0], im.split(' ')[1].strip()) for im in images]
     images_with_labels = {}
     t = time.time()
     for dset, path in images:
+      pdb.set_trace()
       labels = filter_labels(json_images['images'][dset][path])
       images_with_labels[dataset_path_hash[dset] + path] = labels
     print 'Filtering labels takes: ', time.time() - t
@@ -509,7 +509,6 @@ class captionClassifierImageData(caffe.Layer):
     pool_size = 4
 
     self.image_processor = ImageProcessor(self.transformer, self.height)
-    pdb.set_trace()
 
     if pool_size > 0:
       self.pool = Pool(processes=pool_size)
@@ -544,6 +543,7 @@ class captionClassifierImageData(caffe.Layer):
       for i in range(self.batch_size):
         top[top_index].data[i, ...] = self.thread_result[name][i] 
 
+    pdb.set_trace()
     self.dispatch_worker()
       
   def dispatch_worker(self):
