@@ -9,7 +9,7 @@ layer {
   python_param {
     module: "python_data_layers"
     layer: "captionClassifierImageData_train"
-    param_str: "{'batch_size': 100, 'single_bit_classes': ['suitcase', 'luggage', 'bus', 'zebra', 'pizza', 'microwave', 'bottle', 'racket', 'couch'], 'images': 'utils_trainAttributes/imageTrain_eightImagenet.txt'}"
+    param_str: "{'batch_size': 100, 'single_bit_classes': ['bus'], 'images': 'utils_trainAttributes/imageTrain_coco.txt'}"
   }
   include { phase: TRAIN}
 }
@@ -21,7 +21,7 @@ layer {
   python_param {
     module: "python_data_layers"
     layer: "captionClassifierImageData_test"
-    param_str: "{'batch_size': 100, 'single_bit_classes': [], 'images': 'utils_trainAttributes/imageValVal_coco.txt'}"
+    param_str: "{'batch_size': 100, 'single_bit_classes': [], 'images': 'utils_trainAttributes/imageTest_coco.txt'}"
   }
   include { phase: TEST}
 }

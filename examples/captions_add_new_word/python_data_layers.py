@@ -509,6 +509,7 @@ class captionClassifierImageData(caffe.Layer):
     pool_size = 4
 
     self.image_processor = ImageProcessor(self.transformer, self.height)
+    pdb.set_trace()
 
     if pool_size > 0:
       self.pool = Pool(processes=pool_size)

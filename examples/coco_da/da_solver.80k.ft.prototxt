@@ -11,11 +11,11 @@ lr_policy: "step"
 gamma: 0.5
 stepsize: 40000
 display: 10
-max_iter: 110000
+max_iter: 210000
 momentum: 0.9
 weight_decay: 0.00000
 snapshot: 5000
-snapshot_prefix: "/x/lisaanne/coco_caption/snapshots/coco_da_train_direct_attributes_ftPredictLM_pretrainAttributes_zebraClassifier_80k_ft_all"
+snapshot_prefix: "/z/lisaanne/coco_caption/snapshots/coco_da_pretrainImageCap_FTPredictLM_zebraClassifier_80k_run2"
 solver_mode: GPU
 random_seed: 1701
 average_loss: 100

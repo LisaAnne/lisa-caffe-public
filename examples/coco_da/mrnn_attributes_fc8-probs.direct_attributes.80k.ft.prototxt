@@ -15,7 +15,7 @@ layer {
     mean_value: 123
   }
   image_data_param {
-    source: "/home/lisaanne/caffe/examples/coco_caption/h5_data_80k/buffer_50/no_caption_zebra_train_aligned_20_batches/image_list.with_dummy_labels.txt"
+    source: "/home/lisa/caffe-LSTM-video/examples/coco_caption/h5_data_fixN/buffer_50/no_caption_zebra_train_aligned_20_batches/image_list.with_dummy_labels.txt"
     batch_size: 50
     new_height: 256
     new_width: 256
@@ -29,7 +29,7 @@ layer {
   top: "target_sentence"
   include { phase: TRAIN  not_stage: 'trainval' }
   hdf5_data_param {
-    source: "/home/lisaanne/caffe/examples/coco_caption/h5_data_80k/buffer_50/no_caption_zebra_train_aligned_20_batches/hdf5_chunk_list.txt"
+    source: "/home/lisa/caffe-LSTM-video/examples/coco_caption/h5_data_fixN/buffer_50/no_caption_zebra_train_aligned_20_batches/hdf5_chunk_list.txt"
     batch_size: 20
   }
 }
@@ -49,7 +49,7 @@ layer {
     mean_value: 123
   }
   image_data_param {
-    source: "/home/lisaanne/caffe/examples/coco_caption/h5_data_80k/buffer_50/trainval_aligned_20_batches/image_list.with_dummy_labels.txt"
+    source: "/home/lisa/caffe-LSTM-video/examples/coco_caption/h5_data_fixN/buffer_50/trainval_aligned_20_batches/image_list.with_dummy_labels.txt"
     batch_size: 50
     new_height: 256
     new_width: 256
@@ -63,7 +63,7 @@ layer {
   top: "target_sentence"
   include { phase: TRAIN  stage: 'trainval' }
   hdf5_data_param {
-    source: "/home/lisaanne/caffe/examples/coco_caption/h5_data_80k/buffer_50/trainval_aligned_20_batches/hdf5_chunk_list.txt"
+    source: "/home/lisa/caffe-LSTM-video/examples/coco_caption/h5_data_fixN/buffer_50/trainval_aligned_20_batches/hdf5_chunk_list.txt"
     batch_size: 20
   }
 }
@@ -86,7 +86,7 @@ layer {
     mean_value: 123
   }
   image_data_param {
-    source: "/home/lisaanne/caffe/examples/coco_caption/h5_data_80k/buffer_50/no_caption_zebra_train_aligned_20_batches/image_list.with_dummy_labels.txt"
+    source: "/home/lisa/caffe-LSTM-video/examples/coco_caption/h5_data_fixN/buffer_50/no_caption_zebra_train_aligned_20_batches/image_list.with_dummy_labels.txt"
     batch_size: 50
     new_height: 256
     new_width: 256
@@ -103,7 +103,7 @@ layer {
     stage: "test-on-train"
   }
   hdf5_data_param {
-    source: "/home/lisaanne/caffe/examples/coco_caption/h5_data_80k/buffer_50/no_caption_zebra_train_aligned_20_batches/hdf5_chunk_list.txt"
+    source: "/home/lisa/caffe-LSTM-video/examples/coco_caption/h5_data_fixN/buffer_50/no_caption_zebra_train_aligned_20_batches/hdf5_chunk_list.txt"
     batch_size: 20
   }
 }
@@ -126,7 +126,7 @@ layer {
     mean_value: 123
   }
   image_data_param {
-    source: "/home/lisaanne/caffe/examples/coco_caption/h5_data_80k/buffer_10/val_val_aligned_20_batches/image_list.with_dummy_labels.txt"
+    source: "/home/lisa/caffe-LSTM-video/examples/coco_caption/h5_data_fixN/buffer_10/val_val_aligned_20_batches/image_list.with_dummy_labels.txt"
     batch_size: 10 
     new_height: 256
     new_width: 256
@@ -143,7 +143,7 @@ layer {
     stage: "test-on-val"
   }
   hdf5_data_param {
-    source: "/home/lisaanne/caffe/examples/coco_caption/h5_data_80k/buffer_10/val_val_aligned_20_batches/hdf5_chunk_list.txt"
+    source: "/home/lisa/caffe-LSTM-video/examples/coco_caption/h5_data_fixN/buffer_10/val_val_aligned_20_batches/hdf5_chunk_list.txt"
     batch_size: 20
   }
 }
