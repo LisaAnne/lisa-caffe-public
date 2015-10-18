@@ -426,15 +426,11 @@ class captionClassifierImageData(caffe.Layer):
   #  A list of classes to be classified.
   #  Words which will only get a single bit label.
 
-  def initialize(self):
-    self.channels = 3
-    self.json_images = 'utils_trainAttributes/imageJson_test.json' 
-    self.images = 'utils_trainAttributes/imageVal_zebraImagenet.txt' #txt file organized as: dataset image_path
-    self.lexical_classes = 'utils_trainAttributes/lexicalList_parseCoco_JJ100_NN300_VB100.txt' #txt file
-
   def setup(self, bottom, top):
     random.seed(10)
-    self.initialize()
+
+    self.channels = 3
+    self.lexical_classes = 'utils_trainAttributes/lexicalList_parseCoco_JJ100_NN300_VB100.txt' #txt file
 
     dataset_path_hash = {'coco': coco_root, 'imagenet': imagenet_root} 
 
