@@ -1,0 +1,314 @@
+name: "finetune caption model"
+
+# train data layers
+layer {
+  name: "data"
+  type: "Python"
+  top: "features"
+  top: "labels"
+  python_param {
+    module: "python_data_layers"
+    layer: "featureDataLayer"
+    param_str: "{'batch_size': 100, 'extracted_features': '/y/lisaanne/lexical_features/alex_feats.attributes_JJ100_NN300_VB100_eightClusters_cocoImages_iter_50000.train.h5', 'image_list': '/home/lisaanne/caffe-LSTM/examples/coco_caption/h5_data_fixN/buffer_100/no_caption_rm_eightCluster_train_aligned_20_batches/image_list.with_dummy_labels.txt', 'feature_size': 471 }"
+  }
+  include { phase: TRAIN  not_stage: 'trainval' }
+}
+layer {
+  name: "data"
+  type: "HDF5Data"
+  top: "cont_sentence"
+  top: "input_sentence"
+  top: "target_sentence"
+  include { phase: TRAIN  not_stage: 'trainval' }
+  hdf5_data_param {
+    source: "/home/lisaanne/caffe-LSTM/examples/coco_caption/h5_data_fixN/buffer_100/no_caption_rm_eightCluster_train_aligned_20_batches/hdf5_chunk_list.txt"
+    batch_size: 20
+  }
+}
+
+# trainval data layers (for finetuning final model)
+layer {
+  name: "data"
+  type: "Python"
+  top: "features"
+  top: "labels"
+  python_param {
+    module: "python_data_layers"
+    layer: "featureDataLayer"
+    param_str: "{'batch_size': 100, 'extracted_features': '/y/lisaanne/lexical_features/alex_feats.attributes_JJ100_NN300_VB100_eightClusters_cocoImages_iter_50000.train.h5', 'image_list': '/home/lisaanne/caffe-LSTM/examples/coco_caption/h5_data_fixN/buffer_100/no_caption_rm_eightCluster_train_aligned_20_batches/image_list.with_dummy_labels.txt', 'feature_size': 471 }"
+  }
+  include { phase: TRAIN  stage: 'trainval' }
+}
+layer {
+  name: "data"
+  type: "HDF5Data"
+  top: "cont_sentence"
+  top: "input_sentence"
+  top: "target_sentence"
+  include { phase: TRAIN  stage: 'trainval' }
+  hdf5_data_param {
+    source: "/home/lisaanne/caffe-LSTM/examples/coco_caption/h5_data_fixN/buffer_100/train_aligned_20_batches/hdf5_chunk_list.txt"
+    batch_size: 20
+  }
+}
+
+# test on train data layers
+layer {
+  name: "data"
+  type: "Python"
+  top: "features"
+  top: "labels"
+  python_param {
+    module: "python_data_layers"
+    layer: "featureDataLayer"
+    param_str: "{'batch_size': 100, 'extracted_features': '/y/lisaanne/lexical_features/alex_feats.attributes_JJ100_NN300_VB100_eightClusters_cocoImages_iter_50000.train.h5', 'image_list': '/home/lisaanne/caffe-LSTM/examples/coco_caption/h5_data_fixN/buffer_100/no_caption_rm_eightCluster_train_aligned_20_batches/image_list.with_dummy_labels.txt', 'feature_size': 471 }"
+  }
+  include { phase: TEST  stage: 'test-on-train' }
+}
+layer {
+  name: "data"
+  type: "HDF5Data"
+  top: "cont_sentence"
+  top: "input_sentence"
+  top: "target_sentence"
+  include {
+    phase: TEST
+    stage: "test-on-train"
+  }
+  hdf5_data_param {
+    source: "/home/lisaanne/caffe-LSTM/examples/coco_caption/h5_data_fixN/buffer_100/no_caption_rm_eightCluster_train_aligned_20_batches/hdf5_chunk_list.txt"
+    batch_size: 20
+  }
+}
+
+# test on val data layers
+layer {
+  name: "data"
+  type: "Python"
+  top: "features"
+  top: "labels"
+  python_param {
+    module: "python_data_layers"
+    layer: "featureDataLayer"
+    param_str: "{'batch_size': 100, 'extracted_features': '/y/lisaanne/lexical_features/alex_feats.attributes_JJ100_NN300_VB100_eightClusters_cocoImages_iter_50000.val_val.h5', 'image_list': '/home/lisaanne/caffe-LSTM/examples/coco_caption/h5_data_fixN/buffer_100/val_val_aligned_20_batches/image_list.with_dummy_labels.txt', 'feature_size': 471 }"
+  }
+  include { phase: TEST  stage: 'test-on-val' }
+}
+layer {
+  name: "data"
+  type: "HDF5Data"
+  top: "cont_sentence"
+  top: "input_sentence"
+  top: "target_sentence"
+  include {
+    phase: TEST
+    stage: "test-on-val"
+  }
+  hdf5_data_param {
+    source: "/home/lisaanne/caffe-LSTM/examples/coco_caption/h5_data_fixN/buffer_100/val_val_aligned_20_batches/hdf5_chunk_list.txt"
+    batch_size: 20
+  }
+}
+
+layer {
+  name: "silence"
+  type: "Silence"
+  bottom: "labels"
+}
+
+layer {
+  name: "embedding"
+  type: "Embed"
+  bottom: "input_sentence"
+  top: "embedded_input_sentence_1"
+  param {
+    lr_mult: 0.1
+  }
+  embed_param {
+    bias_term: false
+    input_dim: 8801 
+    num_output: 512
+    weight_filler {
+      type: "uniform"
+      min: -0.08
+      max: 0.08
+    }
+  }
+}
+layer {
+  name: "embedding2"
+  type: "InnerProduct"
+  bottom: "embedded_input_sentence_1"
+  top: "embedded_input_sentence"
+  param {
+    lr_mult: 0.1
+    decay_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+    decay_mult: 0.1
+  }
+  inner_product_param {
+    num_output: 512
+    weight_filler {
+      type: "uniform"
+      min: -0.08
+      max: 0.08
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+    axis: 2
+  }
+}
+layer {
+  name: "lstm1"
+  type: "LSTM"
+  bottom: "embedded_input_sentence"
+  bottom: "cont_sentence"
+  top: "lstm1"
+  param {
+    lr_mult: 0.1
+    decay_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+    decay_mult: 0.1
+  }
+  param {
+    lr_mult: 0.1
+    decay_mult: 0.1
+  }
+  recurrent_param {
+    num_output: 512
+    weight_filler {
+      type: "uniform"
+      min: -0.08
+      max: 0.08
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
+  name: "reshape-fc8"
+  type: "Reshape"
+  bottom: "features"
+  top: "reshape-fc8"
+  reshape_param{
+    shape{
+      dim: 1
+      dim: 100
+      dim: -1
+    }
+  }
+}
+layer {
+  name: "tile-fc8"
+  type: "Tile"
+  tile_param{
+    axis: 0
+    tiles: 20
+  }
+  bottom: "reshape-fc8"
+  top: "tile-fc8"
+}
+layer {
+  name: "concat-lm"
+  type: "Concat"
+  concat_param{
+    axis: 2
+  }
+  bottom: "embedded_input_sentence"
+  bottom: "lstm1"
+  top: "concat_lm"
+}
+layer {
+  name: "predict-lm"
+  type: "InnerProduct"
+  bottom: "concat_lm"
+  top: "predict-lm"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 1
+    decay_mult: 2
+  }
+  inner_product_param {
+    num_output: 8801
+    weight_filler {
+      type: "uniform"
+      min: -0.08
+      max: 0.08
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+    axis: 2
+  }
+}
+layer {
+  name: "predict-im"
+  type: "InnerProduct"
+  bottom: "tile-fc8"
+  top: "predict-im"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  inner_product_param {
+    bias_term: false
+    num_output: 8801
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+    axis: 2
+  }
+}
+layer {
+  name: "add-predictions"
+  type: "Eltwise"
+  bottom: "predict-lm"
+  bottom: "predict-im"
+  top: "predict-multimodal"
+  eltwise_param {
+   operation: SUM
+  }
+}
+layer {
+  name: "cross_entropy_loss"
+  type: "SoftmaxWithLoss"
+  bottom: "predict-multimodal"
+  bottom: "target_sentence"
+  top: "cross_entropy_loss"
+  loss_weight: 20
+  loss_param {
+    ignore_label: -1
+  }
+  softmax_param {
+    axis: 2
+  }
+}
+layer {
+  name: "accuracy"
+  type: "Accuracy"
+  bottom: "predict-multimodal"
+  bottom: "target_sentence"
+  top: "accuracy"
+  include { phase: TEST }
+  accuracy_param {
+    axis: 2
+    ignore_label: -1
+  }
+}
