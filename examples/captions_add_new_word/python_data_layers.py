@@ -61,17 +61,18 @@ class CaptionProcessor(object):
 def processImage(im_path, transformer):
   data_in = caffe.io.load_image(im_path)
   data_in = caffe.io.resize_image(data_in, (256, 256))
-  crop_x = random.randint(0, 256-227)
-  crop_y = random.randint(0, 256-227)
-  data_in = data_in[crop_x:crop_x+227, crop_y:crop_y+227,:]
+  crop_x = random.randint(0, 256-self.dim)
+  crop_y = random.randint(0, 256-self.dim)
+  data_in = data_in[crop_x:crop_x+self.dim, crop_y:crop_y+self.dim,:]
   processed_image = transformer.preprocess('data_in',data_in)
   return processed_image
 
 class ImageProcessor(object):
-  def __init__(self, transformer):
+  def __init__(self, transformer, dim):
     self.transformer = transformer
+    self.dim = dim
   def __call__(self, im_path):
-    return processImage(im_path, self.transformer)
+    return processImage(im_path, self.transformer, self.dim)
 
 class sequenceGenerator(object):
   def __init__(self, stream, buffer_size):
@@ -208,22 +209,20 @@ class featureDataLayer(caffe.Layer):
     self.batch_size = param_str['batch_size']
     self.extracted_features = param_str['extracted_features']
     self.image_list = param_str['image_list']
-    self.feature_size = param_str['feature_size']
+    self.feature_size = param_str['feature_size'] 
 
     #read in all extracted features and sort into single dict
     images_with_labels = {}
     extracted_features = []
     #read h5py
-    for key in self.extracted_features:
-      extracted_features.append([key, h5py.File(self.extracted_features[key],'r')])
+    extracted_features = h5py.File(self.extracted_features,'r')
     
     t = time.time()
-    for dset, ef in extracted_features:
-      for ix, im in enumerate(ef['ims']):
-        im_key = im.split('_')[-1].split('.jpg')[0]
-        images_with_labels[im_key] = {} 
-        images_with_labels[im_key]['features'] = ef['features'][ix]
-        images_with_labels[im_key]['labels'] = int(im_key)
+    for ix, im in enumerate(extracted_features['ims']):
+      im_key = im.split('_')[-1].split('.jpg')[0]
+      images_with_labels[im_key] = {} 
+      images_with_labels[im_key]['features'] = extracted_features['features'][ix]
+      images_with_labels[im_key]['labels'] = int(im_key)
     print "Setting up images dict: ", time.time()-t
     
     del extracted_features
@@ -429,8 +428,6 @@ class captionClassifierImageData(caffe.Layer):
 
   def initialize(self):
     self.channels = 3
-    self.height = 224
-    self.width = 224
     self.json_images = 'utils_trainAttributes/imageJson_test.json' 
     self.images = 'utils_trainAttributes/imageVal_zebraImagenet.txt' #txt file organized as: dataset image_path
     self.lexical_classes = 'utils_trainAttributes/lexicalList_parseCoco_JJ100_NN300_VB100.txt' #txt file
@@ -450,10 +447,12 @@ class captionClassifierImageData(caffe.Layer):
     assert 'batch_size' in self.params.keys(), 'Params must include batch size.'
     assert 'single_bit_classes' in self.params.keys(), 'Params must include single bit classes.'
     assert 'images' in self.params.keys(), 'Params must include list of images.'
+    assert 'crop_dim' in self.params.keys(), 'Params must include crop_dim.'
     self.batch_size = self.params['batch_size']
     self.single_bit_classes = self.params['single_bit_classes']
     self.images = self.params['images']
-
+    self.height = self.params['crop_dim']
+    self.width = self.params['crop_dim']
 
     if 'batch_size' in self.params:
       self.batch_size = self.params['batch_size']
@@ -509,7 +508,7 @@ class captionClassifierImageData(caffe.Layer):
     self.thread = None
     pool_size = 4
 
-    self.image_processor = ImageProcessor(self.transformer)
+    self.image_processor = ImageProcessor(self.transformer, self.height)
 
     if pool_size > 0:
       self.pool = Pool(processes=pool_size)
@@ -559,45 +558,6 @@ class captionClassifierImageData(caffe.Layer):
   def backward(self, top, propagate_down, bottom):
     pass
 
-class captionClassifierFeatureData_val(captionClassifierFeatureData):
-
-  def initialize(self):
-    self.batch_size = 100
-    self.feature_size = 4096
-    self.json_images = 'utils_trainAttributes/imageJson_test.json' 
-    self.images = 'utils_trainAttributes/imageVal_zebraImagenet.txt' #txt file organized as: dataset image_path
-    self.lexical_classes = 'utils_trainAttributes/lexicalList_parseCoco_JJ100_NN300_VB100.txt' #txt file
-    self.single_bit_classes = ['zebra'] #txt file
-    self.extracted_features = {'coco': '/y/lisaanne/vgg_features/h5Files/coco2014_cocoid.val_val.txt0.h5'}
-
-class captionClassifierFeatureData_train(captionClassifierFeatureData):
-
-  def initialize(self):
-    self.batch_size = 100
-    self.feature_size = 4096
-    self.json_images = 'utils_trainAttributes/imageJson_train.json' 
-    self.images = 'utils_trainAttributes/imageTrain_zebraImagenet.txt' #txt file organized as: dataset image_path
-    self.lexical_classes = 'utils_trainAttributes/lexicalList_parseCoco_JJ100_NN300_VB100.txt' #txt file
-    self.single_bit_classes = ['zebra'] #txt file
-    self.extracted_features = {'coco': '/y/lisaanne/vgg_features/h5Files/coco2014_cocoid.train.txt0.h5', 'imagenet': '/y/lisaanne/vgg_features/h5Files/vgg_feats_imagenet_zebra.h5'}
-
-class captionClassifierImageData_train(captionClassifierImageData):
-
-  def initialize(self):
-    self.channels = 3
-    self.height = 224
-    self.width = 224
-    self.json_images = 'utils_trainAttributes/imageJson_train.json' 
-    self.lexical_classes = 'utils_trainAttributes/lexicalList_parseCoco_JJ100_NN300_VB100.txt' #txt file
-
-class captionClassifierImageData_test(captionClassifierImageData):
-
-  def initialize(self):
-    self.channels = 3
-    self.height = 224
-    self.width = 224
-    self.json_images = 'utils_trainAttributes/imageJson_test.json' 
-    self.lexical_classes = 'utils_trainAttributes/lexicalList_parseCoco_JJ100_NN300_VB100.txt' #txt file
 
 
 
@@ -610,8 +570,6 @@ class dataRead(caffe.Layer):
     self.buffer_size = 100
     self.batch_size = 100 
     self.channels = 3
-    self.height = 227
-    self.width = 227
     self.path_to_images = '' 
     self.captions_json_file = ''
     self.images_h5_file = ''
@@ -639,7 +597,7 @@ class dataRead(caffe.Layer):
     self.transformer = caffe.io.Transformer({'data_in': shape})
     self.transformer.set_raw_scale('data_in', 255)
     image_mean = [103.939, 116.779, 128.68]
-    channel_mean = np.zeros((3,227,227))
+    channel_mean = np.zeros((3,self.height,self.width))
     for channel_index, mean_val in enumerate(image_mean):
       channel_mean[channel_index, ...] = mean_val
     self.transformer.set_mean('data_in', channel_mean)
@@ -650,7 +608,7 @@ class dataRead(caffe.Layer):
     self.thread = None
     pool_size = 12
 
-    self.image_processor = ImageProcessorCrop(self.transformer)
+    self.image_processor = ImageProcessorCrop(self.transformer, self.height)
     self.sentence_processor = CaptionProcessor(self.stream) 
     self.sequence_generator = sequenceGenerator(self.stream, self.buffer_size)
 
@@ -719,8 +677,6 @@ class dataRead_general(dataRead):
     self.buffer_size = 100
     self.batch_size = 100 
     self.channels = 3
-    self.height = 227
-    self.width = 227
     self.path_to_images = '../../data/coco/coco/images/trainval2014' 
     self.captions_json_file = '../../data/coco/coco/annotations/captions_%s2014.json' %captions_tag
     self.images_h5_file = '/x/lisaanne/coco_attribute/utils_trainAttributes/attributes_rm%s_JJ100_NN300_VB100_train.h5' %image_tag
