@@ -14,6 +14,7 @@ coco_anno_path = '%s/annotations/captions_%%s2014.json' % COCO_PATH
 coco_instance_path = '%s/annotations/instances_%%s2014.json' % COCO_PATH
 coco_txt_path = '/home/lisaanne/caffe-LSTM/data/coco/coco2014_cocoid.%s.txt'
 random.seed(10)
+label_filter_split = 'parse_label'
 
 def read_json(t_file):
   j_file = open(t_file).read()
@@ -34,7 +35,6 @@ segmentation_category_dict = {}
 for c in instances_train['categories']:
   segmentation_category_dict[c['id']] = c['name']
 
-label_filter_split = 'coco_segmentation_label'
 
 if label_filter_split == 'coco_segmentation_label':
   t = time.time()
@@ -88,9 +88,12 @@ def coco_segmentation_label(im_id, im_annotations, train_or_val):
   instance_names = [segmentation_category_dict[i] for i in instances]
   return set(instance_names)
 
-def parse_label(im_id, im_annotations):
+def parse_label(im_id, im_annotations, train_or_val=None):
   #determine labels for given image
-  raise Exception('Not implemented') 
+  words = [] 
+  for anno in im_annotations:
+    words.append(split_sent(anno))
+  return set(words)
 
 def clean_captions(json_dict, rm_wrd):
   #take captions out if they contain certain words
@@ -155,6 +158,8 @@ save_tags = ['zebra']
 
 if label_filter_split == 'coco_segmentation_label':
   label_filter_split = coco_segmentation_label
+if label_filter_split == 'parse_label':
+  label_filter_split = parse_label
 
 for split_word_list, rm_sentence_word, save_tag in zip(split_word_lists, rm_sentence_words, save_tags):
   train_novel, train_train = split_captions(anno_train, rm_words=split_word_list, label_filter=label_filter_split, train_or_val='train')

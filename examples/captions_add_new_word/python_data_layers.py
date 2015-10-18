@@ -197,18 +197,18 @@ class BatchAdvancerFeature():
 
 class featureDataLayer(caffe.Layer):
 
-  def initialize(self):
-    self.batch_size = 100
-    self.extracted_features = {'coco': '/y/lisaanne/vgg_features/h5Files/coco2014_cocoid.train.txt0.h5'}
-    self.image_list = '../coco_caption/h5_data/buffer_100/train_aligned_20_batches/image_list.txt'
-
   def setup(self, bottom, top):
     random.seed(10)
-    self.initialize()
     
     #create dict with all features (will be an issue if there are too many features or if using lower level feature like conv5)
     
     dataset_path_hash = {'coco': coco_root, 'imagenet': imagenet_root} 
+
+    param_str = eval(self.param_str)
+    self.batch_size = param_str['batch_size']
+    self.extracted_features = param_str['extracted_features']
+    self.image_list = param_str['image_list']
+    self.feature_size = param_str['feature_size']
 
     #read in all extracted features and sort into single dict
     images_with_labels = {}
@@ -281,22 +281,6 @@ class featureDataLayer(caffe.Layer):
 
   def backward(self, top, propagate_down, bottom):
     pass
-
-class featureDataLayer_train(featureDataLayer):
-
-  def initialize(self):
-    self.batch_size = 100
-    self.feature_size = 4096
-    self.extracted_features = {'coco': '/y/lisaanne/vgg_features/h5Files/coco2014_cocoid.train.txt0.h5'}
-    self.image_list = '../coco_caption/h5_data/buffer_100/no_caption_zebra_train_aligned_20_batches/image_list.txt'
-
-class featureDataLayer_val(featureDataLayer):
-
-  def initialize(self):
-    self.batch_size = 100
-    self.feature_size = 4096
-    self.extracted_features = {'coco': '/y/lisaanne/vgg_features/h5Files/coco2014_cocoid.val_val.txt0.h5'}
-    self.image_list = '../coco_caption/h5_data_fixN/buffer_100/val_val_aligned_20_batches/image_list.txt'
 
 class captionClassifierFeatureData(caffe.Layer):
 
