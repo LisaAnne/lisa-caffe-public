@@ -58,12 +58,12 @@ class CaptionProcessor(object):
   def __call__(self, captions):
     return processCaptions(captions, self.vocabulary, self.stream)
 
-def processImage(im_path, transformer):
+def processImage(im_path, transformer, dim):
   data_in = caffe.io.load_image(im_path)
   data_in = caffe.io.resize_image(data_in, (256, 256))
-  crop_x = random.randint(0, 256-self.dim)
-  crop_y = random.randint(0, 256-self.dim)
-  data_in = data_in[crop_x:crop_x+self.dim, crop_y:crop_y+self.dim,:]
+  crop_x = random.randint(0, 256-dim)
+  crop_y = random.randint(0, 256-dim)
+  data_in = data_in[crop_x:crop_x+dim, crop_y:crop_y+dim,:]
   processed_image = transformer.preprocess('data_in',data_in)
   return processed_image
 
@@ -444,11 +444,13 @@ class captionClassifierImageData(caffe.Layer):
     assert 'single_bit_classes' in self.params.keys(), 'Params must include single bit classes.'
     assert 'images' in self.params.keys(), 'Params must include list of images.'
     assert 'crop_dim' in self.params.keys(), 'Params must include crop_dim.'
+    assert 'json_images' in self.params.keys(), 'Params must include json_images.'
     self.batch_size = self.params['batch_size']
     self.single_bit_classes = self.params['single_bit_classes']
     self.images = self.params['images']
     self.height = self.params['crop_dim']
     self.width = self.params['crop_dim']
+    self.json_images = self.params['json_images']
 
     if 'batch_size' in self.params:
       self.batch_size = self.params['batch_size']
@@ -486,9 +488,12 @@ class captionClassifierImageData(caffe.Layer):
       images_with_labels[dataset_path_hash[dset] + path] = labels
     print 'Filtering labels takes: ', time.time() - t
 
+    print 'Number images: ', len(images_with_labels.keys())
+    #pdb.set_trace()
+
     #set up data transformer
-    shape = (self.batch_size, self.channels, self.height, self.width)
-        
+    shape = (self.batch_size, self.channels, self.height, self.width)       
+ 
     self.transformer = caffe.io.Transformer({'data_in': shape})
     self.transformer.set_raw_scale('data_in', 255)
     image_mean = [103.939, 116.779, 128.68]
