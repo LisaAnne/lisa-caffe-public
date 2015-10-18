@@ -8,8 +8,8 @@ layer {
   top: "labels"
   python_param {
     module: "python_data_layers"
-    layer: "captionClassifierImageData_train"
-    param_str: "{'batch_size': 100, 'single_bit_classes': ['bus'], 'images': 'utils_trainAttributes/imageTrain_coco.txt'}"
+    layer: "captionClassifierImageData"
+    param_str: "{'batch_size': 100, 'single_bit_classes': ['bus'], 'images': 'utils_trainAttributes/imageTrain_coco.txt', 'crop_dim': 224}"
   }
   include { phase: TRAIN}
 }
