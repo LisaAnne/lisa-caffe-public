@@ -10,6 +10,7 @@ import caffe
 from multiprocessing import Pool
 #coco images
 image_path = '../../data/coco/coco/images/'
+sys.path.insert(0, '../captions_add_new_word/')
 #imagnet images
 #image_path = '/y/lisaanne/imageData/imagenet/'
 #sets = ['pizza', 'zebra', 'motorcycle']
@@ -37,14 +38,16 @@ caffe.set_device(0)
 #model_file = '../../models/vgg/VGG_ILSVRC_16_layers_deploy.prototxt'
 #model_weights = '../../models/vgg/VGG_ILSVRC_16_layers.caffemodel'
 #image_dim = 224
-model_file = '../captions_add_new_word/train_classifiers.vgg.deploy.prototxt'
-model_weights = '/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_imagenet_zebra.vgg_iter_50000'
+#model_file = '../captions_add_new_word/train_classifiers.vgg.deploy.prototxt'
+#model_weights = '/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_imagenet_zebra.vgg_iter_50000'
 
 #lexical weights
-#model_file = '../coco_attribute/mrnn_attributes_fc8-probs_deploy.prototxt'
-#model_weights = '/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_eightClusters_cocoImages_iter_50000'
+model_file = '../coco_attribute/mrnn_attributes_fc8-probs_deploy.prototxt'
+#model_file = '../captions_add_new_word/train_classifiers_deploy.prototxt'
+model_weights = '/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_eightClusters_cocoImages_iter_50000'
+#model_weights = '/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_zebra_iter_50000'
 save_h5 = model_weights.split('/')[-1]
-image_dim = 224
+image_dim = 227
 oversample_dim = True
 feature_extract = 'prob-attributes'
 feature_size = 471
@@ -70,8 +73,9 @@ def image_processor(input_im):
     processed_image = []
     for oi in oversampled_image:
       processed_image.append(transformer.preprocess('data', oi))
-  else: 
-    data_in = data_in[16:240,16:240,:]
+  else:
+    shift = (256-image_dim)/2
+    data_in = data_in[shift:shift+image_dim,shift:shift+image_dim,:]
     processed_image = transformer.preprocess('data',data_in)
   return processed_image
 
@@ -86,15 +90,19 @@ for s, set_name in zip(sets, set_names):
     batch_frames = all_ims[count_im*batch_size:batch_end]
     data = []
     for b in batch_frames:
-      data.extend(image_processor(b))
+      if oversample_dim:
+        data.extend(image_processor(b))
+      else:
+        data.append(image_processor(b))
     net.blobs['data'].reshape(len(data),3,image_dim,image_dim)
+    net.blobs['data'].data[...] = data
     out = net.forward()
     features_tmp = net.blobs[feature_extract].data
     if oversample_dim:
       features_av = [np.mean(features_tmp[i:i+10], axis=0) for i in range(0, len(data), 10)]
       features_tmp = np.array(features_av)
     features[ix:ix+features_tmp.shape[0],:] = features_tmp
-  h5_file = '/y/lisaanne/lexical_features/vgg_feats.%s.%s.h5' %(save_h5, set_name)
+  h5_file = '/y/lisaanne/lexical_features/alex_feats.%s.%s.h5' %(save_h5, set_name)
   f = h5py.File(h5_file, "w")
   print "Printing to %s\n" %h5_file
   all_ims_short = [i.split('/')[-2] + '/' + i.split('/')[-1] for i in all_ims]
