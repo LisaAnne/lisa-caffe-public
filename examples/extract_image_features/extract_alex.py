@@ -14,7 +14,7 @@ sys.path.insert(0, '../captions_add_new_word/')
 #imagnet images
 #image_path = '/y/lisaanne/imageData/imagenet/'
 #sets = ['pizza', 'zebra', 'motorcycle']
-feature_path = '/y/lisaanne/lexical_features/'
+feature_path = '/z/lisaanne/lexical_features/'
 coco_template = '../../data/coco/coco/images/%s2014/COCO_%s2014_%012d.jpg'
 im_ids_train = open('../../data/coco/coco2014_cocoid.no_caption_zebra_train.txt').readlines()
 im_ids_train = [int(im_id.strip()) for im_id in im_ids_train]
@@ -32,7 +32,7 @@ set_names = ['train', 'val_val', 'val_test']
 #sets = ['test2014','train2014']
 #sets = ['train2014']
 caffe.set_mode_gpu()
-caffe.set_device(0)
+caffe.set_device(1)
 
 #vgg weights
 #model_file = '../../models/vgg/VGG_ILSVRC_16_layers_deploy.prototxt'
@@ -43,9 +43,7 @@ caffe.set_device(0)
 
 #lexical weights
 model_file = '../coco_attribute/mrnn_attributes_fc8-probs_deploy.prototxt'
-#model_file = '../captions_add_new_word/train_classifiers_deploy.prototxt'
-model_weights = '/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_eightClusters_cocoImages_iter_50000'
-#model_weights = '/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_zebra_iter_50000'
+model_weights = '/z/lisaanne/lexical_models/attributes_JJ100_NN300_VB100_zebra_iter_50000'
 save_h5 = model_weights.split('/')[-1]
 image_dim = 227
 oversample_dim = True
@@ -102,7 +100,7 @@ for s, set_name in zip(sets, set_names):
       features_av = [np.mean(features_tmp[i:i+10], axis=0) for i in range(0, len(data), 10)]
       features_tmp = np.array(features_av)
     features[ix:ix+features_tmp.shape[0],:] = features_tmp
-  h5_file = '/y/lisaanne/lexical_features/alex_feats.%s.%s.h5' %(save_h5, set_name)
+  h5_file = '/z/lisaanne/lexical_features/alex_feats.%s.%s.h5' %(save_h5, set_name)
   f = h5py.File(h5_file, "w")
   print "Printing to %s\n" %h5_file
   all_ims_short = [i.split('/')[-2] + '/' + i.split('/')[-1] for i in all_ims]
