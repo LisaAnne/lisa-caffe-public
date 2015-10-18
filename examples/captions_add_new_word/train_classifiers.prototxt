@@ -9,19 +9,19 @@ layer {
   python_param {
     module: "python_data_layers"
     layer: "captionClassifierImageData"
-    param_str: "{'batch_size': 100, 'single_bit_classes': ['bus'], 'images': 'utils_trainAttributes/imageTrain_coco.txt', 'crop_dim': 224}"
+    param_str: "{'batch_size': 100, 'single_bit_classes': ['suitcase', 'luggage', 'bus', 'zebra', 'pizza', 'microwave', 'bottle', 'racket', 'couch'], 'json_images': 'utils_trainAttributes/imageJson_train.json', 'images': 'utils_trainAttributes/imageTrain_coco.txt', 'crop_dim': 227}"
   }
   include { phase: TRAIN}
 }
 layer {
-  name: "train-data"
+  name: "test-data"
   type: "Python"
   top: "images"
   top: "labels"
   python_param {
     module: "python_data_layers"
-    layer: "captionClassifierImageData_test"
-    param_str: "{'batch_size': 100, 'single_bit_classes': [], 'images': 'utils_trainAttributes/imageTest_coco.txt'}"
+    layer: "captionClassifierImageData"
+    param_str: "{'batch_size': 100, 'single_bit_classes': [], 'json_images': 'utils_trainAttributes/imageJson_test.json', 'images': 'utils_trainAttributes/imageValVal_coco.txt', 'crop_dim': 227}"
   }
   include { phase: TEST}
 }
