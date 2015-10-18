@@ -58,48 +58,45 @@ class image_json(object):
     with open(save_new_json_name, 'w') as outfile:
       json.dump(self.image_json, outfile) 
 
-train_json = image_json()
-train_json.open_image_json('utils_trainAttributes/imageJson_train.json')
-objects = ['bottle', 'bus', 'couch', 'luggage', 'microwave', 'motorcycle', 'pizza', 'racket', 'suitcase']
+#used to create a new coco image json
+def create_coco_json(image_list_coco_train_json, lexical_list, save_name):
+  image_list_coco_train_json = image_list_coco_train_json 
+  
+  train_json = image_json()
+  train_json.create_new_image_json()
+  lexical_list = open(lexical_list).readlines()
+  lexical_list = [l.strip() for l in lexical_list] 
+  for item in lexical_list:
+    train_json.add_new_label(item)
+  
+  image_list_coco_train = read_json(image_list_coco_train_json)
+  
+  train_json.add_new_dataset('coco', image_list_coco_train)
+  train_json.save_new_json(save_name)
+  print 'Wrote train json to %s.' %save_name
 
-for o in objects:
-  new_object_dict = {}
-  object_paths = glob.glob('%s%s/*.JPEG' %(imagenet_root, o))
-  for op in object_paths:
-    op_partial = '/'.join(op.split('/')[-2:])
-    new_object_dict[op_partial] = {}
-    new_object_dict[op_partial]['positive_label'] = [o]
-    new_object_dict[op_partial]['negative_label'] = []
-  train_json.add_new_dataset('imagenet', new_object_dict)
+def add_imagenet_images(current_json, objects):
+  train_json = image_json()
+  train_json.open_image_json(current_json)
+  for o in objects:
+    new_object_dict = {}
+    object_paths = glob.glob('%s%s/*.JPEG' %(imagenet_root, o))
+    for op in object_paths:
+      op_partial = '/'.join(op.split('/')[-2:])
+      new_object_dict[op_partial] = {}
+      new_object_dict[op_partial]['positive_label'] = [o]
+      new_object_dict[op_partial]['negative_label'] = []
+    train_json.add_new_dataset('imagenet', new_object_dict)
+  train_json.save_updated_json()
+  print 'Saved imagenet items to json %s.' %(current_json)
 
-train_json.save_updated_json()
 
-#To create a json with coco images and zebra images from imagenet
-#image_list_coco_train_json = 'utils_trainAttributes/imageList_coco_train_parse_labels.json'
-#image_list_imagenet_zebra_json = 'utils_trainAttributes/imageList_imagenet_train_zebra.json'
-#
-#train_json = image_json()
-#train_json.create_new_image_json()
-#attributes = pkl.load(open('../coco_attribute/attribute_lists/attributes_JJ100_NN300_VB100.pkl','rb'))
-#for attribute in attributes:
-#  train_json.add_new_label(attribute)
-#
-#image_list_coco_train = read_json(image_list_coco_train_json)
-#image_list_imagenet_zebra = read_json(image_list_imagenet_zebra_json)
-#
-#train_json.add_new_dataset('coco', image_list_coco_train)
-#train_json.add_new_dataset('imagenet', image_list_imagenet_zebra)
-#train_json.save_new_json('utils_trainAttributes/imageJson_train.json')
+#create train json
+lexical_list = 'utils_trainAttributes/lexicalList_parseCoco_JJ100_NN300_VB100.txt'
+create_coco_json('utils_trainAttributes/imageList_coco_train_parse_labels.json', lexical_list, 'utils_trainAttributes/imageJson_train.json')
+create_coco_json('utils_trainAttributes/imageList_coco_test_parse_labels.json', lexical_list, 'utils_trainAttributes/imageJson_test.json')
 
-#image_list_coco_test_json = 'utils_trainAttributes/imageList_coco_test_parse_labels.json'
-#
-#train_json = image_json()
-#train_json.create_new_image_json()
-#attributes = pkl.load(open('../coco_attribute/attribute_lists/attributes_JJ100_NN300_VB100.pkl','rb'))
-#for attribute in attributes:
-#  train_json.add_new_label(attribute)
-#
-#image_list_coco_test = read_json(image_list_coco_test_json)
-#
-#train_json.add_new_dataset('coco', image_list_coco_test)
-#train_json.save_new_json('utils_trainAttributes/imageJson_test.json')
+#Add imagenet objects
+#objects = ['bottle', 'bus', 'couch', 'luggage', 'microwave', 'motorcycle', 'pizza', 'racket', 'suitcase', 'zebra']
+#add_imagenet_images('utils_trainAttributes/imageJson_train.json', objects)
+
