@@ -23,18 +23,27 @@ def read_json(json_file):
 
 #rm_word_base = 'zebra'
 #rm_words = ['zebra', 'zebras']
-rm_word_base = 'motorcycle'
-rm_words = ['motor', 'motors', 'cycle', 'cycles', 'motorcycle', 'motorcycles']
+#rm_word_base = 'giraffe'
+#rm_words = ['giraffe', 'giraffe', 'giraffes', 'girafee', 'giraffee', 'giraff']
+#rm_word_base = 'motorcycle'
+#rm_words = ['motor', 'motors', 'cycle', 'cycles', 'motorcycle', 'motorcycles']
 #rm_word_base = 'pizza'
 #rm_words = ['pizza', 'pizzas']
 
-#rm_word_base =
+rm_word_base = 'rm_eightCluster'
+rm_words = ['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'so    fas', 'microwave', 'microwaves', 'rackett', 'racket', 'raquet', 'rackets',  'bus', 'buses', 'busses', 'pizza', 'pizz    as', 'zebra', 'zebras'] 
 
 trained_model = sys.argv[1]
 trained_model = trained_model
 image_model = sys.argv[2]
 language_model = sys.argv[3]
 if len(sys.argv) > 4:
+  feature_dir_h5 = sys.argv[4]
+  feats_bool_in = True
+else: 
+  feature_dir_h5 = None
+  feats_bool_in = False
+if len(sys.argv) > 5:
   feature_dir = sys.argv[4]
 else: 
   feature_dir = None
@@ -55,7 +64,7 @@ always_recompute = True
 if beam1:
   if not os.path.exists(beam1_json_path) or always_recompute:
     experiment = {'type': 'generation'}
-    retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name='val_val', vocab='vocabulary', precomputed_feats=feature_dir, feats_bool_in=False, experiment=experiment)
+    retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name='val_val', vocab='vocabulary', precomputed_feats=None, feats_bool_in=feats_bool_in, precomputed_h5=feature_dir_h5, experiment=experiment)
   else:
     experiment = {'type': 'score_generation', 'json_file': beam1_json_path} 
     retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name='val_val', vocab='vocabulary', precomputed_feats=feature_dir, feats_bool_in=False, experiment=experiment)
