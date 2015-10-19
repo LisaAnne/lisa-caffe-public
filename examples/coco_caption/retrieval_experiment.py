@@ -41,13 +41,13 @@ class CaptionExperiment():
     self.caption_scores = [None] * len(self.images)
     print 'Initialized caption experiment: %d images, %d captions' % \
         (len(self.images), len(self.captions))
-    #output_name = 'data'
+    output_name = 'data'
     #output_name = 'fc8'
     #output_name = 'fc8-zero'
     #output_name = 'flatten_conv4_3'
     #output_name = 'flatten_pool5'
     #output_name = 'conv5-bottleneck'
-    output_name = 'prob-attributes'
+    #output_name = 'prob-attributes'
     #output_name = 'reshape-pool5'
     #output_name = 'fc8-concat'
     self.output_name = output_name
