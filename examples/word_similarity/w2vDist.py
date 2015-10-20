@@ -8,7 +8,7 @@ FLOAT_SIZE = 4
 
 class w2v:
   def __init__(self):
-    self.binFile="vectors-cbow-bnc+ukwac+wikipedia.bin"
+    self.binFile="../word_similarity/vectors-cbow-bnc+ukwac+wikipedia.bin"
     self.vocab=None
     self.matrix=None
 
@@ -38,6 +38,32 @@ class w2v:
         self.matrix[i] = vector
         i += 1
     infd.close()
+
+  def reduce_vectors(self, word_list):
+  #reduce the vectors so that they only include the vectors in the lexical list
+    #kind of hacky, but assume a noun unless noun does not exist, then assume adjective, then assume verb, then skip
+    vocab = self.vocab
+    new_vocab = []
+    new_matrix = np.zeros((len(word_list), self.matrix.shape[1]), dtype=np.float)
+    for new_idx, word in enumerate(word_list):
+      if word + '-n' in self.vocab:
+        old_idx = vocab.index(word+'-n') 
+        new_vocab.append(word+'-n')
+      elif word + '-v' in self.vocab:
+        old_idx = vocab.index(word+'-v') 
+        new_vocab.append(vocab.index(word+'-v'))
+      elif word + '-a' in self.vocab:
+        old_idx = vocab.index(word+'-a') 
+        new_vocab.append(vocab.index(word+'-a'))
+      else:
+        old_idx = None
+      if old_idx:
+        new_matrix[new_idx, :] = self.matrix[old_idx,:]
+      else:
+        print "Word %s not in word2vec.\n" %word
+        new_matrix[new_idx,:] = 1000000 #this should make this vector far from everythign
+    self.matrix = new_matrix
+    self.vocab = new_vocab 
 
   def printSample(self):
     for i in range(0,7):
@@ -79,8 +105,9 @@ class w2v:
     numerator = np.dot(self.matrix, self.matrix[ind1])
     denominator = np.linalg.norm(self.matrix[ind1])*np.linalg.norm(self.matrix, axis=1)
     dist = numerator/denominator
-    vocab_idx = np.argsort(dist)[-10:]
-    return [self.vocab[idx] for idx in vocab_idx], dist[vocab_idx]
+    return dist
+#    vocab_idx = np.argsort(dist)[-10:]
+#    return [self.vocab[idx] for idx in vocab_idx], dist[vocab_idx]
 
 def demo1():
   parser = argparse.ArgumentParser(
