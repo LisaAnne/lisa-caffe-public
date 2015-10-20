@@ -21,17 +21,15 @@ def read_json(json_file):
   t_json = open(json_file).read()
   return json.loads(t_json) 
 
-#rm_word_base = 'zebra'
-#rm_words = ['zebra', 'zebras']
-#rm_word_base = 'giraffe'
-#rm_words = ['giraffe', 'giraffe', 'giraffes', 'girafee', 'giraffee', 'giraff']
-#rm_word_base = 'motorcycle'
-#rm_words = ['motor', 'motors', 'cycle', 'cycles', 'motorcycle', 'motorcycles']
+rm_word_base = 'zebra'
+rm_words = ['zebra', 'zebras']
 #rm_word_base = 'pizza'
 #rm_words = ['pizza', 'pizzas']
+rm_word_base = 'suitcase'
+rm_words = ['luggage', 'luggages', 'suitcase', 'suitcases']
 
-rm_word_base = 'rm_eightCluster'
-rm_words = ['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'so    fas', 'microwave', 'microwaves', 'rackett', 'racket', 'raquet', 'rackets',  'bus', 'buses', 'busses', 'pizza', 'pizz    as', 'zebra', 'zebras'] 
+#rm_word_base = 'rm_eightCluster'
+#rm_words = ['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'so    fas', 'microwave', 'microwaves', 'rackett', 'racket', 'raquet', 'rackets',  'bus', 'buses', 'busses', 'pizza', 'pizz    as', 'zebra', 'zebras'] 
 
 trained_model = sys.argv[1]
 trained_model = trained_model
