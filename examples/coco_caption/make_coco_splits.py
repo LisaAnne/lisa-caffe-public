@@ -150,7 +150,8 @@ def match_words(rm_words, words):
   return any(list_matches)
 
 def split_sent(sent):
-  re.sub('[^A-Za-z0-9\s]+','',sent)
+  sent = sent.lower()
+  sent = re.sub('([^A-Za-z0-9\s])+','',sent)
   return sent.split(' ')
 
 #add "dumb" captions to new_train_json
@@ -348,8 +349,11 @@ if __name__ == "__main__":
   #rm_words = ['rm3_zpm']
   #all_rm_words = [['motor', 'cycle', 'motorcycle', 'motor', 'cycles', 'motorcycles', 'pizza', 'pizzas', 'zebra', 'zebras']]
   
-  rm_tags = ['rm_eightCluster']
-  rm_words = [['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'sofas', 'microwave', 'microwaves', 'rackett', 'racket', 'raquet', 'rackets',  'bus', 'buses', 'busses', 'pizza', 'pizzas', 'zebra', 'zebras']]
+  #rm_tags = ['rm_eightCluster']
+  #rm_words = [['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'sofas', 'microwave', 'microwaves', 'rackett', 'racket', 'raquet', 'rackets',  'bus', 'buses', 'busses', 'pizza', 'pizzas', 'zebra', 'zebras']]
+
+  rm_tags = ['suitcase', 'bottle', 'couch', 'microwave', 'racket']
+  rm_words = [['luggage', 'luggages', 'suitcase', 'suitcases'], ['bottle', 'bottles'], ['couch', 'couches', 'sofa', 'sofas'], ['microwave', 'microwaves'], ['rackett', 'racket', 'raquet', 'rackets']]
 
   #rm_tags = ['giraffe']
   #rm_words = [['giraffe','giraffes','girafee', 'giraffee', 'giraff']]

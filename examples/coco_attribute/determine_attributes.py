@@ -138,18 +138,31 @@ def write_image_list_2(h5_file_train, image_list_txt, json_captions, coco_folder
   txt_save.close()
   h5_file.close()  
 
+def write_image_list_json(image_dict, image_name_template, save_json, attribute_list):
+  image_list_json = {}
+  for key in image_dict.keys():
+    full_key = image_name_template %key
+    image_list_json[full_key] = {}
+    neg_labels = np.where(np.array(image_dict[key]) == 0)[0] 
+    pos_labels = np.where(np.array(image_dict[key]) == 1)[0]
+    image_list_json[full_key]['negative_label'] = [attribute_list[i] for i in neg_labels] 
+    image_list_json[full_key]['positive_label'] = [attribute_list[i] for i in pos_labels] 
+  with open(save_json, 'w') as outfile:
+    json.dump(image_list_json, outfile)
+  print 'Wrote file to: ', save_json
+
 #Step 1: Sort words by type determined by classifier
 #txt_file = 'train_captions_parse.out'
 #read_txt = open(txt_file, 'rb')
 #lines = read_txt.readlines()
 #word_dict = make_word_dict(lines)
 #pkl.dump(word_dict, open('word_dict.pkl','wb'))
-#word_dict = pkl.load(open('attribute_lists/word_dict.pkl','rb'))
-#
-#attribute_pos = ['JJ', 'NN', 'VB'] #which parts of speech to keep in attribute layer
-#sorted_keys_dict = {}
-#for a in attribute_pos:
-#  sorted_keys_dict[a] = sort_keys(word_dict[a])
+word_dict = pkl.load(open('attribute_lists/word_dict.pkl','rb'))
+
+attribute_pos = ['JJ', 'NN', 'VB'] #which parts of speech to keep in attribute layer
+sorted_keys_dict = {}
+for a in attribute_pos:
+  sorted_keys_dict[a] = sort_keys(word_dict[a])
 
 #Determine attributes
 ##########################################################################
@@ -162,7 +175,7 @@ def write_image_list_2(h5_file_train, image_list_txt, json_captions, coco_folder
 #attributes = sorted_keys_dict['JJ'][-100:] + sorted_keys_dict['NN'][-300:] + sorted_keys_dict['VB'][-100:]
 #attributes = list(set(attributes))
 #pkl.dump(attributes, open('attributes_JJ100_NN300_VB100.pkl','wb'))
-attributes = pkl.load(open('attribute_lists/attributes_JJ100_NN300_VB100.pkl','rb'))
+#attributes = pkl.load(open('attribute_lists/attributes_JJ100_NN300_VB100.pkl','rb'))
 ##########################################################################
 
 #Determine attributes
@@ -177,53 +190,40 @@ attributes = pkl.load(open('attribute_lists/attributes_JJ100_NN300_VB100.pkl','r
 #attributes = pkl.load(open('attribute_lists/attributes_JJ100_NN300_VB100.pkl','rb'))
 ##########################################################################
 
+#Determine attributes
+##########################################################################
+#Third attempt:
+#Pick all nouns, verbs, and adjectives that occur more than 200 times:
+# for NN this is 511 words (puppy occurs 201 times)
+# for JJ this is 155 words (checkered occurs 200 times)
+# for VB still pick 100 since verbs are so infrequent (tell occurs 22 times)
+
+#attributes = sorted_keys_dict['NN'][-511:] + sorted_keys_dict['JJ'][-155:] + sorted_keys_dict['VB'][-100:]
+#attributes = list(set(attributes)) 
+#pkl.dump(attributes, open('attributes_JJ155_NN511_VB100.pkl','wb')) 
+attributes = pkl.load(open('attribute_lists/attributes_JJ155_NN511_VB100.pkl','rb'))
+##########################################################################
+
 #create image dict which combines image ids with labels
 json_file_train = '/home/lisaanne/caffe-LSTM/data/coco/coco/annotations/captions_train2014.json'
-json_file_val = '/home/lisaanne/caffe-LSTM/data/coco/coco/annotations/captions_val2014.json'
-json_file_val = '/home/lisaanne/caffe-LSTM/data/coco/coco/annotations/captions_val_val2014.json'
-json_file_test = '/home/lisaanne/caffe-LSTM/data/coco/coco/annotations/captions_test2014.json'
-#rm_words=[['zebra'], ['luggage'], ['bus'], ['motorcycle', 'motor'], ['pizza']]
-set_name = ['3_zpm']
-rm_words = [['motor', 'motorcycle', 'pizza', 'zebra']]
-#set_name = ['10_randSplit1']
-#rm_words = [['racquet', 'racket', 'silver', 'coffee', 'market', 'family', 'pair', 'dinner', 'bench', 'field', 'baseball']]
+json_file_val_val = '/home/lisaanne/caffe-LSTM/data/coco/coco/annotations/captions_val_val2014.json'
+json_file_val_test = '/home/lisaanne/caffe-LSTM/data/coco/coco/annotations/captions_val_test2014.json'
+
 json_open_train = open(json_file_train).read()
 json_captions_train = json.loads(json_open_train)
-json_open_val = open(json_file_val).read()
-json_captions_val = json.loads(json_open_val)
-json_open_test = open(json_file_test).read()
-json_captions_test = json.loads(json_open_test)
-json_open_val_val = open(json_file_val).read()
+json_open_val_val = open(json_file_val_val).read()
 json_captions_val_val = json.loads(json_open_val_val)
-#image_dict_train = create_image_dict(attributes, json_captions_train, image_dict_pkl='image_dict_train_JJ100_NN300_VB100.pkl')
-image_dict_val_val = create_image_dict(attributes, json_captions_val_val, save_name='image_dict_val_val_JJ100_NN300_VB100.pkl')
+json_open_val_test = open(json_file_val_test).read()
+json_captions_val_test = json.loads(json_open_val_test)
+image_dict_train = create_image_dict(attributes, json_captions_train, image_dict_pkl='image_dict_train_JJ155_NN511_VB100.pkl')
+image_dict_val_val = create_image_dict(attributes, json_captions_val_val, image_dict_pkl='image_dict_val_val_JJ155_NN511_VB100.pkl')
 #image_dict_test = create_image_dict(attributes, json_captions_test, image_dict_pkl='image_dict_%stest_JJ100_NN300_VB100.pkl' %tag)
 
-#rm_words = [['motorcycle', 'motor']]
-for ix, rm_word in enumerate(rm_words):
-  tag = 'rm_%s_' %rm_word[0]
-  
-  #save h5 files and txt files
-  h5_file_train = '/x/lisaanne/coco_attribute/utils_trainAttributes/attributes_rm%s_JJ100_NN300_VB100_train.h5' %set_name[ix]
-  h5_file_val = 'utils_trainAttributes/attributes_JJ100_NN300_VB100_val'
-  h5_file_test = 'utils_trainAttributes/attributes_JJ100_NN300_VB100_test'
-  image_list_txt_train = 'utils_trainAttributes/attributes_rm%s_JJ100_NN300_VB100_imageList_train.txt' %set_name[ix]
-  image_list_txt_val = 'utils_trainAttributes/attributes_JJ100_NN300_VB100_imageList_val.txt'
-  image_list_txt_test = 'utils_trainAttributes/attributes_JJ100_NN300_VB100_imageList_test.txt'
-  vocab_file = '../coco_caption/h5_data/buffer_100/vocabulary.txt'
-  image_list_base = '../coco_caption/h5_data/buffer_100/%s%s_aligned_20_batches/image_list.with_dummy_labels.txt'
-  
-  rm_word_idx = [attributes.index(rw) for rw in rm_word]
-  write_hdf5_file(image_dict_train, h5_file_train, rm_word=rm_word_idx)
-  print 'Wrote hdf5 file to %s.\n' %h5_file_train
-  #write_hdf5_file_vocab(image_dict_val, h5_file_val, attributes, vocab_file, image_list_base %(tag, 'val'))
-  #print 'Wrote hdf5 file to %s.\n' %h5_file_val
-  #write_hdf5_file_vocab(image_dict_test, h5_file_test)
-  #print 'Wrote hdf5 file to %s.\n' %h5_file_test
-  #write_image_list(image_dict_train, image_list_txt_train, json_captions_train)
-  write_image_list_2(h5_file_train, image_list_txt_train, json_captions_train, 'train')
-  print 'Wrote image list train text to %s.\n' %image_list_txt_train
-  #write_image_list(image_dict_val, image_list_txt_val, json_captions_val)
-  #print 'Wrote image list train text to %s.\n' %image_list_txt_val
-  #write_image_list(image_dict_test, image_list_txt_test, json_captions_test)
-  #print 'Wrote image list test text to %s.\n' %image_list_txt_test
+write_image_list_train_json = '../captions_add_new_word/utils_trainAttributes/imageJson_JJ155_NN511_VB100_train.json'
+write_image_list_val_val_json = '../captions_add_new_word/utils_trainAttributes/imageJson_JJ155_NN511_VB100_val_val.json'
+
+image_name_template_train = 'train2014/COCO_train2014_%012d.jpg'
+image_name_template_val_val = 'val2014/COCO_val2014_%012d.jpg'
+
+write_image_list_json(image_dict_train, image_name_template_train, write_image_list_train_json, attributes)
+write_image_list_json(image_dict_val_val, image_name_template_val_val, write_image_list_val_val_json, attributes)

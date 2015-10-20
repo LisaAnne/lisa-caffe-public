@@ -1,4 +1,4 @@
-net: "mrnn_attributes_fc8-probs.direct.prototxt"
+net: "mrnn_attributes_fc8-probs.direct_attributes.prototxt"
 
 # lrcn.prototxt supports three variants of the LRCN architecture:
 # (1) stage: 'factored' stage: '2-layer'
@@ -23,8 +23,9 @@ display: 10
 max_iter: 110000
 momentum: 0.9
 snapshot: 5000
-snapshot_prefix: "/x/lisaanne/mrnn/snapshots/mrnn_attributes_zebra_transfer0928_onlyZebraClassifier"
+snapshot_prefix: "/x/lisaanne/mrnn/snapshots/mrnn_attributes_zebra_transfer0928_onlyImagenetZebraClassifier_ft_all_2"
 solver_mode: GPU
 random_seed: 1701
 average_loss: 100
 clip_gradients: 10
+#debug_info: true

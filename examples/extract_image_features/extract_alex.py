@@ -16,7 +16,7 @@ sys.path.insert(0, '../captions_add_new_word/')
 #sets = ['pizza', 'zebra', 'motorcycle']
 feature_path = '/z/lisaanne/lexical_features/'
 coco_template = '../../data/coco/coco/images/%s2014/COCO_%s2014_%012d.jpg'
-im_ids_train = open('../../data/coco/coco2014_cocoid.no_caption_zebra_train.txt').readlines()
+im_ids_train = open('../../data/coco/coco2014_cocoid.train.txt').readlines()
 im_ids_train = [int(im_id.strip()) for im_id in im_ids_train]
 im_ids_val = open('../../data/coco/coco2014_cocoid.val_val.txt').readlines()
 im_ids_val = [int(im_id.strip()) for im_id in im_ids_val]
@@ -26,8 +26,11 @@ im_ids_test = [int(im_id.strip()) for im_id in im_ids_test]
 train_ims = [coco_template %('train', 'train', im_id) for im_id in im_ids_train]
 val_ims = [coco_template %('val', 'val', im_id) for im_id in im_ids_val]
 test_ims = [coco_template %('val', 'val', im_id) for im_id in im_ids_test]
-sets = [train_ims, val_ims, test_ims]
-set_names = ['train', 'val_val', 'val_test']
+#sets = [train_ims, val_ims, test_ims]
+#set_names = ['train', 'val_val', 'val_test']
+
+sets = [train_ims]
+set_names = ['train']
 
 #sets = ['test2014','train2014']
 #sets = ['train2014']
@@ -43,7 +46,9 @@ caffe.set_device(1)
 
 #lexical weights
 model_file = '../coco_attribute/mrnn_attributes_fc8-probs_deploy.prototxt'
-model_weights = '/z/lisaanne/lexical_models/attributes_JJ100_NN300_VB100_zebra_iter_50000'
+#model_file = '../captions_add_new_word/train_classifiers_deploy.prototxt'
+model_weights = '/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_eightClusters_cocoImages_fixPDL_iter_50000'
+#model_weights = '/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_zebra_iter_50000'
 save_h5 = model_weights.split('/')[-1]
 image_dim = 227
 oversample_dim = True
@@ -77,7 +82,7 @@ def image_processor(input_im):
     processed_image = transformer.preprocess('data',data_in)
   return processed_image
 
-batch_size = 50 
+batch_size = 100 
 for s, set_name in zip(sets, set_names):
   all_ims = s
   features = np.zeros((len(all_ims), feature_size))

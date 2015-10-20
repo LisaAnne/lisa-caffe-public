@@ -3,6 +3,7 @@ import skimage.io
 skimage.io.use_plugin('matplotlib')
 from scipy.ndimage import zoom
 from skimage.transform import resize
+import pdb
 
 #needed to deal with weird IO issue
 from PIL import Image
@@ -298,7 +299,9 @@ def load_image(filename, color=True):
     try:
       img = skimage.img_as_float(skimage.io.imread(filename)).astype(np.float32)
     except:
-      print "Can't load with skimage, trying with PIL.\n"
+      print "Can't load with skimage, trying with PIL.\n" 
+      #pdb.set_trace()
+      print filename
       b = Image.open(filename)
       junk = type(np.array(b))
       a = np.array(b)

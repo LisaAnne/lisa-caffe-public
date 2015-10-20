@@ -348,7 +348,7 @@ def process_coco(tag='', include_val = True, include_trainval=False, vocab_file=
   vocab = readVocab(vocab_file)
   #datasets = [(tag+'test', 'val', 100000, True)]
   datasets = [
-      (tag+'val_val', 'trainval', 100000, True)]
+      (tag+'', 'trainval', 100000, True)]
   if include_val:
       datasets += [
       (tag+'val', 'val', 100000, True)]
@@ -375,7 +375,7 @@ def add_dataset(tag, split):
 
 if __name__ == "__main__":
   #process_coco()
-  process_coco('', False, False, 'h5_data/buffer_100/vocabulary.txt')
+  process_coco('split_set_rm_eightCluster_val_val_train', False, False, 'h5_data/buffer_100/vocabulary.txt')
   #process_coco('only_noun_sentences_noZebra', False, False)
 #  tag = 'captions_augment_train_set_NN300_noZebra_train' 
 #  add_dataset(tag, 'vocab_dicts/captions_augment_train_set_NN300_noZebra_train_vocab.p')

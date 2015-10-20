@@ -2,9 +2,10 @@
 
 DATA_DIR=../../examples/coco_caption/h5_data/
 
-GPU_ID=2
+GPU_ID=0
 WEIGHTS=\
-/x/lisaanne/mrnn/snapshots_final/mrnn.direct_iter_110000.caffemodel,/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_eightClusters_cocoImages_iter_50000.caffemodel
+/x/lisaanne/mrnn/snapshots_final/mrnn.direct_iter_110000.caffemodel
+#,/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_eightClusters_cocoImages_iter_50000.caffemodel
 
 export PYTHONPATH=.
 

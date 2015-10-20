@@ -122,7 +122,7 @@ layer {
   bottom: "input_sentence"
   top: "embedded_input_sentence_1"
   param {
-    lr_mult: 0.1
+    lr_mult: 0
   }
   embed_param {
     bias_term: false
@@ -141,12 +141,12 @@ layer {
   bottom: "embedded_input_sentence_1"
   top: "embedded_input_sentence"
   param {
-    lr_mult: 0.1
-    decay_mult: 0.1
+    lr_mult: 0
+    decay_mult: 0
   }
   param {
-    lr_mult: 0.1
-    decay_mult: 0.1
+    lr_mult: 0
+    decay_mult: 0
   }
   inner_product_param {
     num_output: 512
@@ -169,16 +169,16 @@ layer {
   bottom: "cont_sentence"
   top: "lstm1"
   param {
-    lr_mult: 0.1
-    decay_mult: 0.1
+    lr_mult: 0
+    decay_mult: 0
   }
   param {
-    lr_mult: 0.1
-    decay_mult: 0.1
+    lr_mult: 0
+    decay_mult: 0
   }
   param {
-    lr_mult: 0.1
-    decay_mult: 0.1
+    lr_mult: 0
+    decay_mult: 0
   }
   recurrent_param {
     num_output: 512
@@ -227,7 +227,7 @@ layer {
   top: "concat_lm"
 }
 layer {
-  name: "predict-lm"
+  name: "predict"
   type: "InnerProduct"
   bottom: "concat_lm"
   top: "predict-lm"
