@@ -1,9 +1,12 @@
 import numpy as np
 import json
+import sys
+sys.path.insert(0, '../coco_caption/')
 import retrieval_experiment
 import sys
 import os
 import argparse
+import re
 
 #This script will run all the following tests:
 	#(1) Sentence generation for beam1 and beam3
@@ -21,8 +24,13 @@ def read_json(json_file):
   t_json = open(json_file).read()
   return json.loads(t_json) 
 
-#rm_word_base = 'zebra'
-#rm_words = ['zebra', 'zebras']
+def split_sent(sent):
+  sent = sent.lower()
+  sent = re.sub('[^(A-Za-z0-9\s)]+','', sent)
+  return sent.split()
+
+rm_word_base = 'zebra'
+rm_words = ['zebra', 'zebras']
 #rm_word_base = 'giraffe'
 #rm_words = ['giraffe', 'giraffe', 'giraffes', 'girafee', 'giraffee', 'giraff']
 #rm_word_base = 'motorcycle'
@@ -30,8 +38,8 @@ def read_json(json_file):
 #rm_word_base = 'pizza'
 #rm_words = ['pizza', 'pizzas']
 
-rm_word_base = 'rm_eightCluster'
-rm_words = ['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'so    fas', 'microwave', 'microwaves', 'rackett', 'racket', 'raquet', 'rackets',  'bus', 'buses', 'busses', 'pizza', 'pizz    as', 'zebra', 'zebras'] 
+#rm_word_base = 'rm_eightCluster'
+#rm_words = ['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'so    fas', 'microwave', 'microwaves', 'rackett', 'racket', 'raquet', 'rackets',  'bus', 'buses', 'busses', 'pizza', 'pizz    as', 'zebra', 'zebras'] 
 
 trained_model = sys.argv[1]
 trained_model = trained_model
@@ -91,41 +99,34 @@ print 'Scores for train captions in val set:\n'
 eval_generation(beam1_json_path, gt_train_json, set_train) 
 
 
-##compute f1-score for missing words using generated captions
-#def filter_sentence(sentence):
-#  return sentence.replace('.','').replace(',','').replace("'",'').lower().split()
-#
-#def match_words(rm_words, words):
-#  if not rm_words:
-#    return False #if rm_words is none want to return False.
-#  list_matches = [False]*len(rm_words)
-#  for x, rm_w in enumerate(rm_words):
-#    list_matches[x] = any([w == rm_w for w in words])
-#  return any(list_matches)
-#
-#def compute_f1_score(beam):
-#  gen_novel_captions = read_json('../../retrieval_cache/%s/all_ims/%s/%s/generation_result.json' %(test_sets[1], trained_model, beam))
-#  gen_train_captions = read_json('../../retrieval_cache/%s/all_ims/%s/%s/generation_result.json' %(test_sets[2], trained_model, beam))
-#  #true positive are sentences that contain match words and should
-#  tp = sum(map(int, [match_words(rm_words, filter_sentence(c['caption'])) for c in gen_novel_captions])) 
-#  #false positive are sentences that contain match words and should not
-#  fp = sum(map(int, [match_words(rm_words, filter_sentence(c['caption'])) for c in gen_train_captions])) 
-#  #false positive are sentences that do not contain match words and should
-#  fn = sum(map(int, [not match_words(rm_words, filter_sentence(c['caption'])) for c in gen_novel_captions]))
-# 
-#  #precision = tp/(tp+fp)
-#  precision = float(tp)/(tp+fp) 
-#  #recall = tp/(tp+fn)
-#  recall = float(tp)/(tp+fn)
-#  #f1 = 2* (precision*recall)/(precision+recall)
-#  return 2*(precision*recall)/(precision+recall)
-#
-#if beam1:
-#  f_score_beam1 = compute_f1_score('beam1')
-#  print 'F1 score for beam1 is: %f' %f_score_beam1
-#if beam3: 
-#  f_score_beam3 = compute_f1_score('beam3')
-#  print 'F1 score for beam3 is: %f' %f_score_beam3
+#compute f1-score for missing words using generated captions
+
+def compute_f1_score(generated_json_path, gt_file_novel):
+  generated_sentences_json = read_json(generated_json_path)
+  gt_json = read_json(gt_file_novel)
+  image_ids = list(np.unique([i['id'] for i in gt_json['images']]))  
+  gen_novel = [g for g in generated_sentences_json if g['image_id'] in image_ids]
+  gen_train = [g for g in generated_sentences_json if g['image_id'] not in image_ids]
+  set_rm_words = set(rm_words)
+  #true positive are sentences that contain match words and should
+  tp = sum([1 for c in gen_novel if len(set_rm_words.intersection(set(split_sent(c['caption'])))) > 0]) 
+  #false positive are sentences that contain match words and should not
+  fp = sum([1 for c in gen_train if len(set_rm_words.intersection(set(split_sent(c['caption'])))) > 0])
+  #false positive are sentences that do not contain match words and should
+  fn = sum([1 for c in gen_novel if len(set_rm_words.intersection(set(split_sent(c['caption'])))) == 0 ])
+ 
+  #precision = tp/(tp+fp)
+  if tp > 0:  
+    precision = float(tp)/(tp+fp) 
+    #recall = tp/(tp+fn)
+    recall = float(tp)/(tp+fn)
+    #f1 = 2* (precision*recall)/(precision+recall)
+    return 2*(precision*recall)/(precision+recall)
+  else:
+    return 0.
+
+f_score = compute_f1_score(beam1_json_path, gt_novel_json)
+print 'F1 score for beam1 is: %f' %f_score
 
 ##fill in the blank metrics
 #experiment = {'type': 'madlib', 'fill_words': ['zebra', 'zebras'], 'cooccur_words': [[]]}
