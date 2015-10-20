@@ -21,7 +21,7 @@ def read_json(t_file):
   return json.loads(j_file) 
 
 def split_sent(sent):
-  re.sub('[^A-Za-z0-9\s]+','',sent)
+  re.sub('[^(A-Za-z0-9\s)]+','',sent)
   return sent.split(' ')
 
 #load relevant json dicts

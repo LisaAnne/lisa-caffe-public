@@ -37,6 +37,8 @@ rm_words = ['zebra', 'zebras']
 #rm_words = ['motor', 'motors', 'cycle', 'cycles', 'motorcycle', 'motorcycles']
 #rm_word_base = 'pizza'
 #rm_words = ['pizza', 'pizzas']
+rm_word_base = 'suitcase'
+rm_words = ['luggage', 'luggages', 'suitcase', 'suitcases']
 
 #rm_word_base = 'rm_eightCluster'
 #rm_words = ['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'so    fas', 'microwave', 'microwaves', 'rackett', 'racket', 'raquet', 'rackets',  'bus', 'buses', 'busses', 'pizza', 'pizz    as', 'zebra', 'zebras'] 

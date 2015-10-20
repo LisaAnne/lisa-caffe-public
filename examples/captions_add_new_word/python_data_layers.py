@@ -216,7 +216,7 @@ class featureDataLayer(caffe.Layer):
     extracted_features = []
     #read h5py
     extracted_features = h5py.File(self.extracted_features,'r')
-    
+   
     t = time.time()
     for ix, im in enumerate(extracted_features['ims']):
       im_key = im.split('_')[-1].split('.jpg')[0]

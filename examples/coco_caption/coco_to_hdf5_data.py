@@ -354,7 +354,7 @@ def process_coco(tag='', include_val = True, include_trainval=False, vocab_file=
   vocab = readVocab(vocab_file)
   #datasets = [(tag+'test', 'val', 100000, True)]
   datasets = [
-      (tag+'val_val', 'trainval', 100000, True)]
+      (tag+'', 'trainval', 100000, True)]
   if include_val:
       datasets += [
       (tag+'val', 'val', 100000, True)]

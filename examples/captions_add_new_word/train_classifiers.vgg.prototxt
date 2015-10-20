@@ -6,23 +6,11 @@ layer {
   top: "labels"
   python_param {
     module: "python_data_layers"
-    layer: "captionClassifierImageData_train"
-    param_str: "{'batch_size': 64, 'single_bit_classes': ['zebra'], 'images': 'utils_trainAttributes/imageTrain_zebraImagenet.txt'}"
+    layer: "captionClassifierImageData"
+    param_str: "{'batch_size': 64, 'single_bit_classes': ['zebra'], 'json_images': 'utils_trainAttributes/imageJson_train.json', 'images': 'utils_trainAttributes/imageTrain_coco.txt', 'crop_dim': 224}"
   }
   include { phase: TRAIN}
 }
-#layer {
-#  name: "train-data"
-#  type: "Python"
-#  top: "images"
-#  top: "labels"
-#  python_param {
-#    module: "python_data_layers"
-#    layer: "captionClassifierImageData_test"
-#    param_str: "{'batch_size': 64}"
-#  }
-#  include { phase: TEST}
-#}
 layer {
   name: "conv1_1"
   type: "Convolution"
@@ -362,7 +350,7 @@ layer {
   bottom: "fc8-attributes"
   bottom: "labels"
   top: "loss"
-  loss_param {
+  loss_param{
     ignore_label: -1
   }
 }

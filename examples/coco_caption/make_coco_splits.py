@@ -349,8 +349,11 @@ if __name__ == "__main__":
   #rm_words = ['rm3_zpm']
   #all_rm_words = [['motor', 'cycle', 'motorcycle', 'motor', 'cycles', 'motorcycles', 'pizza', 'pizzas', 'zebra', 'zebras']]
   
-  rm_tags = ['rm_eightCluster']
-  rm_words = [['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'sofas', 'microwave', 'microwaves', 'rackett', 'racket', 'raquet', 'rackets',  'bus', 'buses', 'busses', 'pizza', 'pizzas', 'zebra', 'zebras']]
+  #rm_tags = ['rm_eightCluster']
+  #rm_words = [['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'sofas', 'microwave', 'microwaves', 'rackett', 'racket', 'raquet', 'rackets',  'bus', 'buses', 'busses', 'pizza', 'pizzas', 'zebra', 'zebras']]
+
+  rm_tags = ['suitcase', 'bottle', 'couch', 'microwave', 'racket']
+  rm_words = [['luggage', 'luggages', 'suitcase', 'suitcases'], ['bottle', 'bottles'], ['couch', 'couches', 'sofa', 'sofas'], ['microwave', 'microwaves'], ['rackett', 'racket', 'raquet', 'rackets']]
 
   #rm_tags = ['giraffe']
   #rm_words = [['giraffe','giraffes','girafee', 'giraffee', 'giraff']]
