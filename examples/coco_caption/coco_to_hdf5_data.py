@@ -10,6 +10,8 @@ import h5py
 import numpy as np
 import pickle as pkl
 
+eightyK = True
+
 sys.path.append('.')
 sys.path.append('../../data/coco/coco')
 
@@ -19,7 +21,9 @@ IM_FOLDER = 'images2'
 COCO_IM_FOLDER = 'images'
 COCO_IMAGE_ROOT = '%s/%s' % (COCO_PATH, IM_FOLDER)
 FEATURE_ROOT = '/y/lisaanne/image_captioning/coco_features'
-home_dir = '/home/lisaanne/caffe-LSTM'
+sys.path.insert(0, '../captions_add_new_word/')
+from init import *
+home_dir = caffe_dir
 
 MAX_HASH = 100000
 
@@ -224,9 +228,11 @@ COCO_ANNO_PATH = '%s/annotations/captions_%%s2014.json' % COCO_PATH
 COCO_IMAGE_PATTERN = '%s/%s/%%s2014' % (COCO_PATH, COCO_IM_FOLDER)
 COCO_IMAGE_ID_PATTERN = 'COCO_%s2014_%%012d.jpg'
 
-BUFFER_SIZE = 100
-OUTPUT_DIR = 'h5_data_fixN/buffer_%d' % BUFFER_SIZE
-SPLITS_PATTERN = '/home/lisaanne/caffe-LSTM/data/coco/coco2014_cocoid.%s.txt'
+BUFFER_SIZE = 10
+OUTPUT_DIR =  caffe_dir + '/examples/coco_caption/h5_data_fixN/buffer_%d' % BUFFER_SIZE
+if eightyK:
+  OUTPUT_DIR =  caffe_dir + '/examples/coco_caption/h5_data_fixN_80k/buffer_%d' % BUFFER_SIZE
+SPLITS_PATTERN = coco_data_dir + 'coco2014_cocoid.%s.txt'
 OUTPUT_DIR_PATTERN = '%s/%%s_batches' % OUTPUT_DIR
 
 def process_dataset(split_name, coco_split_name, batch_stream_length,
@@ -375,38 +381,7 @@ def add_dataset(tag, split):
 
 if __name__ == "__main__":
   #process_coco()
-  process_coco('', False, False, 'h5_data/buffer_100/vocabulary.txt')
-  #process_coco('only_noun_sentences_noZebra', False, False)
-#  tag = 'captions_augment_train_set_NN300_noZebra_train' 
-#  add_dataset(tag, 'vocab_dicts/captions_augment_train_set_NN300_noZebra_train_vocab.p')
-  
-  #make new train/test splits
-#  identifiers = ['fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car.train', 'fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car.val', 'fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car.val_novel', 'fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car.val_train']
-#  vocab_tag = 'fixVocab.fixFlag.black_bike.blue_train.red_car.yellow_shirt.green_car'
-#  vocab = None
-#  for identifier in identifiers:
-#    split_name = identifier 
-#    coco_split_name = 'trainval'
-#    batch_stream_length = 100000
-#    aligned = True
-#    vocab = process_dataset(split_name, coco_split_name, batch_stream_length,
-#                             vocab=vocab, aligned=aligned, vocab_tag=vocab_tag)
-#
-#   #just need to read images and then put into an hdf5 file
-#    output_dataset_name = split_name + '_aligned_20'
-#    output_path = OUTPUT_DIR_PATTERN % output_dataset_name
-#    image_out_path = '%s/image_list.txt' % output_path
-#  
-#    im_file = open(image_out_path, 'rb') 
-#    im_list = im_file.readlines()
-#
-#    save_name = '%s/%s' %(output_path, identifier)
-#    write_im_hdf5(im_list, save_name)
-
-#  vocab = None
-#  datasets = [
-#      ('train', 'train', 100000, True, 'train_sentences.txt'),
-#      ('val', 'val', 100000, True, 'val_sentences.txt'),
-#      ('trainval', 'trainval', 100000, True, 'trainval_sentences.txt')]
-#  for split_name, coco_split_name, batch_stream_length, aligned, file_save in datasets:
-#    vocab = output_train_sentences(split_name, coco_split_name, batch_stream_length, file_save, vocab=None, aligned=True)
+  if eightyK:
+    process_coco('', False, False, '/z/lisaanne/pretrained_lm/yt_coco_surface_80k_vocab.txt')
+  else:
+    process_coco('', False, False, 'h5_data/buffer_100/vocabulary.txt')

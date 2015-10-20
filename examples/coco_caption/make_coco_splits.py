@@ -150,7 +150,8 @@ def match_words(rm_words, words):
   return any(list_matches)
 
 def split_sent(sent):
-  re.sub('[^A-Za-z0-9\s]+','',sent)
+  sent = sent.lower()
+  sent = re.sub('[^(A-Za-z0-9\s)]+','',sent)
   return sent.split(' ')
 
 #add "dumb" captions to new_train_json
