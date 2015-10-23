@@ -1,0 +1,21 @@
+net: "mrnn_attributes_fc8.direct.from_features.freezeLM.prototxt"
+
+test_iter: 25
+test_state: {stage: 'test-on-train'}
+test_iter: 25
+test_state: {stage: 'test-on-val'}
+test_interval: 1000
+base_lr: 0.01
+lr_policy: "step"
+gamma: 0.5
+stepsize: 20000
+display: 10
+max_iter: 50000
+momentum: 0.9
+weight_decay: 0
+snapshot: 5000
+snapshot_prefix: "/z/lisaanne/snapshots_caption_models/attributes_JJ100_NN300_VB100_zebra_cocoImages_captions_freezeLMPretrain"
+solver_mode: GPU
+random_seed: 1701
+average_loss: 100
+
