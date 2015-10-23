@@ -430,7 +430,6 @@ class captionClassifierImageData(caffe.Layer):
     random.seed(10)
 
     self.channels = 3
-    self.lexical_classes = 'utils_trainAttributes/lexicalList_parseCoco_JJ100_NN300_VB100.txt' #txt file
 
     dataset_path_hash = {'coco': coco_root, 'imagenet': imagenet_root} 
 
@@ -445,12 +444,14 @@ class captionClassifierImageData(caffe.Layer):
     assert 'images' in self.params.keys(), 'Params must include list of images.'
     assert 'crop_dim' in self.params.keys(), 'Params must include crop_dim.'
     assert 'json_images' in self.params.keys(), 'Params must include json_images.'
+    assert 'lexical_list' in self.params.keys(), 'Params must include lexical_list.'
     self.batch_size = self.params['batch_size']
     self.single_bit_classes = self.params['single_bit_classes']
     self.images = self.params['images']
     self.height = self.params['crop_dim']
     self.width = self.params['crop_dim']
     self.json_images = self.params['json_images']
+    self.lexical_classes = self.params['lexical_list'] #txt file
 
     if 'batch_size' in self.params:
       self.batch_size = self.params['batch_size']
@@ -489,7 +490,6 @@ class captionClassifierImageData(caffe.Layer):
     print 'Filtering labels takes: ', time.time() - t
 
     print 'Number images: ', len(images_with_labels.keys())
-    #pdb.set_trace()
 
     #set up data transformer
     shape = (self.batch_size, self.channels, self.height, self.width)       

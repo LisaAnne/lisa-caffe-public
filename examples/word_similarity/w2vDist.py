@@ -39,29 +39,24 @@ class w2v:
         i += 1
     infd.close()
 
-  def reduce_vectors(self, word_list):
+  def reduce_vectors(self, word_list, pos):
   #reduce the vectors so that they only include the vectors in the lexical list
     #kind of hacky, but assume a noun unless noun does not exist, then assume adjective, then assume verb, then skip
     vocab = self.vocab
     new_vocab = []
     new_matrix = np.zeros((len(word_list), self.matrix.shape[1]), dtype=np.float)
     for new_idx, word in enumerate(word_list):
-      if word + '-n' in self.vocab:
+      if word + pos in self.vocab:
         old_idx = vocab.index(word+'-n') 
         new_vocab.append(word+'-n')
-      elif word + '-v' in self.vocab:
-        old_idx = vocab.index(word+'-v') 
-        new_vocab.append(vocab.index(word+'-v'))
-      elif word + '-a' in self.vocab:
-        old_idx = vocab.index(word+'-a') 
-        new_vocab.append(vocab.index(word+'-a'))
       else:
         old_idx = None
+        new_vocab.append(None)
       if old_idx:
         new_matrix[new_idx, :] = self.matrix[old_idx,:]
       else:
-        print "Word %s not in word2vec.\n" %word
-        new_matrix[new_idx,:] = 1000000 #this should make this vector far from everythign
+        print "Word %s%s not in word2vec.\n" %(word, pos)
+        new_matrix[new_idx,:] = -1000000 #this should make this vector far from everything
     self.matrix = new_matrix
     self.vocab = new_vocab 
 

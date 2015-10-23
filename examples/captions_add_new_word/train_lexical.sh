@@ -2,7 +2,7 @@
 
 DATA_DIR=../../examples/coco_caption/h5_data/
 
-GPU_ID=0
+GPU_ID=2
 WEIGHTS=\
 ../../models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel
 #../../models/vgg/VGG_ILSVRC_16_layers.caffemodel

@@ -26,37 +26,49 @@ def read_json(json_file):
 
 def split_sent(sent):
   sent = sent.lower()
-  sent = re.sub('[^(A-Za-z0-9\s)]+','', sent)
-  return sent.split()
+  #sent = re.sub('[^(A-Za-z0-9\s)]+','', sent)
+  #return sent.split()
+  return re.findall(r"[\w']+", sent)
 
-rm_word_base = 'zebra'
-rm_words = ['zebra', 'zebras']
-#rm_word_base = 'giraffe'
-#rm_words = ['giraffe', 'giraffe', 'giraffes', 'girafee', 'giraffee', 'giraff']
-#rm_word_base = 'motorcycle'
-#rm_words = ['motor', 'motors', 'cycle', 'cycles', 'motorcycle', 'motorcycles']
-#rm_word_base = 'pizza'
-#rm_words = ['pizza', 'pizzas']
-rm_word_base = 'suitcase'
-rm_words = ['luggage', 'luggages', 'suitcase', 'suitcases']
-
-#rm_word_base = 'rm_eightCluster'
-#rm_words = ['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'so    fas', 'microwave', 'microwaves', 'rackett', 'racket', 'raquet', 'rackets',  'bus', 'buses', 'busses', 'pizza', 'pizz    as', 'zebra', 'zebras'] 
 
 trained_model = sys.argv[1]
 trained_model = trained_model
 image_model = sys.argv[2]
 language_model = sys.argv[3]
-if len(sys.argv) > 4:
-  feature_dir_h5 = sys.argv[4]
+rm_word_base = sys.argv[4]
+if len(sys.argv) > 5:
+  feature_dir_h5 = sys.argv[5]
   feats_bool_in = True
 else: 
   feature_dir_h5 = None
   feats_bool_in = False
-if len(sys.argv) > 5:
-  feature_dir = sys.argv[4]
+if len(sys.argv) > 6:
+  feature_dir = sys.argv[6]
 else: 
   feature_dir = None
+
+if rm_word_base == 'zebra':
+  rm_words = ['zebra', 'zebras']
+if rm_word_base ==  'giraffe':
+  rm_words = ['giraffe', 'giraffe', 'giraffes', 'girafee', 'giraffee', 'giraff']
+if rm_word_base == 'motorcycle':
+  rm_words = ['motor', 'motors', 'cycle', 'cycles', 'motorcycle', 'motorcycles']
+if rm_word_base ==  'pizza':
+  rm_words = ['pizza', 'pizzas']
+if rm_word_base ==  'suitcase':
+  rm_words = ['luggage', 'luggages', 'suitcase', 'suitcases']
+if rm_word_base == 'bottle':
+  rm_words = ['bottle', 'bottles']
+if rm_word_base == 'couch':
+  rm_words = ['couch', 'couches', 'sofa', 'sofas']
+if rm_word_base == 'microwave':
+  rm_words = ['microwave', 'microwaves']
+if rm_word_base == 'racket':
+  rm_words = ['racket', 'rackets']
+if rm_word_base == 'bus':
+  rm_words = ['bus', 'busses']
+if rm_word_base == 'rm_eightCluster':
+  rm_words = ['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'so    fas', 'microwave', 'microwaves', 'rackett', 'racket', 'raquet', 'rackets',  'bus', 'buses', 'busses', 'pizza', 'pizz    as', 'zebra', 'zebras'] 
 
 tag = '' 
 full_vocabulary_file = '../coco_caption/h5_data/buffer_100/vocabulary.txt'  
@@ -89,11 +101,12 @@ def eval_generation(generated_sentences, gt_file, test_set):
   gt_json = read_json(gt_file)
   image_ids = list(np.unique([i['id'] for i in gt_json['images']]))  
   gen_novel = [g for g in generated_sentences_json if g['image_id'] in image_ids]
-  with open('gt_file_tmp.json', 'w') as outfile:
+  tmp_json = 'gt_file_tmp.%s.%s.json' %(trained_model.split('/')[-1], rm_word_base)
+  with open(tmp_json, 'w') as outfile:
     json.dump(gen_novel, outfile)
-  experiment = {'type': 'score_generation', 'json_file': 'gt_file_tmp.json', 'read_file': True} 
+  experiment = {'type': 'score_generation', 'json_file': tmp_json, 'read_file': True} 
   retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name=test_set, vocab='vocabulary', precomputed_feats=feature_dir, feats_bool_in=False, experiment=experiment)
-  os.remove('gt_file_tmp.json')
+  os.remove(tmp_json)
 
 print 'Scores for novel captions in val set:\n'
 eval_generation(beam1_json_path, gt_novel_json, set_novel) 

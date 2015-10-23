@@ -29,8 +29,8 @@ test_ims = [coco_template %('val', 'val', im_id) for im_id in im_ids_test]
 #sets = [train_ims, val_ims, test_ims]
 #set_names = ['train', 'val_val', 'val_test']
 
-sets = [train_ims]
-set_names = ['train']
+sets = [val_ims, test_ims]
+set_names = ['val_val', 'val_test']
 
 #sets = ['test2014','train2014']
 #sets = ['train2014']
@@ -105,7 +105,7 @@ for s, set_name in zip(sets, set_names):
       features_av = [np.mean(features_tmp[i:i+10], axis=0) for i in range(0, len(data), 10)]
       features_tmp = np.array(features_av)
     features[ix:ix+features_tmp.shape[0],:] = features_tmp
-  h5_file = '/z/lisaanne/lexical_features/alex_feats.%s.%s.h5' %(save_h5, set_name)
+  h5_file = '/y/lisaanne/lexical_features/alex_feats.%s.%s.h5' %(save_h5, set_name)
   f = h5py.File(h5_file, "w")
   print "Printing to %s\n" %h5_file
   all_ims_short = [i.split('/')[-2] + '/' + i.split('/')[-1] for i in all_ims]

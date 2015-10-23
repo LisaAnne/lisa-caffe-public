@@ -142,17 +142,24 @@ def write_txt_file(save_file, im_dir, json_dict, new_im_folder=False):
 def match_words(rm_words, words):
   if not rm_words:
     return False #if rm_words is none want to return False.
-  list_matches = [False]*len(rm_words)
-  for x, rm_w in enumerate(rm_words):
-    for w in words:
-      if w == rm_w:
-        list_matches[x] = True
-  return any(list_matches)
+  mw = len(set(rm_words).intersection(words))
+  if mw > 0:
+    return True
+  else:
+    return False
+
+#  list_matches = [False]*len(rm_words)
+#  for x, rm_w in enumerate(rm_words):
+#    for w in words:
+#      if w == rm_w:
+#        list_matches[x] = True
+#  return any(list_matches)
 
 def split_sent(sent):
   sent = sent.lower()
-  sent = re.sub('[^(A-Za-z0-9\s)]+','',sent)
+  sent = re.sub('[^A-Za-z0-9\s]+',' ',sent)
   return sent.split(' ')
+  #return re.findall(r"[\w']+", sent)
 
 #add "dumb" captions to new_train_json
 def augment_captions(train_dict, rm_word=None, rm_all_object_sents=False, all_object_sents=False, no_annotations=False): 
@@ -349,11 +356,14 @@ if __name__ == "__main__":
   #rm_words = ['rm3_zpm']
   #all_rm_words = [['motor', 'cycle', 'motorcycle', 'motor', 'cycles', 'motorcycles', 'pizza', 'pizzas', 'zebra', 'zebras']]
   
-  #rm_tags = ['rm_eightCluster']
-  #rm_words = [['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'sofas', 'microwave', 'microwaves', 'rackett', 'racket', 'raquet', 'rackets',  'bus', 'buses', 'busses', 'pizza', 'pizzas', 'zebra', 'zebras']]
+  rm_tags = ['rm_eightCluster']
+  rm_words = [['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'sofas', 'microwave', 'microwaves', 'rackett', 'racket', 'racquet', 'rackets',  'bus', 'buses', 'busses', 'pizza', 'pizzas', 'zebra', 'zebras']]
 
-  rm_tags = ['suitcase', 'bottle', 'couch', 'microwave', 'racket']
-  rm_words = [['luggage', 'luggages', 'suitcase', 'suitcases'], ['bottle', 'bottles'], ['couch', 'couches', 'sofa', 'sofas'], ['microwave', 'microwaves'], ['rackett', 'racket', 'raquet', 'rackets']]
+  rm_tags += ['suitcase', 'bottle', 'couch', 'microwave', 'racket', 'bus', 'pizza', 'zebra']
+  rm_words += [['luggage', 'luggages', 'suitcase', 'suitcases'], ['bottle', 'bottles'], ['couch', 'couches', 'sofa', 'sofas'], ['microwave', 'microwaves'], ['rackett', 'racket', 'raquet', 'rackets'], ['bus', 'buses', 'busses'], ['pizza', 'pizzas'], ['zebra', 'zebras']]
+
+  #rm_tags = ['buses']
+  #rm_words = [['buses']]
 
   #rm_tags = ['giraffe']
   #rm_words = [['giraffe','giraffes','girafee', 'giraffee', 'giraff']]
