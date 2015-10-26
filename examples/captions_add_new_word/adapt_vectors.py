@@ -7,37 +7,58 @@ import numpy as np
 import pickle as pkl
 from w2vDist import *
 
-save_tag = 'da'
 adapt_embed = False 
+mag = True
 num_close_words_im = 1
-num_close_words_lm = 1
+num_close_words_lm = 3
 
-eightyK = False
+eightyk = False
+
+rm_word_base = sys.argv[1]
+save_tag = '%s.da_av_im1_lm3' %rm_word_base
 
 #zebra
-add_words = {'words': ['zebra', 'zebras'], 'classifiers': ['zebra', 'zebra'], 'illegal_words': ['zebra']}
+if rm_word_base == 'zebra':
+  add_words = {'words': ['zebra', 'zebras'], 'classifiers': ['zebra', 'zebra'], 'illegal_words': ['zebra']}
+#bus
+if rm_word_base == 'bus':
+  add_words = {'words': ['bus', 'busses'], 'classifiers': ['bus', 'bus'], 'illegal_words': ['bus']}
+if rm_word_base == 'pizza':
+  add_words = {'words': ['pizza', 'pizzas'], 'classifiers': ['pizza', 'pizza'], 'illegal_words': ['pizza']}
+if rm_word_base == 'suitcase':
+  add_words = {'words': ['suitcase', 'suitcases', 'luggage', 'luggages'], 'classifiers': ['suitcase', 'suitcase', 'luggage', 'luggage'], 'illegal_words': ['luggage', 'suitcase']}
+if rm_word_base == 'bottle':
+  add_words = {'words': ['bottle', 'bottles'], 'classifiers': ['bottle', 'bottle'], 'illegal_words': ['bottle']}
+if rm_word_base == 'couch':
+   add_words = {'words': ['couch', 'couches'], 'classifiers': ['couch', 'couch'], 'illegal_words': ['couch']}
+if rm_word_base == 'microwave':
+  add_words = {'words': ['microwave', 'microwaves'], 'classifiers': ['microwave', 'microwave'], 'illegal_words': ['microwave']}
+if rm_word_base == 'racket':
+  add_words = {'words': ['racket', 'rackets', 'racquet', 'racquets'], 'classifiers': ['racket', 'racket', 'racquet', 'racquet'], 'illegal_words': ['racket', 'racquet']}
+if rm_word_base == 'all':
+  add_words = {'words': ['zebra', 'zebras', 'bus', 'busses', 'pizza', 'pizzas', 'suitcase', 'suitcases', 'luggage', 'luggages','bottle', 'bottles', 'couch', 'couches', 'microwave', 'microwaves', 'racket', 'rackets', 'racquet', 'racquets'], 'classifiers': ['zebra', 'zebra', 'bus', 'bus', 'pizza', 'pizza', 'suitcase', 'suitcase', 'luggage', 'luggage', 'bottle', 'bottle', 'couch', 'couch', 'microwave', 'microwave', 'racket', 'racket', 'racquet', 'racquet'], 'illegal_words': ['zebra', 'bus', 'pizza', 'luggage', 'suitcase','bottle', 'couch', 'microwave', 'racket', 'racquet']}
 
-model = 'mrnn_attributes_fc8.direct.from_features.wtd.prototxt' #The wtd has all the parameters we care about and will take up less memory
-if not eightyK: 
+model = 'mrnn_attributes_fc8.direct.from_features.wtd.prototxt' #the wtd has all the parameters we care about and will take up less memory
+if not eightyk: 
   model_weights_lm = pretrained_lm + 'mrnn.direct_iter_110000'
 else:
   model_weights_lm = pretrained_lm + 'mrnn.lm.direct_imtextyt_lr0.01_iter_120000'
   #model_weights_lm = pretrained_lm + 'mrnn.lm.direct_surf_lr0.01_iter_120000'
   #model_weights_lm = pretrained_lm + 'mrnn.lm.direct_wikisent_lr0.01_iter_120000'
 
-#model_weights_trained = '/z/lisaanne/snapshots_caption_models/attributes_JJ100_NN300_VB100_zebra_cocoImages_captions_ftLMPretrain_iter_110000'
-#model_weights_trained = '/z/lisaanne/snapshots_caption_models/attributes_JJ100_NN300_VB100_zebra_cocoImages_captions_ftLMPretrain_pretrainLM50_iter_110000'
-model_weights_trained = '/z/lisaanne/snapshots_caption_models/attributes_JJ100_NN300_VB100_zebra_cocoImages_captions_ftLMPretrain_pretrainLM50_lr0p001_iter_10000'
+#model_weights_trained = '/z/lisaanne/snapshots_caption_models/attributes_jj100_nn300_vb100_zebra_cocoimages_captions_ftlmpretrain_iter_110000'
+#model_weights_trained = '/z/lisaanne/snapshots_caption_models/attributes_jj100_nn300_vb100_zebra_cocoimages_captions_ftlmpretrain_pretrainlm50_iter_110000'
+model_weights_trained = '/y/lisaanne/mrnn_direct/snapshots/attributes_JJ100_NN300_VB100_eightClusters_cocoImages_captions_ftLM_freezeLMPretrain50_iter_10000'
 
 net_lm = caffe.Net(model, model_weights_lm + '.caffemodel', caffe.TEST)
 net_trained = caffe.Net(model, model_weights_trained + '.caffemodel', caffe.TEST)
 
-if not eightyK:
+if not eightyk:
   vocab = open('../coco_caption/h5_data/buffer_100/vocabulary.txt').readlines()
 else:
   vocab = open('/x/lisaanne/pretrained_lm/yt_coco_surface_80k_vocab.txt').readlines()
 vocab = [v.strip() for v in vocab]
-vocab = ['EOS'] + vocab
+vocab = ['eos'] + vocab
 
 im_bias = False
 if len(net_trained.params['predict-im']) > 1:
@@ -48,7 +69,7 @@ attributes = pkl.load(open('../coco_attribute/attribute_lists/attributes_JJ100_N
 #create word to vec
 W2V = w2v()
 W2V.readVectors()
-W2V.reduce_vectors(attributes)
+W2V.reduce_vectors(attributes, '-n')
 
 def closeness_embedding(new_word):
   return W2V.findClosestWords(new_word)
@@ -90,7 +111,7 @@ for add_word, add_word_classifier in zip(add_words['words'], add_words['classifi
 
   net_trained.params['predict'][0].data[add_word_idx,:] += delta_transfer_weights/num_close_words_lm
   net_trained.params['predict'][1].data[add_word_idx] += delta_transfer_bias/num_close_words_lm
-  
+
   #transfer im (same as before -- just do direct transfer)
 
   weights_im_transfer = np.zeros(net_trained.params['predict-im'][0].data.shape[1],)
