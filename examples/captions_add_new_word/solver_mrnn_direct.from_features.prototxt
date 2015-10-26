@@ -14,7 +14,7 @@ max_iter: 110000
 momentum: 0.9
 weight_decay: 0
 snapshot: 5000
-snapshot_prefix: "/y/lisaanne/mrnn_direct/snapshots/attributes_JJ100_NN300_VB100_eightClusters_cocoImages_captions_fixLMPretrain_fixSplit6"
+snapshot_prefix: "/z/lisaanne/snapshots_caption_models/attributes_JJ100_NN300_VB100_baseline_cocoImages_captions_noLMPretrain_dropout"
 solver_mode: GPU
 random_seed: 1701
 average_loss: 100

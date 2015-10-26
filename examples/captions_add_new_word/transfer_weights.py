@@ -10,8 +10,8 @@ import hickle as hkl
 from nltk.corpus import wordnet as wn
 #import find_close_words
 
-save_tag_template = 'closest_W2V_%s_test'
-transfer_embed = False
+save_tag = 'closest_W2V'
+transfer_embed = False 
 num_close_words_im = 1
 num_close_words_lm = 1
 
@@ -36,7 +36,10 @@ all_add_words.append(add_words)
 #all_add_words.append(add_words)
 
 
-#model_weights = '/z/lisaanne/snapshots_caption_models/attributes_JJ100_NN300_VB100_zebra_cocoImages_captions_fixLMPretrain_iter_110000'
+#Relearn image and language model
+model_weights = '/z/lisaanne/snapshots_caption_models/attributes_JJ100_NN300_VB100_zebra_cocoImages_captions_noLMPretrain_dropout_iter_110000'
+model='mrnn_attributes_fc8.direct.from_features.wtd.prototxt'
+net = caffe.Net(model, model_weights + '.caffemodel', caffe.TRAIN)
 
 
 if 'predict-lm' in net.params.keys():

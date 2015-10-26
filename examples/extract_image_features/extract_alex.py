@@ -26,16 +26,14 @@ im_ids_test = [int(im_id.strip()) for im_id in im_ids_test]
 train_ims = [coco_template %('train', 'train', im_id) for im_id in im_ids_train]
 val_ims = [coco_template %('val', 'val', im_id) for im_id in im_ids_val]
 test_ims = [coco_template %('val', 'val', im_id) for im_id in im_ids_test]
-#sets = [train_ims, val_ims, test_ims]
-#set_names = ['train', 'val_val', 'val_test']
+sets = [train_ims, val_ims, test_ims]
+set_names = ['train', 'val_val', 'val_test']
 
-sets = [val_ims, test_ims]
-set_names = ['val_val', 'val_test']
 
 #sets = ['test2014','train2014']
 #sets = ['train2014']
 caffe.set_mode_gpu()
-caffe.set_device(1)
+caffe.set_device(2)
 
 #vgg weights
 #model_file = '../../models/vgg/VGG_ILSVRC_16_layers_deploy.prototxt'
@@ -47,7 +45,10 @@ caffe.set_device(1)
 #lexical weights
 model_file = '../coco_attribute/mrnn_attributes_fc8-probs_deploy.prototxt'
 #model_file = '../captions_add_new_word/train_classifiers_deploy.prototxt'
-model_weights = '/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_eightClusters_cocoImages_fixPDL_iter_50000'
+#baseline
+model_weights = '/z/lisaanne/CVPR2016/train_lexical_classifier/attributes_JJ100_NN300_VB100_baseline_cocoImages_iter_50000'
+#zebra
+#model_weights = '/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_eightClusters_cocoImages_fixPDL_iter_50000'
 #model_weights = '/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_zebra_iter_50000'
 save_h5 = model_weights.split('/')[-1]
 image_dim = 227

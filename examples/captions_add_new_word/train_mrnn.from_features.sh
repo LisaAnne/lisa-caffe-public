@@ -2,7 +2,7 @@
 
 DATA_DIR=../../examples/coco_caption/h5_data/
 
-GPU_ID=1
+GPU_ID=0
 #WEIGHTS=\
 #/z/lisaanne/pretrained_lm/mrnn.direct_iter_110000.caffemodel
 #,/z/lisaanne/lexical_models/attributes_JJ100_NN300_VB100_zebra_iter_50000.caffemodel
