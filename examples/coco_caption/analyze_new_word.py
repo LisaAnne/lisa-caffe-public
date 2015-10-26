@@ -7,6 +7,7 @@ import sys
 import os
 import argparse
 import re
+import argparse
 
 #This script will run all the following tests:
 	#(1) Sentence generation for beam1 and beam3
@@ -16,6 +17,8 @@ import re
 
 
 #example input: python -m pdb analyze_new_word.py augment_train_noZebra_vocab8749_iter_110000 /models/bvlc_reference_caffenet/deploy.prototxt /examples/coco_caption/lrcn_word_to_preds.deploy.prototxt augment_train_noZebra_ 1 1
+
+print " I am changing this file!"
 
 home_dir = '../../'
 retrieval_cache_home = '/x/lisaanne/retrieval_cache/'
@@ -30,22 +33,22 @@ def split_sent(sent):
   #return sent.split()
   return re.findall(r"[\w']+", sent)
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--trained_model",type=str)
+parser.add_argument("--image_model",type=str)
+parser.add_argument("--language_model",type=str)
+parser.add_argument("--rm_word_base",type=str,default='zebra')
+parser.add_argument("--feature_dir_h5",type=str,default=None)
+parser.add_argument("--feats_bool_in",type=bool,default=True)
 
-trained_model = sys.argv[1]
-trained_model = trained_model
-image_model = sys.argv[2]
-language_model = sys.argv[3]
-rm_word_base = sys.argv[4]
-if len(sys.argv) > 5:
-  feature_dir_h5 = sys.argv[5]
-  feats_bool_in = True
-else: 
-  feature_dir_h5 = None
-  feats_bool_in = False
-if len(sys.argv) > 6:
-  feature_dir = sys.argv[6]
-else: 
-  feature_dir = None
+args = parser.parse_args()
+
+trained_model = args.trained_model.split(',')
+image_model = args.image_model
+language_model = args.language_model
+rm_word_base = args.rm_word_base
+feature_dir_h5 = args.feature_dir_h5
+feats_bool_in = args.feats_bool_in
 
 if rm_word_base == 'zebra':
   rm_words = ['zebra', 'zebras']
@@ -70,6 +73,8 @@ if rm_word_base == 'bus':
 if rm_word_base == 'rm_eightCluster':
   rm_words = ['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'so    fas', 'microwave', 'microwaves', 'rackett', 'racket', 'raquet', 'rackets',  'bus', 'buses', 'busses', 'pizza', 'pizz    as', 'zebra', 'zebras'] 
 
+print rm_word_base
+
 tag = '' 
 full_vocabulary_file = '../coco_caption/h5_data/buffer_100/vocabulary.txt'  
 beam1 = True
@@ -81,7 +86,7 @@ set_novel = 'split_set_%s_val_val_novel' %rm_word_base
 set_train = 'split_set_%s_val_val_train' %rm_word_base
 
 #do sentence generation
-beam1_json_path = retrieval_cache_home + 'val_val/all_ims/%s/beam1/generation_result.json' %(trained_model)
+beam1_json_path = retrieval_cache_home + 'val_val/all_ims/%s/beam1/generation_result.json' %('_'.join(trained_model))
 always_recompute = True
 if beam1:
   if not os.path.exists(beam1_json_path) or always_recompute:
@@ -89,7 +94,7 @@ if beam1:
     retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name='val_val', vocab='vocabulary', precomputed_feats=None, feats_bool_in=feats_bool_in, precomputed_h5=feature_dir_h5, experiment=experiment)
   else:
     experiment = {'type': 'score_generation', 'json_file': beam1_json_path} 
-    retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name='val_val', vocab='vocabulary', precomputed_feats=feature_dir, feats_bool_in=False, experiment=experiment)
+    retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name='val_val', vocab='vocabulary', feats_bool_in=False, experiment=experiment)
 
 if beam3:
   if not os.path.exists(retrieval_cache_home + '%s/all_ims/%s/beam3/generation_result.json' %(test_set, trained_model)):
@@ -97,15 +102,15 @@ if beam3:
     retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name='val_val', vocab='vocabulary', precomputed_feats=feature_dir, feats_bool_in=False, experiment=experiment)
 
 def eval_generation(generated_sentences, gt_file, test_set):
-  generated_sentences_json = read_json(beam1_json_path)
+  generated_sentences_json = read_json(generated_sentences)
   gt_json = read_json(gt_file)
   image_ids = list(np.unique([i['id'] for i in gt_json['images']]))  
   gen_novel = [g for g in generated_sentences_json if g['image_id'] in image_ids]
-  tmp_json = 'gt_file_tmp.%s.%s.json' %(trained_model.split('/')[-1], rm_word_base)
+  tmp_json = 'gt_file_tmp.%s.%s.json' %(trained_model[-1].split('/')[-1], rm_word_base)
   with open(tmp_json, 'w') as outfile:
     json.dump(gen_novel, outfile)
   experiment = {'type': 'score_generation', 'json_file': tmp_json, 'read_file': True} 
-  retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name=test_set, vocab='vocabulary', precomputed_feats=feature_dir, feats_bool_in=False, experiment=experiment)
+  retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name=test_set, vocab='vocabulary', feats_bool_in=False, experiment=experiment)
   os.remove(tmp_json)
 
 print 'Scores for novel captions in val set:\n'
