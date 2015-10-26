@@ -11,6 +11,7 @@ sys.path.insert(0, '../coco_caption/')
 from init_workspace import *
 sys.path.insert(0,home_dir + '/python/')
 sys.path.insert(0, home_dir + '/examples/coco_caption/')
+import argparse
 import glob
 sys.path.insert(0, '.')
 
@@ -439,16 +440,15 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
   TAG += '_%s' % DATASET_NAME
   #MODEL_DIR = home_dir + '/examples/coco_caption/snapshots'
   MODEL_DIR = ''
-  MODEL_FILE = '%s.caffemodel' % (MODEL_FILENAME)
+  MODEL_FILE = ['%s.caffemodel' % (MF) for MF in MODEL_FILENAME] 
   #IMAGE_NET_FILE = home_dir + '/models/bvlc_reference_caffenet/deploy.prototxt'
   IMAGE_NET_FILE = home_dir + image_net 
   #LSTM_NET_FILE = home_dir + '/examples/coco_caption/lrcn_word_to_preds.deploy.prototxt'
   LSTM_NET_FILE = home_dir + LM_net
-  NET_TAG = '%s_%s' % (TAG, MODEL_FILENAME)
   DATASET_SUBDIR = '%s/%s_ims' % (DATASET_NAME,
       str(MAX_IMAGES) if MAX_IMAGES >= 0 else 'all')
   #DATASET_CACHE_DIR = home_dir + '/retrieval_cache/%s/%s' % (DATASET_SUBDIR, MODEL_FILENAME)
-  DATASET_CACHE_DIR = '/x/lisaanne/retrieval_cache/%s/%s' % (DATASET_SUBDIR, MODEL_FILENAME)
+  DATASET_CACHE_DIR = '/x/lisaanne/retrieval_cache/%s/%s' % (DATASET_SUBDIR, '_'.join(MODEL_FILENAME))
   FEATURE_CACHE_DIR = '/x/lisaanne/retrieval_cache/%s/%s' % (DATASET_SUBDIR, precomputed_feats)
   VOCAB_FILE = '../../examples/coco_caption/h5_data/buffer_100/%s.txt' %vocab
   DEVICE_ID = 0
@@ -520,4 +520,21 @@ if __name__ == "__main__":
   #examples: ./retrieval_experiment.py lrcn_alex_black_bike.blue_train.red_car.yellow_shirt.green_car_iter_110000  /examples/coco_caption/lm /models/bvlc_reference_caffenet/deploy.prototxt black_bike.blue_train.red_car.yellow_shirt.green_car.val vocabulary
   #experiment = {'type': 'madlib', 'fill_words': ['zebra'], 'cooccur_words':[[]]}
   experiment = {'type': 'generation'}
-  main(model_name=sys.argv[1], image_net=sys.argv[2], LM_net=sys.argv[3], dataset_name=sys.argv[4], vocab=sys.argv[5], precomputed_feats=None, feats_bool_in=True, precomputed_h5=sys.argv[6], experiment=experiment)
+  parser = argparse.ArgumentParser()
+
+  parser.add_argument("--model_name",type=str)
+  parser.add_argument("--image_net",type=str)
+  parser.add_argument("--LM_net",type=str)
+  parser.add_argument("--dataset_name",type=str,default='val_val')
+  parser.add_argument("--vocab",type=str,default='vocabulary')
+  parser.add_argument("--precomputed_feats",type=str,default=None)
+  parser.add_argument("--feats_bool_in",type=bool,default=True)
+  parser.add_argument("--precomputed_h5",type=str,default=None)
+  parser.add_argument("--experiment",type=str,default="{'type': 'generation'}")
+
+  args = parser.parse_args()
+
+  args.model_name = args.model_name.split(',')
+  args.experiment = eval(args.experiment)
+
+  main(model_name=args.model_name, image_net=args.image_net, LM_net=args.LM_net, dataset_name=args.dataset_name, vocab=args.vocab, precomputed_feats=args.precomputed_feats, feats_bool_in=args.feats_bool_in, precomputed_h5=args.precomputed_h5, experiment=args.experiment)
