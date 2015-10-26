@@ -28,7 +28,7 @@ def split_sent(sent):
 
 
 trained_model = sys.argv[1]
-trained_model = trained_model
+trained_model = trained_model.split(',')
 image_model = sys.argv[2]
 language_model = sys.argv[3]
 rm_word_base = sys.argv[4]
