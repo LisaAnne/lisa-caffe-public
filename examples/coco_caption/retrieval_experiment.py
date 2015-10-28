@@ -414,7 +414,7 @@ def gen_stats(prob):
     stats['perplex_word'] = float('inf')
   return stats
 
-def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='vocabulary', precomputed_feats=None,feats_bool_in=False, precomputed_h5=None, experiment={'type': 'generation'}):
+def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='vocabulary', precomputed_feats=None,feats_bool_in=False, precomputed_h5=None, experiment={'type': 'generation'}, prev_word_restriction=False):
   #model_name is the trained model: path relative to /home/lisa/caffe-LSTM-video
   #image_net is the model to extract length 1000 image features: path relative to snapshots folder; do not need to include "caffemodel"
   #dataset_name indicates which dataset to look at
@@ -480,7 +480,7 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
     print 'Reduced dataset to %d images' % len(dataset.keys())
   if MAX_IMAGES < 0: MAX_IMAGES = len(dataset.keys())
   captioner = Captioner(MODEL_FILE, IMAGE_NET_FILE, LSTM_NET_FILE, VOCAB_FILE,
-                        device_id=DEVICE_ID, precomputed_feats=precomputed_h5)
+                        device_id=DEVICE_ID, precomputed_feats=precomputed_h5, prev_word_restriction=prev_word_restriction)
   if 'beam_size' in experiment.keys():
     beam_size = experiment['beam_size']
   else:
@@ -531,10 +531,11 @@ if __name__ == "__main__":
   parser.add_argument("--feats_bool_in",type=bool,default=True)
   parser.add_argument("--precomputed_h5",type=str,default=None)
   parser.add_argument("--experiment",type=str,default="{'type': 'generation'}")
+  parser.add_argument("--prev_word_restriction",type=bool,default=False)
 
   args = parser.parse_args()
 
   args.model_name = args.model_name.split(',')
   args.experiment = eval(args.experiment)
 
-  main(model_name=args.model_name, image_net=args.image_net, LM_net=args.LM_net, dataset_name=args.dataset_name, vocab=args.vocab, precomputed_feats=args.precomputed_feats, feats_bool_in=args.feats_bool_in, precomputed_h5=args.precomputed_h5, experiment=args.experiment)
+  main(model_name=args.model_name, image_net=args.image_net, LM_net=args.LM_net, dataset_name=args.dataset_name, vocab=args.vocab, precomputed_feats=args.precomputed_feats, feats_bool_in=args.feats_bool_in, precomputed_h5=args.precomputed_h5, experiment=args.experiment, prev_word_restriction=args.prev_word_restriction)
