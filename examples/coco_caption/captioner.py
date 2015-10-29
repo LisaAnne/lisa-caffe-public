@@ -21,7 +21,7 @@ import caffe
 feature_path ='/y/lisaanne/image_captioning/coco_features/' 
 class Captioner():
   def __init__(self, weights_paths, image_net_proto, lstm_net_proto,
-               vocab_path, device_id=0, precomputed_feats=None):
+               vocab_path, device_id=0, precomputed_feats=None, prev_word_restriction=False):
     if device_id >= 0:
       caffe.set_mode_gpu()
       caffe.set_device(device_id)
@@ -29,6 +29,7 @@ class Captioner():
       caffe.set_mode_cpu()
     # Setup image processing net.
     phase = caffe.TEST
+    self.prev_word_bool = prev_word_restriction
     #Assume the image weights are the same for all models
     self.image_net = caffe.Net(image_net_proto, weights_paths[0], phase)
     image_data_shape = self.image_net.blobs['data'].data.shape
@@ -499,6 +500,7 @@ class Captioner():
     batch_size = descriptor.shape[0]
     self.set_caption_batch_size(batch_size)
     nets = self.lstm_nets
+    prev_word_bool = self.prev_word_bool
 
     cont_input = np.zeros_like(nets[0].blobs['cont_sentence'].data)
     word_input = np.zeros_like(nets[0].blobs['input_sentence'].data)
@@ -554,9 +556,12 @@ class Captioner():
         #when i changed the lm_net to input lists I moved the following line; this might cause issues
         #net_output_probs = net.blobs[prob_output_name].data[0]
         no_EOS = False if (caption_index > min_length) else True
+        prev_words = [False]*len(output_captions)
+        if prev_word_bool & caption_index > 0:
+          prev_words = [output_caption[-1] for output_caption in output_captions]
         samples = [
-            random_choice_from_probs(dist, temp=temp, already_softmaxed=True, no_EOS=no_EOS)
-            for dist in net_output_probs
+            random_choice_from_probs(dist, temp=temp, already_softmaxed=True, no_EOS=no_EOS, prev_word=prev_word)
+            for dist, prev_word in zip(net_output_probs, prev_words)
         ]
       else:
         #net_output_preds = net.blobs[pred_output_name].data[0]
@@ -607,12 +612,14 @@ def softmax(softmax_inputs, temp):
   eps_sum = 1e-20
   return exp_outputs / max(exp_outputs_sum, eps_sum)
 
-def random_choice_from_probs(softmax_inputs, temp=1, already_softmaxed=False, no_EOS=False):
+def random_choice_from_probs(softmax_inputs, temp=1, already_softmaxed=False, no_EOS=False, prev_word = None):
   # temperature of infinity == take the max
   # if no_EOS True, then the next word will not be the end of the sentence
   if temp == float('inf'):
+    if prev_word:
+      softmax_inputs[prev_word] = 0
     if no_EOS:
-      return np.argmax(softmax_inputs[1:]) + 1
+        return np.argmax(softmax_inputs[1:]) + 1
     else:
       return np.argmax(softmax_inputs)
   if already_softmaxed:
