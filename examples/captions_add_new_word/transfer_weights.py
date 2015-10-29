@@ -11,6 +11,7 @@ from nltk.corpus import wordnet as wn
 #import find_close_words
 
 save_tag = 'closest_W2V'
+eightK = False
 transfer_embed = False 
 num_close_words_im = 1
 num_close_words_lm = 1
@@ -120,7 +121,8 @@ for add_words in all_add_words:
     close_words_lm[word]['close_words'] = [attributes[i] for i in np.argsort(word_sims)[-num_close_words_lm:]]
     close_words_im[word]['weights'] = [1./num_close_words_im]*num_close_words_im
     close_words_lm[word]['weights'] = [1./num_close_words_lm]*num_close_words_im
-   
+  
+ 
   vocab_file = '../coco_caption/h5_data/buffer_100/vocabulary.txt'
   vocab_lines = open(vocab_file, 'rb').readlines()
   vocab_lines = [v.strip() for v in vocab_lines]
