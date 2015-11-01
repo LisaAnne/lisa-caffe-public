@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import pdb
 from collections import OrderedDict
 import json
 import numpy as np
@@ -29,7 +30,8 @@ from pycocoevalcap.eval import COCOEvalCap
 class CaptionExperiment():
   # captioner is an initialized Captioner (captioner.py)
   # dataset is a dict: image path -> [caption1, caption2, ...]
-  def __init__(self, captioner, dataset, dataset_cache_dir, cache_dir, sg, feats_bool):
+  def __init__(self, captioner, dataset, dataset_cache_dir, cache_dir, sg, feats_bool=True):
+    print feats_bool
     self.captioner = captioner
     self.sg = sg
     self.dataset_cache_dir = dataset_cache_dir
@@ -71,11 +73,14 @@ class CaptionExperiment():
     max_size = 1000*50000.
     return int(np.ceil(size_descriptor/max_size))
       
-  def compute_descriptors(self, des_file_idx=0, file_load=True):
+  def compute_descriptors(self, des_file_idx=0, file_load=False):
     descriptor_filename = '%s/descriptors_%d.npz' % (self.dataset_cache_dir, des_file_idx)
-    if os.path.exists(descriptor_filename):
+    save_descriptor = False
+    load_precomputed_descriptor = False
+    if os.path.exists(descriptor_filename) & load_precomputed_descriptor:
       if file_load:
         self.descriptors = np.load(descriptor_filename)['descriptors']
+        self.descriptor_filename=np.load(descriptor_filename)['image_id_array']
       else:
         return
     else:
@@ -83,13 +88,17 @@ class CaptionExperiment():
       start_image = (len(self.images)/num_des_files)*des_file_idx
       end_image = min((len(self.images)/num_des_files)*(des_file_idx+1), len(self.images)) 
       self.descriptors = self.captioner.compute_descriptors(self.images[start_image:end_image],self.sg.feats_bool, output_name=self.output_name)
-      np.savez_compressed(descriptor_filename, descriptors=self.descriptors)
-    if 'image_id_array' not in np.load(descriptor_filename).keys():
+      if save_descriptor:
+        np.savez_compressed(descriptor_filename, descriptors=self.descriptors)
+    #if 'image_id_array' not in np.load(descriptor_filename).keys():
+    if True:
       #should also save image ids...
       image_id_array = np.zeros((len(self.images),))
       for i, im in enumerate(self.images):
         image_id_array[i] = int(im.split('_')[-1].split('.jpg')[0])
-      np.savez_compressed(descriptor_filename, descriptors=self.descriptors, image_id_array=image_id_array)
+      if save_descriptor:
+        np.savez_compressed(descriptor_filename, descriptors=self.descriptors, image_id_array=image_id_array)
+      self.descriptor_filename=image_id_array
 
   def score_captions(self, image_index, output_name='probs'):
     assert image_index < len(self.images)
@@ -337,7 +346,7 @@ class CaptionExperiment():
           else:
             temp = strategy['temp'] if 'temp' in strategy else 1
           output_captions, output_probs = self.captioner.sample_captions(
-              self.descriptors[descriptor_index:batch_end_index], temp=temp, min_length = 2)
+              self.descriptors[descriptor_index:batch_end_index], temp=temp, min_length = 2, descriptor_filename=self.descriptor_filename[descriptor_index:batch_end_index])
           for batch_index, output in zip(range(descriptor_index, batch_end_index),
                                          output_captions):
             all_captions[image_index] = output
