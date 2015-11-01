@@ -10,6 +10,7 @@ import random
 import sys
 import pickle as pkl
 import copy
+import time
 
 from PIL import Image
 from PIL import ImageFile
@@ -495,7 +496,7 @@ class Captioner():
  
   def sample_captions(self, descriptor, prob_output_name='probs',
                       pred_output_name='predict', temp=1, max_length=50, 
-                      min_length=2, hidden_init=None, forward_model = ''):
+                      min_length=2, hidden_init=None, forward_model = '', descriptor_filename=''):
     descriptor = np.array(descriptor)
     batch_size = descriptor.shape[0]
     self.set_caption_batch_size(batch_size)
@@ -542,17 +543,21 @@ class Captioner():
         nets[0].forward(start="ConcatVisualWordFeatures")
 
       elif not 'hidden_unit_in' in nets[0].blobs.keys():
+        #t = time.time()
         net_output_probs = np.zeros((nets[0].blobs[prob_output_name].data[0].shape))
         for net in nets:
           net.forward(image_features=image_features, cont_sentence=cont_input,
                     input_sentence=word_input)
           net_output_probs += net.blobs[prob_output_name].data[0]
+        #print "time for forward is %f\n" %(time.time()-t)
+        #print 'stop point'
       else:
         nets[0].forward(image_features=image_features, cont_sentence=cont_input,
                     input_sentence=word_input, hidden_unit_in=hidden_unit_in, cell_unit_in=cell_unit_in)
         hidden_unit_in[:] = net.blobs['hidden_unit_out'].data 
         cell_unit_in[:] = net.blobs['cell_unit_out'].data 
       if temp == 1.0 or temp == float('inf'):
+        #t = time.time()
         #when i changed the lm_net to input lists I moved the following line; this might cause issues
         #net_output_probs = net.blobs[prob_output_name].data[0]
         no_EOS = False if (caption_index > min_length) else True
@@ -563,6 +568,7 @@ class Captioner():
             random_choice_from_probs(dist, temp=temp, already_softmaxed=True, no_EOS=no_EOS, prev_word=prev_word)
             for dist, prev_word in zip(net_output_probs, prev_words)
         ]
+        #print "Time for determining next word is %f\n" %(time.time()-t)
       else:
         #net_output_preds = net.blobs[pred_output_name].data[0]
         samples = [
@@ -581,6 +587,7 @@ class Captioner():
       sys.stdout.flush()
       caption_index += 1
     sys.stdout.write('\n')
+    print caption_index
     return output_captions, output_probs
 
   def sentence(self, vocab_indices):
