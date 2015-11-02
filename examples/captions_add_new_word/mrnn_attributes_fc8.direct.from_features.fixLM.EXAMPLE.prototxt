@@ -9,7 +9,7 @@ layer {
   python_param {
     module: "python_data_layers"
     layer: "featureDataLayer"
-    param_str: "{'batch_size': 100, 'extracted_features': '/z/lisaanne/lexical_features/alex_feats.attributes_JJ100_NN300_VB100_zebra_iter_50000.train.h5', 'image_list': '/home/lisa/caffe-LSTM-video/examples/coco_caption/h5_data_fixN/buffer_100/no_caption_zebra_train_aligned_20_batches/image_list.with_dummy_labels.txt', 'feature_size': 471 }"
+    param_str: "{'batch_size': 100, 'extracted_features': '/y/lisaanne/lexical_features/alex_feats.attributes_JJ100_NN300_VB100_eightClusters_cocoImages_1026_iter_50000.train.h5', 'image_list': '/home/lisaanne/caffe-LSTM/examples/coco_caption/h5_data_fixN/buffer_100/no_caption_rm_eightCluster_train_aligned_20_batches/image_list.with_dummy_labels.txt', 'feature_size': 471 }"
   }
   include { phase: TRAIN  not_stage: 'trainval' }
 }
@@ -21,7 +21,7 @@ layer {
   top: "target_sentence"
   include { phase: TRAIN  not_stage: 'trainval' }
   hdf5_data_param {
-    source: "/home/lisa/caffe-LSTM-video/examples/coco_caption/h5_data_fixN/buffer_100/no_caption_zebra_train_aligned_20_batches/hdf5_chunk_list.txt"
+    source: "/home/lisaanne/caffe-LSTM/examples/coco_caption/h5_data_fixN/buffer_100/no_caption_rm_eightCluster_train_aligned_20_batches/hdf5_chunk_list.txt"
     batch_size: 20
   }
 }
@@ -35,7 +35,7 @@ layer {
   python_param {
     module: "python_data_layers"
     layer: "featureDataLayer"
-    param_str: "{'batch_size': 100, 'extracted_features': '/z/lisaanne/lexical_features/alex_feats.attributes_JJ100_NN300_VB100_zebra_iter_50000.train.h5', 'image_list': '/home/lisa/caffe-LSTM-video/examples/coco_caption/h5_data_fixN/buffer_100/no_caption_zebra_train_aligned_20_batches/image_list.with_dummy_labels.txt', 'feature_size': 471 }"
+    param_str: "{'batch_size': 100, 'extracted_features': '/y/lisaanne/lexical_features/alex_feats.attributes_JJ100_NN300_VB100_eightClusters_cocoImages_1026_iter_50000.train.h5', 'image_list': '/home/lisaanne/caffe-LSTM/examples/coco_caption/h5_data_fixN/buffer_100/no_caption_rm_eightCluster_train_aligned_20_batches/image_list.with_dummy_labels.txt', 'feature_size': 471 }"
   }
   include { phase: TRAIN  stage: 'trainval' }
 }
@@ -47,7 +47,7 @@ layer {
   top: "target_sentence"
   include { phase: TRAIN  stage: 'trainval' }
   hdf5_data_param {
-    source: "/home/lisa/caffe-LSTM-video/examples/coco_caption/h5_data_fixN/buffer_100/train_aligned_20_batches/hdf5_chunk_list.txt"
+    source: "/home/lisaanne/caffe-LSTM/examples/coco_caption/h5_data_fixN/buffer_100/no_caption_rm_eightCluster_train_aligned_20_batches/hdf5_chunk_list.txt"
     batch_size: 20
   }
 }
@@ -61,7 +61,7 @@ layer {
   python_param {
     module: "python_data_layers"
     layer: "featureDataLayer"
-    param_str: "{'batch_size': 100, 'extracted_features': '/z/lisaanne/lexical_features/alex_feats.attributes_JJ100_NN300_VB100_zebra_iter_50000.train.h5', 'image_list': '/home/lisa/caffe-LSTM-video/examples/coco_caption/h5_data_fixN/buffer_100/no_caption_zebra_train_aligned_20_batches/image_list.with_dummy_labels.txt', 'feature_size': 471 }"
+    param_str: "{'batch_size': 100, 'extracted_features': '/y/lisaanne/lexical_features/alex_feats.attributes_JJ100_NN300_VB100_eightClusters_cocoImages_1026_iter_50000.train.h5', 'image_list': '/home/lisaanne/caffe-LSTM/examples/coco_caption/h5_data_fixN/buffer_100/no_caption_rm_eightCluster_train_aligned_20_batches/image_list.with_dummy_labels.txt', 'feature_size': 471 }"
   }
   include { phase: TEST  stage: 'test-on-train' }
 }
@@ -76,7 +76,7 @@ layer {
     stage: "test-on-train"
   }
   hdf5_data_param {
-    source: "/home/lisa/caffe-LSTM-video/examples/coco_caption/h5_data_fixN/buffer_100/no_caption_zebra_train_aligned_20_batches/hdf5_chunk_list.txt"
+    source: "/home/lisaanne/caffe-LSTM/examples/coco_caption/h5_data_fixN/buffer_100/no_caption_rm_eightCluster_train_aligned_20_batches/hdf5_chunk_list.txt"
     batch_size: 20
   }
 }
@@ -90,7 +90,7 @@ layer {
   python_param {
     module: "python_data_layers"
     layer: "featureDataLayer"
-    param_str: "{'batch_size': 100, 'extracted_features': '/z/lisaanne/lexical_features/alex_feats.attributes_JJ100_NN300_VB100_zebra_iter_50000.val_val.h5', 'image_list': '/home/lisa/caffe-LSTM-video/examples/coco_caption/h5_data_fixN/buffer_100/val_val_aligned_20_batches/image_list.with_dummy_labels.txt', 'feature_size': 471 }"
+    param_str: "{'batch_size': 100, 'extracted_features': '/y/lisaanne/lexical_features/alex_feats.attributes_JJ100_NN300_VB100_eightClusters_cocoImages_1026_iter_50000.val_val.h5', 'image_list': '/home/lisaanne/caffe-LSTM/examples/coco_caption/h5_data_fixN/buffer_100/val_val_aligned_20_batches/image_list.with_dummy_labels.txt', 'feature_size': 471 }"
   }
   include { phase: TEST  stage: 'test-on-val' }
 }
@@ -105,7 +105,7 @@ layer {
     stage: "test-on-val"
   }
   hdf5_data_param {
-    source: "/home/lisa/caffe-LSTM-video/examples/coco_caption/h5_data_fixN/buffer_100/val_val_aligned_20_batches/hdf5_chunk_list.txt"
+    source: "/home/lisaanne/caffe-LSTM/examples/coco_caption/h5_data_fixN/buffer_100/val_val_aligned_20_batches/hdf5_chunk_list.txt"
     batch_size: 20
   }
 }
@@ -227,17 +227,17 @@ layer {
   top: "concat_lm"
 }
 layer {
-  name: "predict"
+  name: "predict-lm"
   type: "InnerProduct"
   bottom: "concat_lm"
   top: "predict-lm"
   param {
-    lr_mult: 0
-    decay_mult: 0
+    lr_mult: 1
+    decay_mult: 2
   }
   param {
-    lr_mult: 0
-    decay_mult: 0
+    lr_mult: 1
+    decay_mult: 1
   }
   inner_product_param {
     num_output: 8801

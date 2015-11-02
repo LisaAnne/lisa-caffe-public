@@ -36,6 +36,7 @@ parser.add_argument("--language_model",type=str)
 parser.add_argument("--rm_word_base",type=str,default='zebra')
 parser.add_argument("--feature_dir_h5",type=str,default=None)
 parser.add_argument("--feats_bool_in",type=bool,default=True)
+parser.add_argument("--eightyK",type=str,default='False')
 
 args = parser.parse_args()
 
@@ -45,6 +46,7 @@ language_model = args.language_model
 rm_word_base = args.rm_word_base
 feature_dir_h5 = args.feature_dir_h5
 feats_bool_in = args.feats_bool_in
+eightyK = eval(args.eightyK)
 
 if rm_word_base == 'zebra':
   rm_words = ['zebra', 'zebras']
@@ -75,9 +77,8 @@ print rm_words
 tag = '' 
 full_vocabulary_file = '../coco_caption/h5_data/buffer_100/vocabulary.txt'  
 vocab = 'vocabulary'
-eightyK = False
 if eightyK:
-  full_vocabulary_file = '/z/lisaanne/pretrained_lm/yt_coco_surface_80k_vocab.txt'
+  full_vocabulary_file = '../coco_caption/h5_data/buffer_100/vocabulary80k.txt'  
   vocab = 'vocabulary80k'
 beam1 = True
 beam3 = False
@@ -93,10 +94,10 @@ always_recompute = True
 if beam1:
   if not os.path.exists(beam1_json_path) or always_recompute:
     experiment = {'type': 'generation'}
-    retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name='val_val', vocab=vocab, precomputed_feats=None, feats_bool_in=feats_bool_in, precomputed_h5=feature_dir_h5, experiment=experiment)
+    retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name='val_val', vocab=vocab, precomputed_feats=None, feats_bool_in=feats_bool_in, precomputed_h5=feature_dir_h5, experiment=experiment, prev_word_restriction=True)
   else:
     experiment = {'type': 'score_generation', 'json_file': beam1_json_path} 
-    retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name='val_val', vocab=vocab, precomputed_feats=feature_dir, feats_bool_in=False, experiment=experiment)
+    retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name='val_val', vocab=vocab, precomputed_feats=feature_dir, feats_bool_in=False, experiment=experiment, prev_word_restriction=True)
 
 if beam3:
   if not os.path.exists(retrieval_cache_home + '%s/all_ims/%s/beam3/generation_result.json' %(test_set, trained_model)):
@@ -112,7 +113,7 @@ def eval_generation(generated_sentences, gt_file, test_set):
   with open(tmp_json, 'w') as outfile:
     json.dump(gen_novel, outfile)
   experiment = {'type': 'score_generation', 'json_file': tmp_json, 'read_file': True} 
-  retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name=test_set, vocab='vocabulary', feats_bool_in=False, experiment=experiment)
+  retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name=test_set, vocab=vocab, feats_bool_in=False, experiment=experiment)
   os.remove(tmp_json)
 
 print 'Scores for novel captions in val set:\n'

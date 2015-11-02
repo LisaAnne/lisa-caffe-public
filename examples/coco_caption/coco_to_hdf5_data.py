@@ -10,7 +10,7 @@ import h5py
 import numpy as np
 import pickle as pkl
 
-eightyK = False
+eightyK = True
 
 sys.path.append('.')
 sys.path.append('../../data/coco/coco')
@@ -228,7 +228,7 @@ COCO_ANNO_PATH = '%s/annotations/captions_%%s2014.json' % COCO_PATH
 COCO_IMAGE_PATTERN = '%s/%s/%%s2014' % (COCO_PATH, COCO_IM_FOLDER)
 COCO_IMAGE_ID_PATTERN = 'COCO_%s2014_%%012d.jpg'
 
-BUFFER_SIZE = 100
+BUFFER_SIZE = 50
 OUTPUT_DIR =  caffe_dir + '/examples/coco_caption/h5_data_fixN/buffer_%d' % BUFFER_SIZE
 if eightyK:
   OUTPUT_DIR =  caffe_dir + '/examples/coco_caption/h5_data_fixN_80k/buffer_%d' % BUFFER_SIZE
@@ -382,6 +382,6 @@ def add_dataset(tag, split):
 if __name__ == "__main__":
   #process_coco()
   if eightyK:
-    process_coco('train', False, False, '/z/lisaanne/pretrained_lm/yt_coco_surface_80k_vocab.txt')
+    process_coco('no_caption_rm_eightCluster_train', False, False, '/y/lisaanne/pretrained_lm/yt_coco_surface_80k_vocab.txt')
   else:
-    process_coco('train', False, False, 'h5_data/buffer_100/vocabulary.txt')
+    process_coco('no_caption_rm_eightCluster_train', False, False, 'h5_data/buffer_100/vocabulary.txt')

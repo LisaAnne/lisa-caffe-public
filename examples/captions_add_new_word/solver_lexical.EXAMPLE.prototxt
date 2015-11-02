@@ -11,7 +11,7 @@ max_iter: 50000
 momentum: 0.9
 weight_decay: 0.005
 snapshot: 5000
-snapshot_prefix: "/z/lisaanne/CVPR2016/train_lexical_classifier/attributes_JJ100_NN300_VB100_pizza_cocoImages"
+snapshot_prefix: "/y/lisaanne/CVPR2016/lexical_classifiers/imagenet_domain/attributes_JJ100_NN300_VB100_secondEight_imagenetImages_1030"
 solver_mode: GPU
 random_seed: 1701
 average_loss: 100

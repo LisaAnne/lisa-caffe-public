@@ -356,11 +356,14 @@ if __name__ == "__main__":
   #rm_words = ['rm3_zpm']
   #all_rm_words = [['motor', 'cycle', 'motorcycle', 'motor', 'cycles', 'motorcycles', 'pizza', 'pizzas', 'zebra', 'zebras']]
   
-  rm_tags = ['rm_eightCluster']
-  rm_words = [['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'sofas', 'microwave', 'microwaves', 'rackett', 'racket', 'racquet', 'rackets',  'bus', 'buses', 'busses', 'pizza', 'pizzas', 'zebra', 'zebras']]
+  #rm_tags = ['rm_eightCluster']
+  #rm_words = [['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'sofas', 'microwave', 'microwaves', 'rackett', 'racket', 'racquet', 'rackets', 'racquets',  'bus', 'buses', 'busses', 'pizza', 'pizzas', 'zebra', 'zebras']]
 
-  rm_tags += ['suitcase', 'bottle', 'couch', 'microwave', 'racket', 'bus', 'pizza', 'zebra']
-  rm_words += [['luggage', 'luggages', 'suitcase', 'suitcases'], ['bottle', 'bottles'], ['couch', 'couches', 'sofa', 'sofas'], ['microwave', 'microwaves'], ['rackett', 'racket', 'raquet', 'rackets'], ['bus', 'buses', 'busses'], ['pizza', 'pizzas'], ['zebra', 'zebras']]
+#  rm_tags += ['suitcase', 'bottle', 'couch', 'microwave', 'racket', 'bus', 'pizza', 'zebra']
+#  rm_words += [['luggage', 'luggages', 'suitcase', 'suitcases'], ['bottle', 'bottles'], ['couch', 'couches', 'sofa', 'sofas'], ['microwave', 'microwaves'], ['rackett', 'racket', 'raquet', 'rackets'], ['bus', 'buses', 'busses'], ['pizza', 'pizzas'], ['zebra', 'zebras']]
+
+  rm_tags = ['racket_1101']
+  rm_words = [['rackett', 'racket', 'rackets', 'raquet', 'raquets']]
 
   #rm_tags = ['buses']
   #rm_words = [['buses']]
@@ -389,9 +392,9 @@ if __name__ == "__main__":
   #save_files(augment_captions_out, tag + 'train')
 
   #no captions
-  augment_captions_out = augment_captions(train_captions, rm_words[0], rm_all_object_sents=False, all_object_sents=False, no_annotations=True)
-  tag = 'no_caption_%s_' %(rm_tags[0])
-  save_files(augment_captions_out, tag + 'train')
+  #augment_captions_out = augment_captions(train_captions, rm_words[0], rm_all_object_sents=False, all_object_sents=False, no_annotations=True)
+  #tag = 'no_caption_%s_' %(rm_tags[0])
+  #save_files(augment_captions_out, tag + 'train')
 
   #make smaller train set for training vocab
   #vocab_pretrain = vocab_pretrain(train_captions) 
