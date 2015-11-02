@@ -8,10 +8,12 @@ import copy
 import pickle as pkl
 import hickle as hkl
 from nltk.corpus import wordnet as wn
+from init import *
 #import find_close_words
 
-save_tag = 'closest_W2V'
-eightK = False
+save_tag_template = 'closest_W2V_%s'
+eightyK = True
+all_at_once = True
 transfer_embed = False 
 num_close_words_im = 1
 num_close_words_lm = 1
@@ -38,13 +40,28 @@ all_add_words.append(add_words)
 add_words = {'words': ['racket', 'rackets', 'racquet', 'racquets'], 'classifiers': ['racket', 'racket', 'racquet', 'racquet'], 'illegal_words': ['racket', 'racquet']}
 all_add_words.append(add_words)
 
+if all_at_once:
+  add_words_list = {}
+  add_words_list['words'] = []
+  add_words_list['classifiers'] = []
+  add_words_list['illegal_words'] = []
+  for add_words in all_add_words:
+    add_words_list['words'].extend(add_words['words']) 
+    add_words_list['classifiers'].extend(add_words['classifiers']) 
+    add_words_list['illegal_words'].extend(add_words['illegal_words']) 
+  all_add_words = []
+  all_add_words.append(add_words_list)  
 
 #Relearn image and language model
-model_weights = '/z/lisaanne/snapshots_caption_models/attributes_JJ100_NN300_VB100_zebra_cocoImages_captions_noLMPretrain_dropout_iter_110000'
-model='mrnn_attributes_fc8.direct.from_features.wtd.prototxt'
+#model_weights = '/y/lisaanne/mrnn_direct/snapshots/attributes_JJ100_NN300_VB100_eightClusters_captions_imagenetImages_1026_lr0p01_1030_iter_110000'
+if not eightyK:
+  model='mrnn_attributes_fc8.direct.from_features.wtd.prototxt'
+else:
+  model='mrnn_attributes_fc8.direct.from_features.wtd.80k.prototxt'
+#model_weights = '/y/lisaanne/mrnn_direct/snapshots/attributes_JJ100_NN300_VB100_eightClusters_captions_imagenetImages_1026.direct_surf_lr0.01_iter_120000.80k_lrp01_1031_iter_110000'
+model_weights = '/y/lisaanne/mrnn_direct/snapshots/attributes_JJ100_NN300_VB100_eightClusters_captions_imagenetImages_1026.direct_imtextyt_lr0.01_iter_120000.80k_lrp01_1031_iter_110000'
+#model_weights='/y/lisaanne/mrnn_direct/snapshots/attributes_JJ100_NN300_VB100_eightClusters_captions_imagenetImages_1026_lr0p01_1030_iter_110000'
 net = caffe.Net(model, model_weights + '.caffemodel', caffe.TRAIN)
-
-
 
 attributes = pkl.load(open('../coco_attribute/attribute_lists/attributes_JJ100_NN300_VB100.pkl','rb'))
 
@@ -93,31 +110,17 @@ def closeness_embedding_synset(new_word):
 
 closeness_metric = closeness_embedding
   
-if not eightyK:
-  model='mrnn_attributes_fc8.direct.from_features.wtd.prototxt'
-else:
-  model='mrnn_attributes_fc8.direct.from_features.wtd.80k.prototxt'
 
 for add_words in all_add_words:
   close_words_im = {}
   close_words_lm = {}
-  model_weights = '/y/lisaanne/mrnn_direct/snapshots/attributes_JJ100_NN300_VB100_eightClusters_cocoImages_captions_fixLMPretrain_fixSplit5_iter_110000'
   net = caffe.Net(model, model_weights + '.caffemodel', caffe.TRAIN)
 
   #This should check that you are using the correct wtd prototxt.
-  check_wtd = False
-  while check_wtd == False:
-    if 'predict-lm' in net.params.keys():
-      predict_lm = 'predict-lm'
-    else:
-      predict_lm = 'predict'
-    if np.mean(net.params[predict_lm][0].data) < 0.1:
-      print "Model trained with 'predict' layer not 'predict-lm'"
-      if not eightyK:
-        model='mrnn_attributes_fc8.direct.from_features.wtd.ft.prototxt'
-      else:
-        model='mrnn_attributes_fc8.direct.from_features.wtd.80k.ft.prototxt'
-      net = caffe.Net(model, model_weights + '.caffemodel', caffe.TRAIN)
+  if 'predict-lm' in net.params.keys():
+    predict_lm = 'predict-lm'
+  else:
+    predict_lm = 'predict'
 
  
   if len(net.params['predict-im']) > 1:
@@ -125,6 +128,8 @@ for add_words in all_add_words:
   else: 
     im_bias = False
   save_tag = save_tag_template % add_words['words'][0]
+  if all_at_once:
+    save_tag = save_tag_template %'all'
   for aw, word in enumerate(add_words['words']):
     close_words_im[word] = {}
     word_sims = closeness_metric(add_words['classifiers'][aw])
@@ -199,7 +204,7 @@ for add_words in all_add_words:
     for wi, close_word in enumerate(close_words_lm[add_word]['close_words']):
       close_word_idx = vocab_lines.index(close_word)
       predict_weights_im[close_word_idx,attribute_loc] = 0 
-     
+  
   net.params[predict_lm][0].data[...] = predict_weights_lm
   net.params[predict_lm][1].data[...] = predict_bias_lm
   net.params['predict-im'][0].data[...] = predict_weights_im
