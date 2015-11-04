@@ -14,7 +14,7 @@ sys.path.insert(0, '../captions_add_new_word/')
 #imagnet images
 #image_path = '/y/lisaanne/imageData/imagenet/'
 #sets = ['pizza', 'zebra', 'motorcycle']
-feature_path = '/z/lisaanne/lexical_features/'
+feature_path = '/y/lisaanne/lexical_features/'
 coco_template = '../../data/coco/coco/images/%s2014/COCO_%s2014_%012d.jpg'
 im_ids_train = open('../../data/coco/coco2014_cocoid.train.txt').readlines()
 im_ids_train = [int(im_id.strip()) for im_id in im_ids_train]
@@ -33,7 +33,7 @@ set_names = ['train', 'val_val', 'val_test']
 #sets = ['test2014','train2014']
 #sets = ['train2014']
 caffe.set_mode_gpu()
-caffe.set_device(2)
+caffe.set_device(1)
 
 #vgg weights
 #model_file = '../../models/vgg/VGG_ILSVRC_16_layers_deploy.prototxt'
@@ -46,7 +46,8 @@ caffe.set_device(2)
 model_file = '../coco_attribute/mrnn_attributes_fc8-probs_deploy.prototxt'
 #model_file = '../captions_add_new_word/train_classifiers_deploy.prototxt'
 #baseline
-model_weights = '/z/lisaanne/CVPR2016/train_lexical_classifier/attributes_JJ100_NN300_VB100_baseline_cocoImages_iter_50000'
+#model_weights = '/z/lisaanne/CVPR2016/train_lexical_classifier/attributes_JJ100_NN300_VB100_baseline_cocoImages_iter_50000'
+model_weights = '/y/lisaanne/CVPR2016/lexical_classifiers/imagenet_domain/attributes_JJ100_NN300_VB100_secondEight_imagenetImages_1030_iter_50000'
 #zebra
 #model_weights = '/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_eightClusters_cocoImages_fixPDL_iter_50000'
 #model_weights = '/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_zebra_iter_50000'
