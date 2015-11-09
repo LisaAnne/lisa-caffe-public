@@ -15,7 +15,4 @@ BNAME=`basename $NAME`
 echo $BNAME
 mkdir -m 755 $BNAME
 
-if [ -z $3 ]; then
-    ffmpeg -i $1 -r $FRAMES -an -vf scale="256:256"  $BNAME/$BNAME.%4d.jpg; else
-    ffmpeg -i $1 -r $FRAMES -an -vf scale="$3:$3"  $BNAME/$BNAME.%4d.jpg;
-fi
+ffmpeg -i $1 -r $FRAMES $BNAME/$BNAME.%4d.jpg; else
