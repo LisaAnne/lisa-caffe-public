@@ -390,12 +390,16 @@ class Captioner():
     return output
 
   def compute_descriptors(self, image_list, feats_bool=False, output_name='fc8'):
+    coco=False
     if feats_bool:
       #load image from h5 file and make into a dict
       f = h5py.File(self.h5_file, 'r')
       extracted_features = {}
       for feature, im in zip(f['features'], f['ims']):
-        im_key = im.split('_')[-1].split('.jpg')[0]
+        if coco:
+          im_key = im.split('_')[-1].split('.jpg')[0]
+        else:
+          im_key = im
         extracted_features[im_key] = feature
 
     batch = np.zeros_like(self.image_net.blobs['data'].data)
@@ -408,7 +412,10 @@ class Captioner():
       batch_list = image_list[batch_start_index:(batch_start_index + batch_size)]
       for batch_index, image_path in enumerate(batch_list):
         if feats_bool:
-          im_key = image_path.split('_')[-1].split('.jpg')[0]
+          if coco:
+            im_key = image_path.split('_')[-1].split('.jpg')[0]
+          else:
+            im_key = im
           batch[batch_index:(batch_index+1),:] = extracted_features[im_key] 
         else:
           batch[batch_index:(batch_index + 1)] = self.preprocess_image(image_path)

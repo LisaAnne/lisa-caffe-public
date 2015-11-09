@@ -94,8 +94,10 @@ class CaptionExperiment():
     if True:
       #should also save image ids...
       image_id_array = np.zeros((len(self.images),))
+      tag_end = '.' + self.images[0].split('.')[-1]
       for i, im in enumerate(self.images):
-        image_id_array[i] = int(im.split('_')[-1].split('.jpg')[0])
+        #image_id_array[i] = int(im.split('_')[-1].split(tag_end)[0])
+        image_id_array[i] = self.sg.image_path_to_id[im]
       if save_descriptor:
         np.savez_compressed(descriptor_filename, descriptors=self.descriptors, image_id_array=image_id_array)
       self.descriptor_filename=image_id_array
@@ -469,6 +471,7 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
   #COCO_IMAGE_PATTERN = '/y/lisaanne/coco/images2/%s2014' 
   #image_root = COCO_IMAGE_PATTERN % DATASET_NAME
   image_root = COCO_IMAGE_PATTERN % 'val'
+  image_root = '/z/lisaanne/imageData/imagenet/'
   sg = CocoSequenceGenerator(coco, BUFFER_SIZE, image_root, vocab=vocab,
                              max_words=MAX_WORDS, align=False, shuffle=False,  
                              gt_captions=True, pad=True, truncate=True, 
