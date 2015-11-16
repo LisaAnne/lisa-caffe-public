@@ -222,7 +222,8 @@ class featureDataLayer(caffe.Layer):
       im_key = im.split('_')[-1].split('.jpg')[0]
       images_with_labels[im_key] = {} 
       images_with_labels[im_key]['features'] = extracted_features['features'][ix]
-      images_with_labels[im_key]['labels'] = int(im_key)
+      if 'J' not in im_key:
+        images_with_labels[im_key]['labels'] = int(im_key)
     print "Setting up images dict: ", time.time()-t
     
     del extracted_features

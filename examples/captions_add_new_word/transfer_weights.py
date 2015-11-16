@@ -12,7 +12,7 @@ from init import *
 #import find_close_words
 
 save_tag_template = 'closest_W2V_%s'
-eightyK = True
+eightyK = False
 all_at_once = True
 transfer_embed = False 
 num_close_words_im = 1
@@ -40,6 +40,24 @@ all_add_words.append(add_words)
 add_words = {'words': ['racket', 'rackets', 'racquet', 'racquets'], 'classifiers': ['racket', 'racket', 'racquet', 'racquet'], 'illegal_words': ['racket', 'racquet']}
 all_add_words.append(add_words)
 
+#secondEight
+#add_words = {'words': ['bowl', 'bowls'], 'classifiers': ['bowl', 'bowl'], 'illegal_words': ['bowl']}
+#all_add_words.append(add_words)
+#add_words = {'words': ['kite', 'kites'], 'classifiers': ['kite', 'kite'], 'illegal_words': ['kite']}
+#all_add_words.append(add_words)
+#add_words = {'words': ['oven', 'ovens'], 'classifiers': ['oven', 'oven'], 'illegal_words': ['oven']}
+#all_add_words.append(add_words)
+#add_words = {'words': ['salad', 'salads'], 'classifiers': ['salad', 'salad'], 'illegal_words': ['salad']}
+#all_add_words.append(add_words)
+#add_words = {'words': ['sheep', 'sheeps'], 'classifiers': ['sheep', 'sheep'], 'illegal_words': ['sheep']}
+#all_add_words.append(add_words)
+#add_words = {'words': ['table', 'tables'], 'classifiers': ['table', 'table'], 'illegal_words': ['table']}
+#all_add_words.append(add_words)
+#add_words = {'words': ['truck', 'trucks'], 'classifiers': ['truck', 'truck'], 'illegal_words': ['truck']}
+#all_add_words.append(add_words)
+#add_words = {'words': ['umbrella', 'umbrellas'], 'classifiers': ['umbrella', 'umbrella'], 'illegal_words': ['umbrella']}
+#all_add_words.append(add_words)
+
 if all_at_once:
   add_words_list = {}
   add_words_list['words'] = []
@@ -55,12 +73,14 @@ if all_at_once:
 #Relearn image and language model
 #model_weights = '/y/lisaanne/mrnn_direct/snapshots/attributes_JJ100_NN300_VB100_eightClusters_captions_imagenetImages_1026_lr0p01_1030_iter_110000'
 if not eightyK:
-  model='mrnn_attributes_fc8.direct.from_features.wtd.prototxt'
+  model='mrnn_attributes_fc8.direct.from_features.wtd.ft.prototxt'
 else:
   model='mrnn_attributes_fc8.direct.from_features.wtd.80k.prototxt'
 #model_weights = '/y/lisaanne/mrnn_direct/snapshots/attributes_JJ100_NN300_VB100_eightClusters_captions_imagenetImages_1026.direct_surf_lr0.01_iter_120000.80k_lrp01_1031_iter_110000'
-model_weights = '/y/lisaanne/mrnn_direct/snapshots/attributes_JJ100_NN300_VB100_eightClusters_captions_imagenetImages_1026.direct_imtextyt_lr0.01_iter_120000.80k_lrp01_1031_iter_110000'
+#model_weights = '/y/lisaanne/mrnn_direct/snapshots/attributes_JJ100_NN300_VB100_eightClusters_captions_imagenetImages_1026.direct_imtextyt_lr0.01_iter_120000.80k_lrp01_1031_iter_110000'
 #model_weights='/y/lisaanne/mrnn_direct/snapshots/attributes_JJ100_NN300_VB100_eightClusters_captions_imagenetImages_1026_lr0p01_1030_iter_110000'
+#model_weights='snapshots/attributes_JJ100_NN300_VB100_captions_lr0p01_1102_SecondEightClusterFeatures_iter_110000'
+model_weights='snapshots/attributes_JJ100_NN300_VB100_eightClusters_captions_cocoImages_1026_ftLM_1110_noLMPretrain_iter_110000'
 net = caffe.Net(model, model_weights + '.caffemodel', caffe.TRAIN)
 
 attributes = pkl.load(open('../coco_attribute/attribute_lists/attributes_JJ100_NN300_VB100.pkl','rb'))

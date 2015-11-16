@@ -158,7 +158,7 @@ def match_words(rm_words, words):
 
 #def split_sent(sent):
 #  sent = sent.lower()
-#  sent = re.sub('[^A-Za-z0-9\s]+',' ',sent)
+#  sent = re.sub('[^a-zA-Z0-9\s]+',' ',sent)
 #  return sent.split(' ')
   #return re.findall(r"[\w']+", sent)
 
@@ -364,10 +364,13 @@ if __name__ == "__main__":
   #all_rm_words = [['motor', 'cycle', 'motorcycle', 'motor', 'cycles', 'motorcycles', 'pizza', 'pizzas', 'zebra', 'zebras']]
   
   #rm_tags = ['rm_eightCluster_2']
-  #rm_words = [['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'sofas', 'microwave', 'microwaves', 'rackett', 'racket', 'racquet', 'rackets', 'racquets',  'bus', 'buses', 'busses', 'pizza', 'pizzas', 'zebra', 'zebras']]
+  #rm_words = [['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'sofas', 'microwave', 'microwaves', 'rackett', 'racket', 'racquet', 'rackets', 'racquets',  'bus', 'buss', 'buses', 'busses', 'pizza', 'pizzas', 'zebra', 'zebras']]
 
-  rm_tags = ['rm_secondEightCluster']
-  rm_words = [['bowl','bowls', 'kite','kites', 'oven','ovens', 'salad', 'salads', 'sheep', 'sheeps', 'table', 'tables', 'truck', 'trucks', 'umbrella', 'umbrellas']]
+  #rm_tags = ['rm_secondEightCluster']
+  #rm_words = [['bowl','bowls', 'kite','kites', 'oven','ovens', 'salad', 'salads', 'sheep', 'sheeps', 'table', 'tables', 'truck', 'trucks', 'umbrella', 'umbrellas']]
+
+  rm_tags = ['bowl', 'kite', 'oven', 'salad', 'sheep', 'table', 'truck', 'umbrella']
+  rm_words = [['bowl','bowls'], ['kite','kites'], ['oven','ovens'], ['salad', 'salads'], ['sheep', 'sheeps'], ['table', 'tables'], ['truck', 'trucks'], ['umbrella', 'umbrellas']]
 
 #  rm_tags += ['suitcase', 'bottle', 'couch', 'microwave', 'racket', 'bus', 'pizza', 'zebra']
 #  rm_words += [['luggage', 'luggages', 'suitcase', 'suitcases'], ['bottle', 'bottles'], ['couch', 'couches', 'sofa', 'sofas'], ['microwave', 'microwaves'], ['rackett', 'racket', 'raquet', 'rackets'], ['bus', 'buses', 'busses'], ['pizza', 'pizzas'], ['zebra', 'zebras']]
@@ -402,9 +405,9 @@ if __name__ == "__main__":
   #save_files(augment_captions_out, tag + 'train')
 
   #no captions
-  augment_captions_out = augment_captions(train_captions, rm_words[0], rm_all_object_sents=False, all_object_sents=False, no_annotations=True)
-  tag = 'no_caption_%s_' %(rm_tags[0])
-  save_files(augment_captions_out, tag + 'train')
+  #augment_captions_out = augment_captions(train_captions, rm_words[0], rm_all_object_sents=False, all_object_sents=False, no_annotations=True)
+  #tag = 'no_caption_%s_' %(rm_tags[0])
+  #save_files(augment_captions_out, tag + 'train')
 
   #make smaller train set for training vocab
   #vocab_pretrain = vocab_pretrain(train_captions) 
@@ -415,14 +418,14 @@ if __name__ == "__main__":
   #save_files(val_test, 'val_test')
 
 #  split val into val_train and val_novel
-#  all_rm_words = rm_words
-#  for i in range(len(rm_tags)):
-#    rm_tag = rm_tags[i]
-#    rm_words = all_rm_words[i] 
-#    tag = 'split_set_%s_' %(rm_tag)
-#    val_captions_novel, val_captions_train = separate_val_set(val_val, rm_words)
-#    save_files(val_captions_novel, tag+'val_val_novel')
-#    save_files(val_captions_train, tag+'val_val_train')
-#    val_captions_novel, val_captions_train = separate_val_set(val_test, rm_words)
-#    save_files(val_captions_novel, tag+'val_test_novel')
-#    save_files(val_captions_train, tag+'val_test_train')
+  all_rm_words = rm_words
+  for i in range(len(rm_tags)):
+    rm_tag = rm_tags[i]
+    rm_words = all_rm_words[i] 
+    tag = 'split_set_%s_' %(rm_tag)
+    val_captions_novel, val_captions_train = separate_val_set(val_val, rm_words)
+    save_files(val_captions_novel, tag+'val_val_novel')
+    save_files(val_captions_train, tag+'val_val_train')
+    val_captions_novel, val_captions_train = separate_val_set(val_test, rm_words)
+    save_files(val_captions_novel, tag+'val_test_novel')
+    save_files(val_captions_train, tag+'val_test_train')

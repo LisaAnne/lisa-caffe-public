@@ -29,6 +29,18 @@ test_ims = [coco_template %('val', 'val', im_id) for im_id in im_ids_test]
 sets = [train_ims, val_ims, test_ims]
 set_names = ['train', 'val_val', 'val_test']
 
+more_ims = open('../captions_add_new_word/utils_trainAttributes/imageTest_newObjects.txt').readlines()
+more_ims_test = ['/yy2/lisaanne/imageData/imagenet/' + m.split(' ')[1].strip() for m in more_ims if m.split(' ')[0] == 'imagenet']
+more_test_set = val_ims + more_ims_test
+#set_names = ['more_ims_supp_test']
+#sets = [more_ims] 
+
+more_ims = open('../captions_add_new_word/utils_trainAttributes/imageTrain_newObjects.txt').readlines()
+more_ims_train = ['/yy2/lisaanne/imageData/imagenet/' + m.split(' ')[1].strip() for m in more_ims if m.split(' ')[0] == 'imagenet']
+more_train_set = train_ims + more_ims_train
+
+set_names = ['more_ims_supp_test']
+sets = [more_test_set] 
 
 #sets = ['test2014','train2014']
 #sets = ['train2014']
@@ -48,6 +60,7 @@ model_file = '../coco_attribute/mrnn_attributes_fc8-probs_deploy.prototxt'
 #baseline
 #model_weights = '/z/lisaanne/CVPR2016/train_lexical_classifier/attributes_JJ100_NN300_VB100_baseline_cocoImages_iter_50000'
 model_weights = '/y/lisaanne/CVPR2016/lexical_classifiers/imagenet_domain/attributes_JJ100_NN300_VB100_secondEight_imagenetImages_1030_iter_50000'
+model_weights = '/yy2/lisaanne/CVPR2016/lexical_classifiers/imagenet_domain/attributes_JJ100_NN300_VB100_cocoImages_newImages_1110_iter_40000'
 #zebra
 #model_weights = '/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_eightClusters_cocoImages_fixPDL_iter_50000'
 #model_weights = '/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_zebra_iter_50000'
@@ -55,7 +68,7 @@ save_h5 = model_weights.split('/')[-1]
 image_dim = 227
 oversample_dim = True
 feature_extract = 'prob-attributes'
-feature_size = 471
+feature_size = 483
 
 net = caffe.Net(model_file, model_weights + '.caffemodel', caffe.TEST)
 shape = (128,3,image_dim,image_dim)
@@ -107,7 +120,7 @@ for s, set_name in zip(sets, set_names):
       features_av = [np.mean(features_tmp[i:i+10], axis=0) for i in range(0, len(data), 10)]
       features_tmp = np.array(features_av)
     features[ix:ix+features_tmp.shape[0],:] = features_tmp
-  h5_file = '/y/lisaanne/lexical_features/alex_feats.%s.%s.h5' %(save_h5, set_name)
+  h5_file = '/yy2/lisaanne/lexical_features/alex_feats.%s.%s.h5' %(save_h5, set_name)
   f = h5py.File(h5_file, "w")
   print "Printing to %s\n" %h5_file
   all_ims_short = [i.split('/')[-2] + '/' + i.split('/')[-1] for i in all_ims]

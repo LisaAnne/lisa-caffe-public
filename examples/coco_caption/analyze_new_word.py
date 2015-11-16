@@ -39,6 +39,7 @@ parser.add_argument("--feats_bool_in",type=bool,default=True)
 parser.add_argument("--eightyK",type=str,default='True')
 parser.add_argument("--gpu",type=int,default=0)
 
+dset_name = 'val_val'
 
 args = parser.parse_args()
 
@@ -54,6 +55,10 @@ eightyK = eval(args.eightyK)
 
 rm_word_base_list = []
 rm_words_list = []
+
+if rm_word_base == 'rm_eightCluster':
+  rm_words_list.append([])
+  rm_word_base_list.append('rm_eightCluster')
 
 if rm_word_base == 'bus' or rm_word_base == 'eightCluster1':
   rm_words = ['bus', 'busses']
@@ -88,6 +93,10 @@ if rm_word_base == 'zebra' or rm_word_base == 'eightCluster1':
   rm_word_base_list.append('zebra')
   rm_words_list.append(rm_words)
 
+if rm_word_base == 'eightCluster2':
+  rm_words_list = [['bowl','bowls'], ['kite','kites'], ['oven','ovens'], ['salad', 'salads'], ['sheep', 'sheeps'], ['table', 'tables'], ['truck', 'trucks'], ['umbrella', 'umbrellas']]
+  rm_word_base_list = ['bowl', 'kite', 'oven', 'salad', 'sheep', 'table', 'truck', 'umbrella']
+
 if rm_word_base ==  'giraffe':
   rm_words = ['giraffe', 'giraffe', 'giraffes', 'girafee', 'giraffee', 'giraff']
 if rm_word_base == 'motorcycle':
@@ -105,20 +114,20 @@ beam3 = False
 
 
 #do sentence generation
-beam1_json_path = retrieval_cache_home + 'val_val/all_ims/%s/beam1/generation_result.json' %('_'.join(trained_model))
+beam1_json_path = retrieval_cache_home + '%s/all_ims/%s/beam1/generation_result.json' %(dset_name, '_'.join(trained_model))
 always_recompute = True
 if beam1:
   if not os.path.exists(beam1_json_path) or always_recompute:
     experiment = {'type': 'generation'}
-    retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name='val_val', vocab=vocab, precomputed_feats=None, feats_bool_in=feats_bool_in, precomputed_h5=feature_dir_h5, experiment=experiment, prev_word_restriction=True, gpu=args.gpu)
+    retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name=dset_name, vocab=vocab, precomputed_feats=None, feats_bool_in=feats_bool_in, precomputed_h5=feature_dir_h5, experiment=experiment, prev_word_restriction=True, gpu=args.gpu)
   else:
     experiment = {'type': 'score_generation', 'json_file': beam1_json_path} 
-    retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name='val_val', vocab=vocab, precomputed_feats=feature_dir, feats_bool_in=False, experiment=experiment, prev_word_restriction=True)
+    retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name=dset_name, vocab=vocab, precomputed_feats=feature_dir, feats_bool_in=False, experiment=experiment, prev_word_restriction=True)
 
 if beam3:
   if not os.path.exists(retrieval_cache_home + '%s/all_ims/%s/beam3/generation_result.json' %(test_set, trained_model)):
     experiment = {'type': 'generation', 'beam_size': 3}
-    retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name='val_val', vocab=vocab, precomputed_feats=feature_dir, feats_bool_in=False, experiment=experiment)
+    retrieval_experiment.main(model_name=trained_model, image_net=image_model, LM_net=language_model, dataset_name=dset_name, vocab=vocab, precomputed_feats=feature_dir, feats_bool_in=False, experiment=experiment)
 
 def eval_generation(generated_sentences, gt_file, test_set):
   generated_sentences_json = read_json(generated_sentences)
@@ -137,10 +146,10 @@ for rm_word_base, rm_words in zip(rm_word_base_list, rm_words_list):
   print rm_word_base
   print rm_words
 
-  gt_novel_json = '../../data/coco/coco/annotations/captions_split_set_%s_val_val_novel2014.json' %rm_word_base
-  gt_train_json = '../../data/coco/coco/annotations/captions_split_set_%s_val_val_train2014.json' %rm_word_base
-  set_novel = 'split_set_%s_val_val_novel' %rm_word_base
-  set_train = 'split_set_%s_val_val_train' %rm_word_base
+  gt_novel_json = '../../data/coco/coco/annotations/captions_split_set_%s_%s_novel2014.json' %(rm_word_base, dset_name)
+  gt_train_json = '../../data/coco/coco/annotations/captions_split_set_%s_%s_train2014.json' %(rm_word_base, dset_name)
+  set_novel = 'split_set_%s_%s_novel' %(rm_word_base, dset_name)
+  set_train = 'split_set_%s_%s_train' %(rm_word_base, dset_name)
   
   print 'Scores for novel captions in val set for word %s:\n' %rm_word_base
   eval_generation(beam1_json_path, gt_novel_json, set_novel) 
