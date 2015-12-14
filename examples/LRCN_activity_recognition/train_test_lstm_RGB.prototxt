@@ -287,6 +287,20 @@ layer {
     dropout_ratio: 0.9
   }
 }
+#layer{
+#  name: "label-print"
+#  type: "Split"
+#  bottom: "label"
+#  top: "label-print-train"
+#  include: { phase: TRAIN }
+#}
+#layer{
+#  name: "label-print"
+#  type: "Split"
+#  bottom: "label"
+#  top: "label-print-test"
+#  include: { phase: TEST stage: "test-on-test" }
+#}
 layer{
   name: "reshape-data"
   type: "Reshape"
@@ -341,6 +355,21 @@ layer{
   }
   include: { phase: TEST stage: "test-on-test" }
 }
+layer{
+  name: "reshape-label-print"
+  type: "Split"
+  bottom: "reshape-label"
+  top: "reshape-label-print-train"
+  include: { phase: TRAIN }
+}
+layer{
+  name: "reshape-label-print"
+  type: "Split"
+  bottom: "reshape-label"
+  top: "reshape-label-print-test"
+  include: { phase: TEST stage: "test-on-test" }
+}
+
 layer{
   name: "reshape-cm"
   type: "Reshape"
