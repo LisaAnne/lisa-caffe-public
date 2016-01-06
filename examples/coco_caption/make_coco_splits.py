@@ -5,6 +5,7 @@ import json
 import os
 import pickle as pkl
 import re
+import nltk
 
 COCO_PATH = '../../data/coco/coco/'
 feature_dir = '/y/lisaanne/image_captioning/coco_features/'
@@ -155,11 +156,14 @@ def match_words(rm_words, words):
 #        list_matches[x] = True
 #  return any(list_matches)
 
-def split_sent(sent):
-  sent = sent.lower()
-  sent = re.sub('[^A-Za-z0-9\s]+',' ',sent)
-  return sent.split(' ')
+#def split_sent(sent):
+#  sent = sent.lower()
+#  sent = re.sub('[^a-zA-Z0-9\s]+',' ',sent)
+#  return sent.split(' ')
   #return re.findall(r"[\w']+", sent)
+
+def split_sent(sent):
+  return nltk.tokenize.word_tokenize(sent.lower())
 
 #add "dumb" captions to new_train_json
 def augment_captions(train_dict, rm_word=None, rm_all_object_sents=False, all_object_sents=False, no_annotations=False): 
@@ -178,6 +182,8 @@ def augment_captions(train_dict, rm_word=None, rm_all_object_sents=False, all_ob
   rm_ids = []
   rm_image_ids = []
   for count_im, im in enumerate(train_dict['images']):
+    if im in [83968, 476160, 567301, 403464, 505865, 253962, 34827, 565264, 114705, 544786]:
+      print 'stop'
     if count_im % 50 == 0:
       sys.stdout.write("\rAdding sentences for im %d/%d" % (count_im, len(train_dict['images'])))
       sys.stdout.flush()
@@ -196,7 +202,8 @@ def augment_captions(train_dict, rm_word=None, rm_all_object_sents=False, all_ob
         rm_image_ids.append(count_im)
       if not rm_all_object_sents:  #This will make the only sentences associated with an image the label
         #option2 of rm_words...
-        words = rm_word 
+        words = set(rm_word) & set(words)
+        words = list(words) 
 
     if (mw | all_object_sents) & (not no_annotations): #if match words or if inserting augmented sentences for all train sentences and annotations
       word_sentences = ['A %s.' %(word) for word in words if word in nouns]
@@ -356,11 +363,20 @@ if __name__ == "__main__":
   #rm_words = ['rm3_zpm']
   #all_rm_words = [['motor', 'cycle', 'motorcycle', 'motor', 'cycles', 'motorcycles', 'pizza', 'pizzas', 'zebra', 'zebras']]
   
-  rm_tags = ['rm_eightCluster']
-  rm_words = [['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'sofas', 'microwave', 'microwaves', 'rackett', 'racket', 'racquet', 'rackets',  'bus', 'buses', 'busses', 'pizza', 'pizzas', 'zebra', 'zebras']]
+  #rm_tags = ['rm_eightCluster_2']
+  #rm_words = [['luggage', 'luggages', 'suitcase', 'suitcases', 'bottle', 'bottles', 'couch', 'couches', 'sofa', 'sofas', 'microwave', 'microwaves', 'rackett', 'racket', 'racquet', 'rackets', 'racquets',  'bus', 'buss', 'buses', 'busses', 'pizza', 'pizzas', 'zebra', 'zebras']]
 
-  rm_tags += ['suitcase', 'bottle', 'couch', 'microwave', 'racket', 'bus', 'pizza', 'zebra']
-  rm_words += [['luggage', 'luggages', 'suitcase', 'suitcases'], ['bottle', 'bottles'], ['couch', 'couches', 'sofa', 'sofas'], ['microwave', 'microwaves'], ['rackett', 'racket', 'raquet', 'rackets'], ['bus', 'buses', 'busses'], ['pizza', 'pizzas'], ['zebra', 'zebras']]
+  #rm_tags = ['rm_secondEightCluster']
+  #rm_words = [['bowl','bowls', 'kite','kites', 'oven','ovens', 'salad', 'salads', 'sheep', 'sheeps', 'table', 'tables', 'truck', 'trucks', 'umbrella', 'umbrellas']]
+
+  rm_tags = ['bowl', 'kite', 'oven', 'salad', 'sheep', 'table', 'truck', 'umbrella']
+  rm_words = [['bowl','bowls'], ['kite','kites'], ['oven','ovens'], ['salad', 'salads'], ['sheep', 'sheeps'], ['table', 'tables'], ['truck', 'trucks'], ['umbrella', 'umbrellas']]
+
+#  rm_tags += ['suitcase', 'bottle', 'couch', 'microwave', 'racket', 'bus', 'pizza', 'zebra']
+#  rm_words += [['luggage', 'luggages', 'suitcase', 'suitcases'], ['bottle', 'bottles'], ['couch', 'couches', 'sofa', 'sofas'], ['microwave', 'microwaves'], ['rackett', 'racket', 'raquet', 'rackets'], ['bus', 'buses', 'busses'], ['pizza', 'pizzas'], ['zebra', 'zebras']]
+
+  #rm_tags = ['racket_1101']
+  #rm_words = [['rackett', 'racket', 'rackets', 'raquet', 'raquets']]
 
   #rm_tags = ['buses']
   #rm_words = [['buses']]
@@ -384,14 +400,14 @@ if __name__ == "__main__":
         #all_object_sents (True) --> 'A zebra.' 'A field.' 'A cow.' 'A grass.' 'A cow in the grass.'
         #no_annotations (True) --> 'A cow in the grass.'
   #basic captions
-  #augment_captions_out = augment_captions(train_captions, rm_words, rm_all_object_sents=False, all_object_sents=False, no_annotations=False)
-  #tag = 'basic_caption_%s_' %(rm_tag)
+  #augment_captions_out = augment_captions(train_captions, rm_words[0], rm_all_object_sents=False, all_object_sents=False, no_annotations=False)
+  #tag = 'basic_caption_%s_' %(rm_tags[0])
   #save_files(augment_captions_out, tag + 'train')
 
   #no captions
-  augment_captions_out = augment_captions(train_captions, rm_words[0], rm_all_object_sents=False, all_object_sents=False, no_annotations=True)
-  tag = 'no_caption_%s_' %(rm_tags[0])
-  save_files(augment_captions_out, tag + 'train')
+  #augment_captions_out = augment_captions(train_captions, rm_words[0], rm_all_object_sents=False, all_object_sents=False, no_annotations=True)
+  #tag = 'no_caption_%s_' %(rm_tags[0])
+  #save_files(augment_captions_out, tag + 'train')
 
   #make smaller train set for training vocab
   #vocab_pretrain = vocab_pretrain(train_captions) 

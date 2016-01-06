@@ -382,6 +382,6 @@ def add_dataset(tag, split):
 if __name__ == "__main__":
   #process_coco()
   if eightyK:
-    process_coco('train', False, False, '/z/lisaanne/pretrained_lm/yt_coco_surface_80k_vocab.txt')
+    process_coco('no_caption_rmSecondEightCluster_train', False, False, '/y/lisaanne/pretrained_lm/yt_coco_surface_80k_vocab.txt')
   else:
-    process_coco('train', False, False, 'h5_data/buffer_100/vocabulary.txt')
+    process_coco('basic_caption_rmEightCluster_train', False, False, 'h5_data/buffer_100/vocabulary.txt')

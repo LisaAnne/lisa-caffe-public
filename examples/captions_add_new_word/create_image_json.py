@@ -93,23 +93,24 @@ def add_imagenet_images(current_json, objects):
 #create coco json
 
 #original attributes (has 471 classes)
-#lexical_list = 'utils_trainAttributes/lexicalList_parseCoco_JJ100_NN300_VB100.txt' #lexical list
-#imageList_train = 'utils_trainAttributes/imageList_coco_train_parse_labels.json' #list of images and labels
-#imageList_val_val = 'utils_trainAttributes/imageList_coco_test_parse_labels.json' #list of images and labels
-#save_image_json_train = 'utils_trainAttributes/imageJson_train.json'
-#save_image_json_val_val = 'utils_trainAttributes/imageJson_test.json'
+lexical_list = 'utils_trainAttributes/lexicalList_parseCoco_JJ100_NN300_VB100.txt' #lexical list
+imageList_train = 'utils_trainAttributes/imageList_coco_train_parse_labels.json' #list of images and labels
+imageList_val_val = 'utils_trainAttributes/imageList_coco_test_parse_labels.json' #list of images and labels
+save_image_json_train = 'utils_trainAttributes/imageJson_train_secondEight.json'
+save_image_json_val_val = 'utils_trainAttributes/imageJson_test_secondEight.json'
 
 #For expanded attribute set (has 715 classes)
-lexical_list = 'utils_trainAttributes/lexicalList_parseCoco_JJ155_NN511_VB100.txt'
-imageList_train = 'utils_trainAttributes/imageList_JJ155_NN511_VB100_coco_train.json'
-imageList_val_val = 'utils_trainAttributes/imageList_JJ155_NN511_VB100_coco_val_val.json'
-save_image_json_train = 'utils_trainAttributes/imageJson_JJ155_NN511_VB100_train.json'
-save_image_json_val_val = 'utils_trainAttributes/imageJson_JJ155_NN511_VB100_val_val.json'
-
-create_coco_json(imageList_train, lexical_list, save_image_json_train)
-create_coco_json(imageList_val_val, lexical_list, save_image_json_val_val)
+#lexical_list = 'utils_trainAttributes/lexicalList_parseCoco_JJ155_NN511_VB100.txt'
+#imageList_train = 'utils_trainAttributes/imageList_JJ155_NN511_VB100_coco_train.json'
+#imageList_val_val = 'utils_trainAttributes/imageList_JJ155_NN511_VB100_coco_val_val.json'
+#save_image_json_train = 'utils_trainAttributes/imageJson_JJ155_NN511_VB100_train.json'
+#save_image_json_val_val = 'utils_trainAttributes/imageJson_JJ155_NN511_VB100_val_val.json'
+#
+#create_coco_json(imageList_train, lexical_list, save_image_json_train)
+#create_coco_json(imageList_val_val, lexical_list, save_image_json_val_val)
 
 #Add imagenet objects
 #objects = ['bottle', 'bus', 'couch', 'luggage', 'microwave', 'motorcycle', 'pizza', 'racket', 'suitcase', 'zebra']
-#add_imagenet_images('utils_trainAttributes/imageJson_train.json', objects)
+objects = ['bowl', 'kite', 'oven', 'salad', 'sheep', 'table', 'truck', 'umbrella']
+add_imagenet_images('utils_trainAttributes/imageJson_train_secondEight.json', objects)
 

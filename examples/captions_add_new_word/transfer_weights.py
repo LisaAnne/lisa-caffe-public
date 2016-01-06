@@ -8,11 +8,12 @@ import copy
 import pickle as pkl
 import hickle as hkl
 from nltk.corpus import wordnet as wn
-import pdb
+from init import *
 #import find_close_words
 
-save_tag = 'closest_W2V'
-eightyK = True
+save_tag_template = 'closest_W2V_%s'
+eightyK = False
+all_at_once = True
 transfer_embed = False 
 num_close_words_im = 1
 num_close_words_lm = 1
@@ -39,17 +40,45 @@ all_add_words.append(add_words)
 add_words = {'words': ['racket', 'rackets', 'racquet', 'racquets'], 'classifiers': ['racket', 'racket', 'racquet', 'racquet'], 'illegal_words': ['racket', 'racquet']}
 all_add_words.append(add_words)
 
+#secondEight
+#add_words = {'words': ['bowl', 'bowls'], 'classifiers': ['bowl', 'bowl'], 'illegal_words': ['bowl']}
+#all_add_words.append(add_words)
+#add_words = {'words': ['kite', 'kites'], 'classifiers': ['kite', 'kite'], 'illegal_words': ['kite']}
+#all_add_words.append(add_words)
+#add_words = {'words': ['oven', 'ovens'], 'classifiers': ['oven', 'oven'], 'illegal_words': ['oven']}
+#all_add_words.append(add_words)
+#add_words = {'words': ['salad', 'salads'], 'classifiers': ['salad', 'salad'], 'illegal_words': ['salad']}
+#all_add_words.append(add_words)
+#add_words = {'words': ['sheep', 'sheeps'], 'classifiers': ['sheep', 'sheep'], 'illegal_words': ['sheep']}
+#all_add_words.append(add_words)
+#add_words = {'words': ['table', 'tables'], 'classifiers': ['table', 'table'], 'illegal_words': ['table']}
+#all_add_words.append(add_words)
+#add_words = {'words': ['truck', 'trucks'], 'classifiers': ['truck', 'truck'], 'illegal_words': ['truck']}
+#all_add_words.append(add_words)
+#add_words = {'words': ['umbrella', 'umbrellas'], 'classifiers': ['umbrella', 'umbrella'], 'illegal_words': ['umbrella']}
+#all_add_words.append(add_words)
+
+if all_at_once:
+  add_words_list = {}
+  add_words_list['words'] = []
+  add_words_list['classifiers'] = []
+  add_words_list['illegal_words'] = []
+  for add_words in all_add_words:
+    add_words_list['words'].extend(add_words['words']) 
+    add_words_list['classifiers'].extend(add_words['classifiers']) 
+    add_words_list['illegal_words'].extend(add_words['illegal_words']) 
+  all_add_words = []
+  all_add_words.append(add_words_list)  
 
 #Relearn image and language model
-#model_weights = '/z/lisaanne/snapshots_caption_models/attributes_JJ100_NN300_VB100_zebra_cocoImages_captions_noLMPretrain_dropout_iter_110000'
-model_weights = '/z/lisaanne/snapshots_caption_models/attributes_JJ155_NN511_VB100_vgg_ftLMPretrain.surf_lr0.01_iter_120000.80k_1104_iter_110000'
 if not eightyK:
-  model='mrnn_attributes_fc8.direct.from_features.wtd.prototxt'
+  model='mrnn_attributes_fc8.direct.from_features.wtd.ft.prototxt'
 else:
   model='mrnn_attributes_fc8.direct.from_features.wtd.80k.prototxt'
+model_weights='snapshots/attributes_JJ100_NN300_VB100_eightClusters_captions_cocoImages_1026_ftLM_1110_noLMPretrain_iter_110000'
 net = caffe.Net(model, model_weights + '.caffemodel', caffe.TRAIN)
 
-attributes = pkl.load(open('../coco_attribute/attribute_lists/attributes_JJ155_NN511_VB100.pkl','rb'))
+attributes = pkl.load(open('../coco_attribute/attribute_lists/attributes_JJ100_NN300_VB100.pkl','rb'))
 
 scale_feats = False
 if scale_feats:
@@ -103,18 +132,19 @@ for add_words in all_add_words:
   net = caffe.Net(model, model_weights + '.caffemodel', caffe.TRAIN)
 
   #This should check that you are using the correct wtd prototxt.
-  check_wtd = False
-  while check_wtd == False:
-    if 'predict-lm' in net.params.keys():
-      predict_lm = 'predict-lm'
-    else:
-      predict_lm = 'predict'
+  if 'predict-lm' in net.params.keys():
+    predict_lm = 'predict-lm'
+  else:
+    predict_lm = 'predict'
+
  
   if len(net.params['predict-im']) > 1:
     im_bias = True
   else: 
     im_bias = False
   save_tag = save_tag_template % add_words['words'][0]
+  if all_at_once:
+    save_tag = save_tag_template %'all'
   for aw, word in enumerate(add_words['words']):
     close_words_im[word] = {}
     word_sims = closeness_metric(add_words['classifiers'][aw])
@@ -189,7 +219,7 @@ for add_words in all_add_words:
     for wi, close_word in enumerate(close_words_lm[add_word]['close_words']):
       close_word_idx = vocab_lines.index(close_word)
       predict_weights_im[close_word_idx,attribute_loc] = 0 
-     
+  
   net.params[predict_lm][0].data[...] = predict_weights_lm
   net.params[predict_lm][1].data[...] = predict_bias_lm
   net.params['predict-im'][0].data[...] = predict_weights_im

@@ -14,7 +14,7 @@ sys.path.insert(0, '../captions_add_new_word/')
 #imagnet images
 #image_path = '/y/lisaanne/imageData/imagenet/'
 #sets = ['pizza', 'zebra', 'motorcycle']
-feature_path = '/z/lisaanne/lexical_features/'
+feature_path = '/y/lisaanne/lexical_features/'
 coco_template = '../../data/coco/coco/images/%s2014/COCO_%s2014_%012d.jpg'
 im_ids_train = open('../../data/coco/coco2014_cocoid.train.txt').readlines()
 im_ids_train = [int(im_id.strip()) for im_id in im_ids_train]
