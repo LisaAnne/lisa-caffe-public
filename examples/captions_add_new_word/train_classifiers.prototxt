@@ -9,7 +9,7 @@ layer {
   python_param {
     module: "python_data_layers"
     layer: "captionClassifierImageData"
-    param_str: "{'batch_size': 100, 'single_bit_classes': ['bottle'], 'json_images': 'utils_trainAttributes/imageJson_train.json', 'images': 'utils_trainAttributes/imageTrain_coco.txt', 'lexical_list': 'utils_trainAttributes/lexicalList_parseCoco_JJ100_NN300_VB100.txt', 'crop_dim': 227}"
+    param_str: "{'batch_size': 100, 'single_bit_classes': ['bottle', 'bus', 'couch', 'microwave', 'pizza', 'suitcase', 'racket', 'racquet', 'zebra'], 'json_images': 'utils_trainAttributes/imageJson_train.json', 'images': 'utils_trainAttributes/imageTrain_coco.txt', 'lexical_list': 'utils_trainAttributes/lexicalList_parseCoco_JJ100_NN300_VB100.txt', 'crop_dim': 227}"
   }
   include { phase: TRAIN}
 }

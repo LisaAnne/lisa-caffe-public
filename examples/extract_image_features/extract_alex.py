@@ -23,43 +23,39 @@ im_ids_val = [int(im_id.strip()) for im_id in im_ids_val]
 im_ids_test = open('../../data/coco/coco2014_cocoid.val_test.txt').readlines()
 im_ids_test = [int(im_id.strip()) for im_id in im_ids_test]
 
-#train_ims = [coco_template %('train', 'train', im_id) for im_id in im_ids_train]
-#val_ims = [coco_template %('val', 'val', im_id) for im_id in im_ids_val]
-#test_ims = [coco_template %('val', 'val', im_id) for im_id in im_ids_test]
+train_ims = [coco_template %('train', 'train', im_id) for im_id in im_ids_train]
+val_ims = [coco_template %('val', 'val', im_id) for im_id in im_ids_val]
+test_ims = [coco_template %('val', 'val', im_id) for im_id in im_ids_test]
 #sets = [train_ims, val_ims, test_ims]
 #set_names = ['train', 'val_val', 'val_test']
+sets = [val_ims, test_ims]
+set_names = ['val_val', 'val_test']
 
 more_ims_path = open('../captions_add_new_word/utils_trainAttributes/imageTest_newObjects_2.txt').readlines()
 more_ims_path = ['/z/lisaanne/imageData/imagenet/' + m.split(' ')[1].strip() for m in more_ims_path if m.split(' ')[0]=='imagenet'] 
 
-sets = [more_ims_path]
-set_names = ['more_ims']
-#sets = ['test2014','train2014']
-#sets = ['train2014']
 caffe.set_mode_gpu()
 caffe.set_device(1)
 
 #vgg weights
-#model_file = '../../models/vgg/VGG_ILSVRC_16_layers_deploy.prototxt'
-#model_weights = '../../models/vgg/VGG_ILSVRC_16_layers.caffemodel'
-#image_dim = 224
-#model_file = '../captions_add_new_word/train_classifiers.vgg.deploy.prototxt'
-#model_weights = '/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_imagenet_zebra.vgg_iter_50000'
+model_file = 'deploy_vgg_attributes.prototxt'
+image_dim = 224
 
 #lexical weights
-model_file = '../coco_attribute/mrnn_attributes_fc8-probs_deploy.prototxt'
+#model_file = '../coco_attribute/mrnn_attributes_fc8-probs_deploy.prototxt'
+#image_dim = 227
 #model_file = '../captions_add_new_word/train_classifiers_deploy.prototxt'
 #baseline
 #model_weights = '/z/lisaanne/CVPR2016/train_lexical_classifier/attributes_JJ100_NN300_VB100_baseline_cocoImages_iter_50000'
-model_weights = '/z/lisaanne/CVPR2016/train_lexical_classifier/attributes_JJ100_NN300_VB100_imagenetImages_addMoreImages_iter_45000'
+#model_weights = '/z/lisaanne/CVPR2016/train_lexical_classifier/attributes_JJ100_NN300_VB100_imagenetImages_addMoreImages_iter_45000'
+model_weights = '/z/lisaanne/CVPR2016/train_lexical_classifier/final_snapshots/attributes_JJ155_NN511_VB100_eightCluster_vgg_1110_iter_50000'
 #zebra
 #model_weights = '/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_eightClusters_cocoImages_fixPDL_iter_50000'
 #model_weights = '/x/lisaanne/coco_attribute/train_lexical_classifier/attributes_JJ100_NN300_VB100_zebra_iter_50000'
 save_h5 = model_weights.split('/')[-1]
-image_dim = 227
 oversample_dim = True
 feature_extract = 'prob-attributes'
-feature_size = 668
+feature_size = 715
 
 net = caffe.Net(model_file, model_weights + '.caffemodel', caffe.TEST)
 shape = (128,3,image_dim,image_dim)
@@ -88,7 +84,7 @@ def image_processor(input_im):
     processed_image = transformer.preprocess('data',data_in)
   return processed_image
 
-batch_size = 100 
+batch_size = 10 
 for s, set_name in zip(sets, set_names):
   all_ims = s
   features = np.zeros((len(all_ims), feature_size))
@@ -111,7 +107,7 @@ for s, set_name in zip(sets, set_names):
       features_av = [np.mean(features_tmp[i:i+10], axis=0) for i in range(0, len(data), 10)]
       features_tmp = np.array(features_av)
     features[ix:ix+features_tmp.shape[0],:] = features_tmp
-  h5_file = '/z/lisaanne/lexical_features/alex_feats.%s.%s.h5' %(save_h5, set_name)
+  h5_file = '/z/lisaanne/lexical_features/vgg_feats.%s.%s.h5' %(save_h5, set_name)
   f = h5py.File(h5_file, "w")
   print "Printing to %s\n" %h5_file
   all_ims_short = [i.split('/')[-2] + '/' + i.split('/')[-1] for i in all_ims]

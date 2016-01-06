@@ -8,10 +8,11 @@ import copy
 import pickle as pkl
 import hickle as hkl
 from nltk.corpus import wordnet as wn
+import pdb
 #import find_close_words
 
 save_tag = 'closest_W2V'
-eightK = False
+eightyK = True
 transfer_embed = False 
 num_close_words_im = 1
 num_close_words_lm = 1
@@ -40,13 +41,15 @@ all_add_words.append(add_words)
 
 
 #Relearn image and language model
-model_weights = '/z/lisaanne/snapshots_caption_models/attributes_JJ100_NN300_VB100_zebra_cocoImages_captions_noLMPretrain_dropout_iter_110000'
-model='mrnn_attributes_fc8.direct.from_features.wtd.prototxt'
+#model_weights = '/z/lisaanne/snapshots_caption_models/attributes_JJ100_NN300_VB100_zebra_cocoImages_captions_noLMPretrain_dropout_iter_110000'
+model_weights = '/z/lisaanne/snapshots_caption_models/attributes_JJ155_NN511_VB100_vgg_ftLMPretrain.surf_lr0.01_iter_120000.80k_1104_iter_110000'
+if not eightyK:
+  model='mrnn_attributes_fc8.direct.from_features.wtd.prototxt'
+else:
+  model='mrnn_attributes_fc8.direct.from_features.wtd.80k.prototxt'
 net = caffe.Net(model, model_weights + '.caffemodel', caffe.TRAIN)
 
-
-
-attributes = pkl.load(open('../coco_attribute/attribute_lists/attributes_JJ100_NN300_VB100.pkl','rb'))
+attributes = pkl.load(open('../coco_attribute/attribute_lists/attributes_JJ155_NN511_VB100.pkl','rb'))
 
 scale_feats = False
 if scale_feats:
@@ -93,15 +96,10 @@ def closeness_embedding_synset(new_word):
 
 closeness_metric = closeness_embedding
   
-if not eightyK:
-  model='mrnn_attributes_fc8.direct.from_features.wtd.prototxt'
-else:
-  model='mrnn_attributes_fc8.direct.from_features.wtd.80k.prototxt'
 
 for add_words in all_add_words:
   close_words_im = {}
   close_words_lm = {}
-  model_weights = '/y/lisaanne/mrnn_direct/snapshots/attributes_JJ100_NN300_VB100_eightClusters_cocoImages_captions_fixLMPretrain_fixSplit5_iter_110000'
   net = caffe.Net(model, model_weights + '.caffemodel', caffe.TRAIN)
 
   #This should check that you are using the correct wtd prototxt.
@@ -111,14 +109,6 @@ for add_words in all_add_words:
       predict_lm = 'predict-lm'
     else:
       predict_lm = 'predict'
-    if np.mean(net.params[predict_lm][0].data) < 0.1:
-      print "Model trained with 'predict' layer not 'predict-lm'"
-      if not eightyK:
-        model='mrnn_attributes_fc8.direct.from_features.wtd.ft.prototxt'
-      else:
-        model='mrnn_attributes_fc8.direct.from_features.wtd.80k.ft.prototxt'
-      net = caffe.Net(model, model_weights + '.caffemodel', caffe.TRAIN)
-
  
   if len(net.params['predict-im']) > 1:
     im_bias = True
