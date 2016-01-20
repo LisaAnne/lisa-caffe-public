@@ -1,9 +1,17 @@
-name: "singleFrame_flow"
-input: "data"
-input_dim: 160
-input_dim: 3
-input_dim: 227
-input_dim: 227
+name: "image_deploy"
+layer {
+  name: "data"
+  type: "DummyData"
+  top: "data"
+  dummy_data_param {
+    shape {
+      dim: 160
+      dim: 3
+      dim: 227
+      dim: 227
+    }
+  }
+}
 layer {
   name: "conv1"
   type: "Convolution"
@@ -283,12 +291,12 @@ layer {
   inner_product_param {
     num_output: 4096
     weight_filler {
-      type: "gaussian"
-      std: 0.01
+      type: "constant" 
+      std: 0
     }
     bias_filler {
       type: "constant"
-      value: 0.1
+      value: 0
     }
   }
 }
@@ -323,8 +331,8 @@ layer {
   inner_product_param {
     num_output: 101
     weight_filler {
-      type: "gaussian"
-      std: 0.01
+      type: "constant"
+      std: 0
     }
     bias_filler {
       type: "constant"

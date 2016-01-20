@@ -94,7 +94,9 @@ def evaluate_lstm(model_weights, h5_file_list, model='deploy_lstm.prototxt'):
       data_in_chunk = data_in_chunk_reshape.reshape((8000, 4096, 1,1))
       clip_markers_chunk = np.ones((8000, 1, 1,1))
       clip_markers_chunk[:batch_size,...] = 0
-      out = net.forward(data=data_in_chunk, clip_markers=clip_markers_chunk)
+      net.blobs['data'].data[...] = data_in_chunk
+      net.blobs['clip_markers'].data[...] = clip_markers_chunk
+      out = net.forward()
       out_probs_reshape = np.zeros((8000,101))
       count = 0
       for nc in range(min(num_samples-i, batch_size*num_frames)/num_frames):
@@ -110,6 +112,33 @@ def evaluate_lstm(model_weights, h5_file_list, model='deploy_lstm.prototxt'):
   
   num_correct = len(np.where(np.array(gt_labels)-np.array(predict_labels) == 0)[0])
   print 'Accuracy is %f.\n' %(float(num_correct)/len(gt_labels))
+  
+def image_processor(transformer, input_im, image_dim=227):
+  resize = (240, 320)
+  data_in = caffe.io.load_image(input_im)
+  if not ((data_in.shape[0] == resize[0]) & (data_in.shape[1] == resize[1])):
+    data_in = caffe.io.resize_image(data_in, resize)
+  
+  shift_x = (resize[0] - image_dim)/2
+  shift_y = (resize[1] - image_dim)/2
+  shift_data_in = data_in[shift_x:shift_x+image_dim,shift_y:shift_y+image_dim,:] 
+  processed_image = transformer.preprocess('data',shift_data_in)
+  return processed_image
+
+def create_transformer(net, image_dim, flow):
+  shape = (128,3,image_dim,image_dim)
+  transformer = caffe.io.Transformer({'data': net.blobs['data'].data.shape})
+  transformer.set_raw_scale('data', 255)
+  image_mean = [103.939, 116.779, 128.68]
+  if flow:
+    image_mean = [128, 128, 128]
+  channel_mean = np.zeros((3,image_dim,image_dim))
+  for channel_index, mean_val in enumerate(image_mean):
+    channel_mean[channel_index, ...] = mean_val
+  transformer.set_mean('data', channel_mean)
+  transformer.set_channel_swap('data', (2, 1, 0))
+  transformer.set_transpose('data', (2, 0, 1))
+  return transformer
 
 def extract_features(model_weights, flow=False, split=1, save_folder='extracted_features', im_path='images'):
 
@@ -117,7 +146,6 @@ def extract_features(model_weights, flow=False, split=1, save_folder='extracted_
   videos = [im_path + '/' + v.split(' ')[0].split('/')[1]  for v in videos]
   
   image_dim = 227
-  resize = (240, 320)
   
   if not os.path.isdir(save_folder):
     print 'Creating folder %s.' %save_folder
@@ -133,30 +161,8 @@ def extract_features(model_weights, flow=False, split=1, save_folder='extracted_
   feature_size = 4096
   
   net = caffe.Net(model_file, model_weights, caffe.TEST)
-  shape = (128,3,image_dim,image_dim)
-  transformer = caffe.io.Transformer({'data': net.blobs['data'].data.shape})
-  transformer.set_raw_scale('data', 255)
-  image_mean = [103.939, 116.779, 128.68]
-  if flow:
-    image_mean = [128, 128, 128]
-  channel_mean = np.zeros((3,image_dim,image_dim))
-  for channel_index, mean_val in enumerate(image_mean):
-    channel_mean[channel_index, ...] = mean_val
-  transformer.set_mean('data', channel_mean)
-  transformer.set_channel_swap('data', (2, 1, 0))
-  transformer.set_transpose('data', (2, 0, 1))
+  transformer = create_transformer(net, image_dim, flow) 
   
-  
-  def image_processor(input_im):
-    data_in = caffe.io.load_image(input_im)
-    if not ((data_in.shape[0] == resize[0]) & (data_in.shape[1] == resize[1])):
-      data_in = caffe.io.resize_image(data_in, resize)
-  
-    shift_x = (resize[0] - image_dim)/2
-    shift_y = (resize[1] - image_dim)/2
-    shift_data_in = data_in[shift_x:shift_x+image_dim,shift_y:shift_y+image_dim,:] 
-    processed_image = transformer.preprocess('data',shift_data_in)
-    return processed_image
   
   def save_frames(feats, num_h5):
     f = h5py.File('%s/extracted_features_%d.h5' %(save_folder, num_h5), "w")
@@ -188,7 +194,7 @@ def extract_features(model_weights, flow=False, split=1, save_folder='extracted_
     data = []
     #t = time.time()
     for frame in sorted(frames):
-      data.append(image_processor(frame))
+      data.append(image_processor(transformer, frame))
   
     min_batch = 400 
     video_key = video.split('/')[-1] 

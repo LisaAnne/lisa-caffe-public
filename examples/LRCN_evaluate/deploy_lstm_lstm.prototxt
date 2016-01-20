@@ -1,14 +1,30 @@
-name: "lstm_joints"
-input: "data"
-input_dim: 8000
-input_dim: 4096
-input_dim: 1
-input_dim: 1
-input: "clip_markers"
-input_dim: 8000
-input_dim: 1
-input_dim: 1
-input_dim: 1
+name: "lstm_deploy"
+layer {
+  name: "data"
+  type: "DummyData"
+  top: "data"
+  dummy_data_param {
+    shape {
+      dim: 8000
+      dim: 4096
+      dim: 1
+      dim: 1
+    }
+  }  
+}
+layer {
+  name: "clip_markers"
+  type: "DummyData"
+  top: "clip_markers"
+  dummy_data_param {
+    shape {
+      dim: 8000
+      dim: 1 
+      dim: 1
+      dim: 1
+    }
+  }  
+}
 layer{
   name: "reshape-data"
   type: "Reshape"
@@ -16,7 +32,7 @@ layer{
   top: "fc6-reshape"
   reshape_param{
     shape{
-      dim: 16
+      dim: 16 
       dim: 500
       dim: 4096
     }
