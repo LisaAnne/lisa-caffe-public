@@ -299,13 +299,18 @@ def load_image(filename, color=True):
     try:
       img = skimage.img_as_float(skimage.io.imread(filename)).astype(np.float32)
     except:
-      print "Can't load with skimage, trying with PIL.\n" 
-      #pdb.set_trace()
-      print filename
-      b = Image.open(filename)
-      junk = type(np.array(b))
-      a = np.array(b)
-      img = a.astype(np.float32) 
+      try:
+        print "Can't load with skimage, trying with PIL.\n" 
+        #pdb.set_trace()
+        print filename
+        b = Image.open(filename)
+        junk = type(np.array(b))
+        a = np.array(b)
+        img = a.astype(np.float32) 
+      except:
+        img = np.zeros((256, 256, 3))
+        img = img.astype(np.float32)
+        print "Returning all zeros image..." 
     if img.ndim == 2:
         img = img[:, :, np.newaxis]
         if color:

@@ -1,4 +1,5 @@
 name: "FinetuneVGG"
+
 layer {
   name: "train-data"
   type: "Python"
@@ -7,7 +8,11 @@ layer {
   python_param {
     module: "python_data_layers"
     layer: "captionClassifierImageData"
-    param_str: "{'batch_size': 64, 'single_bit_classes': ['bottle', 'bus', 'couch', 'microwave', 'pizza', 'suitcase', 'racket', 'racquet', 'zebra'], 'json_images': 'utils_trainAttributes/imageJson_JJ155_NN511_VB100_train.json', 'images': 'utils_trainAttributes/imageTrain_coco.txt', 'lexical_list': 'utils_trainAttributes/lexicalList_parseCoco_JJ155_NN511_VB100.txt', 'crop_dim': 224}"
+    param_str: "{'batch_size': 64, 'single_bit_classes': ['chair', 'truck', 'snowboard', 'broccoli', 'oven', 'bear', 'fork', 'vase'], 'json_images': 'utils_trainAttributes/imageJson_train_secondEight_471.json', 'images': 'utils_trainAttributes/imageTrain_coco_secondEight_471.txt', 'lexical_list': 'utils_trainAttributes/lexicalList_parseCoco_JJ100_NN300_VB100.txt', 'crop_dim': 224}"
+    #param_str: "{'batch_size': 64, 'single_bit_classes': ['bottle', 'bus', 'couch', 'microwave', 'pizza', 'suitcase', 'racket', 'racquet', 'zebra'], 'json_images': 'utils_trainAttributes/imageJson_train_JJ155_NN511_VB100.json', 'images': 'utils_trainAttributes/imageTrain_coco.txt', 'lexical_list': 'utils_trainAttributes/lexicalList_parseCoco_JJ155_NN511_VB100.txt', 'crop_dim': 224}"
+    #param_str: "{'batch_size': 64, 'single_bit_classes': ['bottle', 'bus', 'couch', 'microwave', 'pizza', 'suitcase', 'racket', 'racquet', 'zebra'], 'json_images': 'utils_trainAttributes/imageJson_train_JJ155_NN511_VB100.json', 'images': 'utils_trainAttributes/imageTrain_eightImagenet.txt', 'lexical_list': 'utils_trainAttributes/lexicalList_parseCoco_JJ155_NN511_VB100.txt', 'crop_dim': 224}"
+    #param_str: "{'batch_size': 64, 'single_bit_classes': ['bottle', 'bus', 'couch', 'microwave', 'pizza', 'suitcase', 'racket', 'racquet', 'zebra'], 'json_images': 'utils_trainAttributes/imageJson_train.json', 'images': 'utils_trainAttributes/imageTrain_coco.txt', 'lexical_list': 'utils_trainAttributes/lexicalList_parseCoco_JJ100_NN300_VB100.txt', 'crop_dim': 224}"
+    #param_str: "{'batch_size': 64, 'single_bit_classes': [], 'json_images': 'utils_trainAttributes/imageJson_train.json', 'images': 'utils_trainAttributes/imageTrain_coco.txt', 'lexical_list': 'utils_trainAttributes/lexicalList_parseCoco_JJ100_NN300_VB100.txt', 'crop_dim': 224}"
   }
   include { phase: TRAIN}
 }
@@ -16,6 +21,14 @@ layer {
   type: "Convolution"
   bottom: "images"
   top: "conv1_1"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 1
+  }
   convolution_param {
     num_output: 64
     pad: 1
@@ -33,6 +46,14 @@ layer {
   type: "Convolution"
   bottom: "conv1_1"
   top: "conv1_2"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 1
+  }
   convolution_param {
     num_output: 64
     pad: 1
@@ -61,6 +82,14 @@ layer {
   type: "Convolution"
   bottom: "pool1"
   top: "conv2_1"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 1
+  }
   convolution_param {
     num_output: 128
     pad: 1
@@ -78,6 +107,14 @@ layer {
   type: "Convolution"
   bottom: "conv2_1"
   top: "conv2_2"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 1
+  }
   convolution_param {
     num_output: 128
     pad: 1
@@ -106,6 +143,14 @@ layer {
   type: "Convolution"
   bottom: "pool2"
   top: "conv3_1"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 1
+  }
   convolution_param {
     num_output: 256
     pad: 1
@@ -123,6 +168,14 @@ layer {
   type: "Convolution"
   bottom: "conv3_1"
   top: "conv3_2"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 1
+  }
   convolution_param {
     num_output: 256
     pad: 1
@@ -140,6 +193,14 @@ layer {
   type: "Convolution"
   bottom: "conv3_2"
   top: "conv3_3"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 1
+  }
   convolution_param {
     num_output: 256
     pad: 1
@@ -168,6 +229,14 @@ layer {
   type: "Convolution"
   bottom: "pool3"
   top: "conv4_1"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 1
+  }
   convolution_param {
     num_output: 512
     pad: 1
@@ -185,6 +254,14 @@ layer {
   type: "Convolution"
   bottom: "conv4_1"
   top: "conv4_2"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 1
+  }
   convolution_param {
     num_output: 512
     pad: 1
@@ -202,6 +279,14 @@ layer {
   type: "Convolution"
   bottom: "conv4_2"
   top: "conv4_3"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 1
+  }
   convolution_param {
     num_output: 512
     pad: 1
@@ -230,6 +315,14 @@ layer {
   type: "Convolution"
   bottom: "pool4"
   top: "conv5_1"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 1
+  }
   convolution_param {
     num_output: 512
     pad: 1
@@ -247,6 +340,14 @@ layer {
   type: "Convolution"
   bottom: "conv5_1"
   top: "conv5_2"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 1
+  }
   convolution_param {
     num_output: 512
     pad: 1
@@ -264,6 +365,14 @@ layer {
   type: "Convolution"
   bottom: "conv5_2"
   top: "conv5_3"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 1
+  }
   convolution_param {
     num_output: 512
     pad: 1
@@ -316,6 +425,14 @@ layer {
   type: "InnerProduct"
   bottom: "fc6"
   top: "fc7"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2
+    decay_mult: 1
+  }
   inner_product_param {
     num_output: 4096
   }
@@ -340,8 +457,24 @@ layer {
   type: "InnerProduct"
   bottom: "fc7"
   top: "fc8-attributes"
+  param {
+    lr_mult: 10
+    decay_mult: 10
+  }
+  param {
+    lr_mult: 20
+    decay_mult: 10
+  }
   inner_product_param {
-    num_output: 715
+    num_output: 471
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
   }
 }
 layer {

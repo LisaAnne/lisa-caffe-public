@@ -390,7 +390,7 @@ class Captioner():
     return output
 
   def compute_descriptors(self, image_list, feats_bool=False, output_name='fc8'):
-    coco=False
+    coco=True
     if feats_bool:
       #load image from h5 file and make into a dict
       f = h5py.File(self.h5_file, 'r')

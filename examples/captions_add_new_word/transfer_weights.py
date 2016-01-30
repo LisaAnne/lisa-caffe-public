@@ -12,7 +12,7 @@ from init import *
 #import find_close_words
 
 save_tag_template = 'closest_W2V_%s'
-eightyK = False
+eightyK = True
 all_at_once = True
 transfer_embed = False 
 num_close_words_im = 1
@@ -75,10 +75,10 @@ if not eightyK:
   model='mrnn_attributes_fc8.direct.from_features.wtd.ft.prototxt'
 else:
   model='mrnn_attributes_fc8.direct.from_features.wtd.80k.prototxt'
-model_weights='snapshots/attributes_JJ100_NN300_VB100_eightClusters_captions_cocoImages_1026_ftLM_1110_noLMPretrain_iter_110000'
+model_weights='/z/lisaanne/snapshots_caption_models/attributes_JJ155_NN511_VB100_vgg_ftLMPretrain.surf_lr0.01_iter_120000.80k_1104_iter_110000'
 net = caffe.Net(model, model_weights + '.caffemodel', caffe.TRAIN)
 
-attributes = pkl.load(open('../coco_attribute/attribute_lists/attributes_JJ100_NN300_VB100.pkl','rb'))
+attributes = pkl.load(open('../coco_attribute/attribute_lists/attributes_JJ155_NN511_VB100.pkl','rb'))
 
 scale_feats = False
 if scale_feats:

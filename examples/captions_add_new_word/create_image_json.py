@@ -42,9 +42,6 @@ class image_json(object):
   
     self.image_json = image_json
 
-  def add_new_images(self):
-    raise Exception('Not yet implemented')
-
   def add_new_label(self, label):
     #add new label to list of labels
     self.image_json['labels'].append(label) 
@@ -84,33 +81,61 @@ def add_imagenet_images(current_json, objects):
       op_partial = '/'.join(op.split('/')[-2:])
       new_object_dict[op_partial] = {}
       new_object_dict[op_partial]['positive_label'] = [o]
-      new_object_dict[op_partial]['negative_label'] = []
+      new_object_dict[op_partial]['negative_label'] = [objects]
     train_json.add_new_dataset('imagenet', new_object_dict)
   train_json.save_updated_json()
   print 'Saved imagenet items to json %s.' %(current_json)
 
+def create_image_json(imagenet_objects):
 
-#create coco json
+  #create coco jso 
+  #original attributes (has 471 classes)
+  lexical_list = 'utils_trainAttributes/lexicalList_parseCoco_JJ100_NN300_VB100.txt' #lexical list
+  imageList_train = 'utils_trainAttributes/imageList_coco_train_parse_labels.json' #list of images and labels
+  imageList_val_val = 'utils_trainAttributes/imageList_coco_test_parse_labels.json' #list of images and labels
+  save_image_json_train = 'utils_trainAttributes/imageJson_train_JJ100_NN300_VB100_scaleImagenet_negs.json'
+  save_image_json_val_val = 'utils_trainAttributes/imageJson_test_JJ100_NN300_VB100_scaleImagenet_negs.json'
+  
+  create_coco_json(imageList_train, lexical_list, save_image_json_train)
+  create_coco_json(imageList_val_val, lexical_list, save_image_json_val_val)
+  
+  #Add imagenet objects
+  #objects = ['chair', 'truck', 'snowboard', 'broccoli', 'oven', 'bear', 'fork', 'vase']
+  objects = imagenet_objects 
+  add_imagenet_images(save_image_json_train, objects)
 
-#original attributes (has 471 classes)
-lexical_list = 'utils_trainAttributes/lexicalList_parseCoco_JJ100_NN300_VB100.txt' #lexical list
-imageList_train = 'utils_trainAttributes/imageList_coco_train_parse_labels.json' #list of images and labels
-imageList_val_val = 'utils_trainAttributes/imageList_coco_test_parse_labels.json' #list of images and labels
-save_image_json_train = 'utils_trainAttributes/imageJson_train_secondEight.json'
-save_image_json_val_val = 'utils_trainAttributes/imageJson_test_secondEight.json'
+def add_nvc_images(current_json, objects):
+  train_json = image_json()
+  train_json.open_image_json(current_json)
+  train_json.add_new_dataset('nvc', objects)
+  train_json.save_updated_json()
+  print 'Saved imagenet items to json %s.' %(current_json)
 
-#For expanded attribute set (has 715 classes)
-#lexical_list = 'utils_trainAttributes/lexicalList_parseCoco_JJ155_NN511_VB100.txt'
-#imageList_train = 'utils_trainAttributes/imageList_JJ155_NN511_VB100_coco_train.json'
-#imageList_val_val = 'utils_trainAttributes/imageList_JJ155_NN511_VB100_coco_val_val.json'
-#save_image_json_train = 'utils_trainAttributes/imageJson_JJ155_NN511_VB100_train.json'
-#save_image_json_val_val = 'utils_trainAttributes/imageJson_JJ155_NN511_VB100_val_val.json'
-#
-#create_coco_json(imageList_train, lexical_list, save_image_json_train)
-#create_coco_json(imageList_val_val, lexical_list, save_image_json_val_val)
+def create_NVC_json():
+  lexical_list = '../captions_add_new_word/utils_trainAttributes/lexicalList_parseCoco_JJ100_NN300_VB100_NVCC-small.txt'
 
-#Add imagenet objects
-#objects = ['bottle', 'bus', 'couch', 'luggage', 'microwave', 'motorcycle', 'pizza', 'racket', 'suitcase', 'zebra']
-objects = ['bowl', 'kite', 'oven', 'salad', 'sheep', 'table', 'truck', 'umbrella']
-add_imagenet_images('utils_trainAttributes/imageJson_train_secondEight.json', objects)
+  imageList_train = 'utils_trainAttributes/imageList_coco_train_parse_labels.json' #list of images and labels
+  imageList_test = 'utils_trainAttributes/imageList_coco_test_parse_labels.json' #list of images and labels
+  save_image_json_train = 'utils_trainAttributes/imageJson_train_NVCC_0120.json'
+  save_image_json_test = 'utils_trainAttributes/imageJson_test_NVCC_0120.json'
+  create_coco_json(imageList_train, lexical_list, save_image_json_train)
+  create_coco_json(imageList_test, lexical_list, save_image_json_test)
+
+  nvc_json_train = read_json('utils_trainAttributes/imageList_NVC-small_JJ100_NN300_VB100_train.json')
+  nvc_json_test = read_json('utils_trainAttributes/imageList_NVC-small_JJ100_NN300_VB100_test.json')
+
+  add_nvc_images(save_image_json_train, nvc_json_train)
+  add_nvc_images(save_image_json_test, nvc_json_test)
+
+#create_NVC_json()
+
+imagenet_objects_list = open('/home/lisa/caffe-LSTM-video/examples/captions_add_new_word/pruned_imagenet_words.txt').readlines()
+imagenet_objects = [i.split(' ')[0] for i in imagenet_objects_list]
+create_image_json(imagenet_objects)
+
+
+
+
+
+
 

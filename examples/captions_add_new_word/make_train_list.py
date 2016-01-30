@@ -7,11 +7,12 @@ def read_json(t_file):
   j_file = open(t_file).read()
   return json.loads(j_file)
 
-image_train_json = read_json('utils_trainAttributes/imageJson_train_secondEight.json')
+image_train_json = read_json('utils_trainAttributes/imageJson_train_secondEight_471.json')
 
 #new_objects = ['bottle', 'couch', 'luggage', 'racket', 'bus', 'microwave', 'pizza', 'suitcase', 'zebra']
 
-new_objects = ['bowl', 'kite', 'oven', 'salad', 'sheep', 'table', 'truck', 'umbrella']
+#new_objects = ['bowl', 'kite', 'oven', 'salad', 'sheep', 'table', 'truck', 'umbrella']
+new_objects = ['chair', 'truck', 'snowboard', 'broccoli', 'oven', 'bear', 'fork', 'vase']
 
 coco_images = []
 imagenet_images = []
@@ -42,7 +43,7 @@ print '\n'
 print 'Number of coco images is %d.\n' %len(coco_images)
 
 
-write_txt = open('utils_trainAttributes/imageTrain_coco_secondEight.txt', 'w')
+write_txt = open('utils_trainAttributes/imageTrain_coco_secondEight_471.txt', 'w')
 
 write_list = []
 for im in coco_images:

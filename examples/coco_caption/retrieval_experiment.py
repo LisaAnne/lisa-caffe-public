@@ -471,7 +471,7 @@ def main(model_name='',image_net='', LM_net='',  dataset_name='val', vocab='voca
   #COCO_IMAGE_PATTERN = '/y/lisaanne/coco/images2/%s2014' 
   #image_root = COCO_IMAGE_PATTERN % DATASET_NAME
   image_root = COCO_IMAGE_PATTERN % 'val'
-  image_root = '/z/lisaanne/imageData/imagenet/'
+  #image_root = '/z/lisaanne/imageData/imagenet/'
   sg = CocoSequenceGenerator(coco, BUFFER_SIZE, image_root, vocab=vocab,
                              max_words=MAX_WORDS, align=False, shuffle=False,  
                              gt_captions=True, pad=True, truncate=True, 

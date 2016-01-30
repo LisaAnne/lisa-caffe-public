@@ -203,7 +203,7 @@ class featureDataLayer(caffe.Layer):
     
     #create dict with all features (will be an issue if there are too many features or if using lower level feature like conv5)
     
-    dataset_path_hash = {'coco': coco_root, 'imagenet': imagenet_root} 
+    dataset_path_hash = {'coco': coco_root, 'imagenet': imagenet_root, 'nvc': nvc_root} 
 
     param_str = eval(self.param_str)
     self.batch_size = param_str['batch_size']
@@ -299,7 +299,7 @@ class captionClassifierFeatureData(caffe.Layer):
     
     #create dict with all features (will be an issue if there are too many features or if using lower level feature like conv5)
     
-    dataset_path_hash = {'coco': coco_root, 'imagenet': imagenet_root} 
+    dataset_path_hash = {'coco': coco_root, 'imagenet': imagenet_root, 'nvc': nvc_root} 
   
     self.params = eval(self.param_str)
     if 'batch_size' in self.params:
@@ -432,7 +432,7 @@ class captionClassifierImageData(caffe.Layer):
 
     self.channels = 3
 
-    dataset_path_hash = {'coco': coco_root, 'imagenet': imagenet_root} 
+    dataset_path_hash = {'coco': coco_root, 'imagenet': imagenet_root, 'nvc': nvc_root} 
 
     #read json
     def read_json(t_file):
@@ -466,8 +466,14 @@ class captionClassifierImageData(caffe.Layer):
 
     def filter_labels(label_list):
       final_labels = np.ones(len(lexical_classes),)*-1
-      positive_idx = [lexical_classes_dict[label] for label in label_list['positive_label']]
-      negative_idx = [lexical_classes_dict[label] for label in label_list['negative_label']]
+      #assume labels after imagenet should be 0
+      if 'imagenet_start' in self. params.keys():
+        final_labels[self.params['imagenet_start']:] = 0
+      labels_positive = list(set(label_list['positive_label']) & set(lexical_classes_dict.keys()))
+      labels_negative = list(set(label_list['negative_label']) & set(lexical_classes_dict.keys()))
+      positive_idx = [lexical_classes_dict[label] for label in labels_positive]
+      negative_idx = [lexical_classes_dict[label] for label in labels_negative]
+ 
       final_labels[positive_idx] = 1
       final_labels[negative_idx] = 0
       if (single_bit_classes_idx > 0) and (np.sum(final_labels[single_bit_classes_idx]) > 0):
@@ -481,11 +487,12 @@ class captionClassifierImageData(caffe.Layer):
 
     #filter image labels and set up
     images = open(self.images, 'rb').readlines()
+    random.shuffle(images)
     images = [(im.split(' ')[0], im.split(' ')[1].strip()) for im in images]
+    random.shuffle(images)
     images_with_labels = {}
     t = time.time()
     for dset, path in images:
-      #pdb.set_trace()
       labels = filter_labels(json_images['images'][dset][path])
       images_with_labels[dataset_path_hash[dset] + path] = labels
     print 'Filtering labels takes: ', time.time() - t
