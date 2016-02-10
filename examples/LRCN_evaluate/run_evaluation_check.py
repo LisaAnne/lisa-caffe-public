@@ -14,6 +14,7 @@ import caffe
 caffe.set_mode_gpu()
 caffe.set_device(1)
 import pickle as pkl
+import pdb
 
 parser = argparse.ArgumentParser()
 #Model to evaluate
@@ -130,6 +131,7 @@ for video in video_dict.keys():
   for frame in sorted(frames[:16]):
     transformed_data.append(evaluate_lstm.image_processor(transformer, frame))
   net.blobs['data'].reshape(16, 3, 227, 227)
+  net.blobs['data'].data[...] = transformed_data
   net.forward()
   for blob in net.blobs.keys():
     if init_debug: check_dict[video]['image_blobs'][blob] = {}
