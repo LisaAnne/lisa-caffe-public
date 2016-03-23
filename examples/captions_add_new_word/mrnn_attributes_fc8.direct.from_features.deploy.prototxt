@@ -2,7 +2,7 @@ name: "finetune caption model"
 input: "data"
 input_shape {
   dim: 10
-  dim: 715
+  dim: 471
 }
 layer {
   name: "reshape-data"
@@ -13,7 +13,7 @@ layer {
     shape {
       dim: 1
       dim: -1
-      dim: 715
+      dim: 471
     }
   }
 }

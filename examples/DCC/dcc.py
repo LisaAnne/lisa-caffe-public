@@ -9,8 +9,8 @@ def extract_features(args):
 
 def transfer(args):
   
-  transfer_weights.transfer_net(args.model, args.model_weights, args.orig_attributes, args.all_attributes, args.vocab)
-  eval('transfer_weights.' + args.transfer_type)(args.words, args.classifiers, ags.closeness_metric, args.log) 
+  transfer_net = transfer_weights.transfer_net(args.model, args.model_weights, args.orig_attributes, args.all_attributes, args.vocab)
+  eval('transfer_net.' + args.transfer_type)(args.words, args.classifiers, args.closeness_metric, args.log) 
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
@@ -21,7 +21,7 @@ if __name__ == "__main__":
   parser.add_argument("--orig_attributes",type=str, default='')
   parser.add_argument("--all_attributes",type=str, default='')
   parser.add_argument("--vocab", type=str, default='')
-  parser.add_argument("--words", type=str, defulat='')
+  parser.add_argument("--words", type=str, default='')
   parser.add_argument("--classifiers", type=str, default='') #list of classifiers
   parser.add_argument("--closeness_metric", type=str, default='closeness_embedding')
   parser.add_argument("--transfer_type", type=str, default='direct_transfer')

@@ -11,7 +11,7 @@ import sys
 import pickle as pkl
 import copy
 import time
-
+import pdb
 from PIL import Image
 from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -32,38 +32,39 @@ class Captioner():
     phase = caffe.TEST
     self.prev_word_bool = prev_word_restriction
     #Assume the image weights are the same for all models
-    self.image_net = caffe.Net(image_net_proto, weights_paths[0], phase)
-    image_data_shape = self.image_net.blobs['data'].data.shape
-    self.transformer = caffe.io.Transformer({'data': image_data_shape})
-    channel_mean = np.zeros(image_data_shape[1:])
-    channel_mean_values = [104, 117, 123]
-    #assert channel_mean.shape[0] == len(channel_mean_values)
-    if channel_mean.shape[0] == len(channel_mean_values):
-      for channel_index, mean_val in enumerate(channel_mean_values):
-        channel_mean[channel_index, ...] = mean_val
-      self.transformer.set_mean('data', channel_mean)
-      self.transformer.set_channel_swap('data', (2, 1, 0))
-      self.transformer.set_transpose('data', (2, 0, 1))
-    else:
-      print "Warning: did not set transformer; assume that image features do not need to be transformed.\n"
+    t = time.time()
+    print weights_paths
+    self.image_net = None
+    if image_net_proto:
+      self.image_net = caffe.Net(image_net_proto, weights_paths[0], phase)
+      print 'Time to read image net is: %f' %(time.time() - t)
+      image_data_shape = self.image_net.blobs['data'].data.shape
+      self.transformer = caffe.io.Transformer({'data': image_data_shape})
+      channel_mean = np.zeros(image_data_shape[1:])
+      channel_mean_values = [104, 117, 123]
+      #assert channel_mean.shape[0] == len(channel_mean_values)
+      if channel_mean.shape[0] == len(channel_mean_values):
+        for channel_index, mean_val in enumerate(channel_mean_values):
+          channel_mean[channel_index, ...] = mean_val
+        self.transformer.set_mean('data', channel_mean)
+        self.transformer.set_channel_swap('data', (2, 1, 0))
+        self.transformer.set_transpose('data', (2, 0, 1))
+      else:
+        print "Warning: did not set transformer; assume that image features do not need to be transformed.\n"
     # Setup sentence prediction net.
+    t = time.time()
     self.lstm_nets = [caffe.Net(lstm_net_proto, weights_path, phase) for weights_path in weights_paths]
-    if 'hidden_unit_in' in self.lstm_nets[0].blobs.keys():
-      #SO HACKY!!!
-      lstm_net_tmp = caffe.Net('mrnn_wtd_deploy_lm_im.prototxt', weights_path, phase)
-      self.lstm_nets[0].params['lstm1_x_transform'][0].data[:] = copy.deepcopy(lstm_net_tmp.params['lstm1'][0].data)
-      self.lstm_nets[0].params['lstm1_x_transform'][1].data[:] = copy.deepcopy(lstm_net_tmp.params['lstm1'][1].data)
-      self.lstm_nets[0].params['lstm1_transform'][0].data[:] = copy.deepcopy(lstm_net_tmp.params['lstm1'][2].data)
-      del lstm_net_tmp
-    self.vocab = ['<EOS>']
+    print 'Time to read word net is: %f' %(time.time() - t)
     with open(vocab_path, 'r') as vocab_file:
-      self.vocab += [word.strip() for word in vocab_file.readlines()]
-    net_vocab_size = self.lstm_nets[0].blobs['predict-im'].data.shape[2]
-    if len(self.vocab) != net_vocab_size:
-      raise Exception('Invalid vocab file: contains %d words; '
-          'net expects vocab with %d words' % (len(self.vocab), net_vocab_size))
+      self.vocab = [word.strip() for word in vocab_file.readlines()]
+    net_vocab_size = self.lstm_nets[0].blobs['probs'].data.shape[1]
+    self.vocab = ['<EOS>'] + self.vocab
+    #if len(self.vocab) != net_vocab_size:
+    #  raise Exception('Invalid vocab file: contains %d words; '
+    #      'net expects vocab with %d words' % (len(self.vocab), net_vocab_size))
 
     self.h5_file = precomputed_feats
+    self.save_activation = None
 
   def set_image_batch_size(self, batch_size):
     self.image_net.blobs['data'].reshape(batch_size,
@@ -79,9 +80,11 @@ class Captioner():
     for lstm_net in self.lstm_nets:
       lstm_net.blobs['cont_sentence'].reshape(1, batch_size)
       lstm_net.blobs['input_sentence'].reshape(1, batch_size)
-      if 'hidden_unit_in' in lstm_net.blobs.keys():
-        lstm_net.blobs['hidden_unit_in'].reshape(1, batch_size, lstm_net.blobs['hidden_unit_in'].data.shape[-1])
-        lstm_net.blobs['cell_unit_in'].reshape(1, batch_size, lstm_net.blobs['cell_unit_in'].data.shape[-1])
+      if 'lstm1_h0' in lstm_net.blobs.keys():
+        lstm_net.blobs['lstm1_h0'].reshape(1, batch_size, lstm_net.blobs['lstm1_h0'].data.shape[-1])
+        lstm_net.blobs['lstm1_c0'].reshape(1, batch_size, lstm_net.blobs['lstm1_c0'].data.shape[-1])
+        lstm_net.blobs['lstm2_h0'].reshape(1, batch_size, lstm_net.blobs['lstm2_h0'].data.shape[-1])
+        lstm_net.blobs['lstm2_c0'].reshape(1, batch_size, lstm_net.blobs['lstm2_c0'].data.shape[-1])
   
       if dim == 2:
         lstm_net.blobs['image_features'].reshape(batch_size,
@@ -132,16 +135,14 @@ class Captioner():
     return self.preprocessed_image_to_descriptor(self.preprocess_image(image), output_name)
 
   def predict_single_word(self, descriptor, previous_word, output='probs', seed_net=''):
-    nets = self.lstm_nets[0]
+    net = self.lstm_nets[0]
     if seed_net:
       net = seed_net #this is to ensure net maintains state for predict_missing word scheme
     cont = 0 if previous_word == 0 else 1
-    cont_input = np.array([cont])
-    word_input = np.array([previous_word])
-    image_features = np.zeros_like(net.blobs['image_features'].data)
-    image_features[:] = descriptor
-    net.forward(image_features=image_features, cont_sentence=cont_input,
-                input_sentence=word_input)
+    net.blobs['cont_sentence'].data[...] = np.array([cont])
+    net.blobs['input_sentence'].data[...] = np.array([previous_word])
+    net.blobs['image_features'].data[...] = descriptor
+    net.forward()
     output_preds = net.blobs[output].data[0, 0, :]
     return output_preds
 
@@ -185,7 +186,11 @@ class Captioner():
         else:
           cont_input[:] = 1
         word_input[:] = word
-        net.forward(image_features=image_features, cont_sentence=cont_input, input_sentence=word_input) 
+
+        net.blobs['cont_sentence'].data[...] = cont_input
+        net.blobs['input_sentence'].data[...] = word_input
+        net.blobs['image_features'].data[...] = image_features
+        net.forward() 
 
       probs = net.blobs[prob_output_name].data[0]
       missing_word_probs[b:batch_end] = probs[0,b:batch_end] #p(word|prev_word)
@@ -389,18 +394,20 @@ class Captioner():
       probs = self.predict_single_word(descriptor, word)
     return output
 
-  def compute_descriptors(self, image_list, feats_bool=False, output_name='fc8'):
-    coco=True
-    if feats_bool:
+  def compute_descriptors(self, image_list, output_name='fc8'):
+    if self.h5_file:
       #load image from h5 file and make into a dict
-      f = h5py.File(self.h5_file, 'r')
       extracted_features = {}
-      for feature, im in zip(f['features'], f['ims']):
-        if coco:
+      file_type = None
+      if self.h5_file.split('.')[-1] == 'h5':
+        file_type = 'h5'
+        f = h5py.File(self.h5_file, 'r')
+        for feature, im in zip(f['features'], f['ims']):
           im_key = im.split('_')[-1].split('.jpg')[0]
-        else:
-          im_key = im
-        extracted_features[im_key] = feature
+          extracted_features[im_key] = feature
+      elif self.h5_file.split('.')[-1] == 'p':
+        file_type = 'pkl' 
+        extracted_features = pkl.load(open(self.h5_file, 'r'))
 
     batch = np.zeros_like(self.image_net.blobs['data'].data)
     batch_shape = batch.shape
@@ -411,11 +418,11 @@ class Captioner():
     for batch_start_index in range(0, len(image_list), batch_size):
       batch_list = image_list[batch_start_index:(batch_start_index + batch_size)]
       for batch_index, image_path in enumerate(batch_list):
-        if feats_bool:
-          if coco:
+        if self.h5_file:
+          if file_type == 'h5': 
             im_key = image_path.split('_')[-1].split('.jpg')[0]
           else:
-            im_key = im
+            im_key = '/'.join(image_path.split('/')[-2:])
           batch[batch_index:(batch_index+1),:] = extracted_features[im_key] 
         else:
           batch[batch_index:(batch_index + 1)] = self.preprocess_image(image_path)
@@ -423,7 +430,8 @@ class Captioner():
       print 'Computing descriptors for images %d-%d of %d' % \
           (batch_start_index, batch_start_index + current_batch_size - 1,
            len(image_list))
-      self.image_net.forward(data=batch)
+      self.image_net.blobs['data'].data[...] = batch
+      self.image_net.forward()
       descriptors[batch_start_index:(batch_start_index + current_batch_size)] = \
           self.image_net.blobs[output_name].data[:current_batch_size]
     return descriptors
@@ -485,8 +493,8 @@ class Captioner():
     return outputs
  
   def init_zeros(self, descriptor):
-    hidden_unit_in = np.zeros_like(self.lstm_net.blobs['hidden_unit_in'].data)
-    cell_unit_in = np.zeros_like(self.lstm_net.blobs['cell_unit_in'].data)
+    hidden_unit_in = np.zeros_like(self.lstm_nets[0].blobs['lstm1_h0'].data)
+    cell_unit_in = np.zeros_like(self.lstm_nets[0].blobs['lstm1_c0'].data)
     return hidden_unit_in, cell_unit_in
 
   def init_average(self, descriptor):
@@ -500,23 +508,29 @@ class Captioner():
      hidden_unit_in = np.dot(feat_average, hidden_unit_W.T) + np.tile(hidden_unit_b, (feat_average.shape[0],1)) 
      cell_unit_in = np.dot(feat_average, cell_unit_W.T) + np.tile(cell_unit_b, (feat_average.shape[0],1)) 
      return hidden_unit_in, cell_unit_in
- 
-  def sample_captions(self, descriptor, prob_output_name='predict',
+  
+  def gt_captions(self, descriptor, gt_captions, prob_output_name='probs',
                       pred_output_name='predict', temp=1, max_length=50, 
-                      min_length=2, hidden_init=None, forward_model = '', descriptor_filename=''):
+                      min_length=2, descriptor_filename='', expansion=False):
+    #only make expansion true if using the expansion layer
     descriptor = np.array(descriptor)
     batch_size = descriptor.shape[0]
     self.set_caption_batch_size(batch_size)
     nets = self.lstm_nets
     prev_word_bool = self.prev_word_bool
+    if expansion:
+      expansionFun = expansion_layer.expansionFunction()
+
 
     cont_input = np.zeros_like(nets[0].blobs['cont_sentence'].data)
     word_input = np.zeros_like(nets[0].blobs['input_sentence'].data)
     image_features = np.zeros_like(nets[0].blobs['image_features'].data)
-    if 'hidden_unit_in' in nets[0].blobs.keys():
-      #hidden_unit_in, cell_unit_in = self.init_average(descriptor)
-      hidden_unit_in, cell_unit_in = self.init_zeros(descriptor)   
+    if 'lstm1_h0' in nets[0].blobs.keys():
+      hidden_unit_in_1, cell_unit_in_1 = self.init_zeros(descriptor)   
+      hidden_unit_in_2, cell_unit_in_2 = self.init_zeros(descriptor)   
 
+    if expansion:
+      descriptor = expansionFun(descriptor)
     image_features[:] = descriptor
     outputs = []
     output_captions = [[] for b in range(batch_size)]
@@ -528,6 +542,10 @@ class Captioner():
         cont_input[:] = 0
       elif caption_index == 1:
         cont_input[:] = 1
+
+      ##FOR DEBUGGING PURPOSES
+      #cont_input[:] = 0
+
       if caption_index == 0:
         word_input[:] = 0
       else:
@@ -535,34 +553,35 @@ class Captioner():
           word_input[0, index] = \
               output_captions[index][caption_index - 1] if \
               caption_index <= len(output_captions[index]) else 0
-      if forward_model == 'sat_rough':
-        t = caption_index + 1
-        print t
-        if t == 1:
-          nets[0].forward(image_features=image_features, cont_sentence=cont_input,
-                      input_sentence=word_input, end="LSTMUnit_1")
+      for net in nets:
+        net.blobs['image_features'].data[...] = image_features
+        net.blobs['cont_sentence'].data[...] = cont_input
+        net.blobs['input_sentence'].data[...] = word_input
+        if not 'lstm1_h0' in nets[0].blobs.keys():
+          net_output_probs = np.zeros((nets[0].blobs[prob_output_name].data[0].shape))
+          net.forward()
+          if len(nets) > 1:
+            net_output_probs += net.blobs[prob_output_name].data[0]
+          else:
+            net_output_probs = net.blobs[prob_output_name].data[0]
+          if self.save_activation:
+            self.save_activation_mat[self.offset_index:self.offset_index+descriptor.shape[0]:, caption_index, :] = nets[0].blobs[self.save_activation].data.squeeze(0)
+          #pdb.set_trace()
+ 
         else:
-          nets[0].forward(image_features=image_features, cont_sentence=cont_input,
-                      input_sentence=word_input, end="wtSplit")
-          nets[0].forward(start="HiddenAttentionTransform_"+str(t-1), end="LSTMUnit_"+str(t))
-        nets[0].blobs['reshape_z_20'].data[:] = net.blobs['reshape_z_'+str(t)].data
-        nets[0].blobs['hidden_unit_20'].data[:] = net.blobs['hidden_unit_'+str(t)].data
-        nets[0].forward(start="ConcatVisualWordFeatures")
+          net.blobs['lstm1_h0'].data[...] = hidden_unit_in_1 
+          net.blobs['lstm1_c0'].data[...] = cell_unit_in_1
+          net.blobs['lstm2_h0'].data[...] = hidden_unit_in_2
+          net.blobs['lstm2_c0'].data[...] = cell_unit_in_2
+          nets[0].forward()
+          hidden_unit_in_1[:] = net.blobs['lstm1_h1'].data 
+          cell_unit_in_1[:] = net.blobs['lstm1_c1'].data 
+          hidden_unit_in_2[:] = net.blobs['lstm2_h1'].data 
+          cell_unit_in_2[:] = net.blobs['lstm2_c1'].data 
+          net_output_probs = net.blobs[prob_output_name].data[0]
+          #pdb.set_trace()
 
-      elif not 'hidden_unit_in' in nets[0].blobs.keys():
-        #t = time.time()
-        net_output_probs = np.zeros((nets[0].blobs[prob_output_name].data[0].shape))
-        for net in nets:
-          net.forward(image_features=image_features, cont_sentence=cont_input,
-                    input_sentence=word_input)
-          net_output_probs += net.blobs[prob_output_name].data[0]
-        #print "time for forward is %f\n" %(time.time()-t)
-        #print 'stop point'
-      else:
-        nets[0].forward(image_features=image_features, cont_sentence=cont_input,
-                    input_sentence=word_input, hidden_unit_in=hidden_unit_in, cell_unit_in=cell_unit_in)
-        hidden_unit_in[:] = net.blobs['hidden_unit_out'].data 
-        cell_unit_in[:] = net.blobs['cell_unit_out'].data 
+      #generation tracking stuff
       if temp == 1.0 or temp == float('inf'):
         #t = time.time()
         #when i changed the lm_net to input lists I moved the following line; this might cause issues
@@ -582,6 +601,7 @@ class Captioner():
             random_choice_from_probs(preds, temp=temp, already_softmaxed=False)
             for preds in net_output_preds
         ]
+      #t = time.time()
       for index, next_word_sample in enumerate(samples):
         # If the caption is empty, or non-empty but the last word isn't EOS,
         # predict another word.
@@ -589,12 +609,131 @@ class Captioner():
           output_captions[index].append(next_word_sample)
           output_probs[index].append(net_output_probs[index, next_word_sample])
           if next_word_sample == 0: num_done += 1
+      #print 'Time to append EOS: %f' %(time.time()-t)
       sys.stdout.write('\r%d/%d done after word %d' %
           (num_done, batch_size, caption_index))
       sys.stdout.flush()
       caption_index += 1
     sys.stdout.write('\n')
     print caption_index
+
+    if self.save_activation:
+      self.offset_index += descriptor.shape[0]
+
+    return output_captions, output_probs
+ 
+  def sample_captions(self, descriptor, prob_output_name='probs',
+                      pred_output_name='predict', temp=1, max_length=50, 
+                      min_length=2, hidden_init=None, forward_model = '', 
+                      descriptor_filename='', expansion=False):
+    #only make expansion true if using the expansion layer
+    descriptor = np.array(descriptor)
+    batch_size = descriptor.shape[0]
+    self.set_caption_batch_size(batch_size)
+    nets = self.lstm_nets
+    prev_word_bool = self.prev_word_bool
+    if expansion:
+      expansionFun = expansion_layer.expansionFunction()
+
+
+    cont_input = np.zeros_like(nets[0].blobs['cont_sentence'].data)
+    word_input = np.zeros_like(nets[0].blobs['input_sentence'].data)
+    image_features = np.zeros_like(nets[0].blobs['image_features'].data)
+    if 'lstm1_h0' in nets[0].blobs.keys():
+      hidden_unit_in_1, cell_unit_in_1 = self.init_zeros(descriptor)   
+      hidden_unit_in_2, cell_unit_in_2 = self.init_zeros(descriptor)   
+
+    if expansion:
+      descriptor = expansionFun(descriptor)
+    image_features[:] = descriptor
+    outputs = []
+    output_captions = [[] for b in range(batch_size)]
+    output_probs = [[] for b in range(batch_size)]
+    caption_index = 0
+    num_done = 0
+    while num_done < batch_size and caption_index < max_length:
+      if caption_index == 0:
+        cont_input[:] = 0
+      elif caption_index == 1:
+        cont_input[:] = 1
+
+      ##FOR DEBUGGING PURPOSES
+      #cont_input[:] = 0
+
+      if caption_index == 0:
+        word_input[:] = 0
+      else:
+        for index in range(batch_size):
+          word_input[0, index] = \
+              output_captions[index][caption_index - 1] if \
+              caption_index <= len(output_captions[index]) else 0
+      for net in nets:
+        net.blobs['image_features'].data[...] = image_features
+        net.blobs['cont_sentence'].data[...] = cont_input
+        net.blobs['input_sentence'].data[...] = word_input
+        if not 'lstm1_h0' in nets[0].blobs.keys():
+          net_output_probs = np.zeros((nets[0].blobs[prob_output_name].data[0].shape))
+          net.forward()
+          if len(nets) > 1:
+            net_output_probs += net.blobs[prob_output_name].data[0]
+          else:
+            net_output_probs = net.blobs[prob_output_name].data[0]
+          if self.save_activation:
+            self.save_activation_mat[self.offset_index:self.offset_index+descriptor.shape[0]:, caption_index, :] = nets[0].blobs[self.save_activation].data.squeeze(0)
+          #pdb.set_trace()
+ 
+        else:
+          net.blobs['lstm1_h0'].data[...] = hidden_unit_in_1 
+          net.blobs['lstm1_c0'].data[...] = cell_unit_in_1
+          net.blobs['lstm2_h0'].data[...] = hidden_unit_in_2
+          net.blobs['lstm2_c0'].data[...] = cell_unit_in_2
+          nets[0].forward()
+          hidden_unit_in_1[:] = net.blobs['lstm1_h1'].data 
+          cell_unit_in_1[:] = net.blobs['lstm1_c1'].data 
+          hidden_unit_in_2[:] = net.blobs['lstm2_h1'].data 
+          cell_unit_in_2[:] = net.blobs['lstm2_c1'].data 
+          net_output_probs = net.blobs[prob_output_name].data[0]
+          #pdb.set_trace()
+
+      #generation tracking stuff
+      if temp == 1.0 or temp == float('inf'):
+        #t = time.time()
+        #when i changed the lm_net to input lists I moved the following line; this might cause issues
+        #net_output_probs = net.blobs[prob_output_name].data[0]
+        no_EOS = False if (caption_index > min_length) else True
+        prev_words = [False]*len(output_captions)
+        if prev_word_bool & caption_index > 0:
+          prev_words = [output_caption[-1] for output_caption in output_captions]
+        samples = [
+            random_choice_from_probs(dist, temp=temp, already_softmaxed=True, no_EOS=no_EOS, prev_word=prev_word)
+            for dist, prev_word in zip(net_output_probs, prev_words)
+        ]
+        #print "Time for determining next word is %f\n" %(time.time()-t)
+      else:
+        #net_output_preds = net.blobs[pred_output_name].data[0]
+        samples = [
+            random_choice_from_probs(preds, temp=temp, already_softmaxed=False)
+            for preds in net_output_preds
+        ]
+      #t = time.time()
+      for index, next_word_sample in enumerate(samples):
+        # If the caption is empty, or non-empty but the last word isn't EOS,
+        # predict another word.
+        if not output_captions[index] or output_captions[index][-1] != 0:
+          output_captions[index].append(next_word_sample)
+          output_probs[index].append(net_output_probs[index, next_word_sample])
+          if next_word_sample == 0: num_done += 1
+      #print 'Time to append EOS: %f' %(time.time()-t)
+      sys.stdout.write('\r%d/%d done after word %d' %
+          (num_done, batch_size, caption_index))
+      sys.stdout.flush()
+      caption_index += 1
+    sys.stdout.write('\n')
+    print caption_index
+
+    if self.save_activation:
+      self.offset_index += descriptor.shape[0]
+
     return output_captions, output_probs
 
   def sentence(self, vocab_indices):
