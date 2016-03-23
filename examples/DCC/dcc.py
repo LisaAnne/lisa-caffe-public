@@ -1,6 +1,7 @@
 import sys
 from train_lexical import eval_classifiers 
 from train_captions import transfer_weights
+from eval import eval_generation
 import argparse
 import pdb 
 
@@ -11,6 +12,10 @@ def transfer(args):
   
   transfer_net = transfer_weights.transfer_net(args.model, args.model_weights, args.orig_attributes, args.all_attributes, args.vocab)
   eval('transfer_net.' + args.transfer_type)(args.words, args.classifiers, args.closeness_metric, args.log) 
+
+def generate(args):
+  eval_generation.generate() 
+
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
