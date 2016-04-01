@@ -30,7 +30,6 @@ def split_sent(sent):
 
 def score_generation(gt_filename=None, generation_result=None):
   coco = COCO(gt_filename)
-  pdb.set_trace()
   generation_coco = coco.loadRes(generation_result)
   coco_dict = read_json(generation_result)
   coco_evaluator = COCOEvalCap(coco, generation_coco)
@@ -159,9 +158,9 @@ def add_new_word(gt_filename, generation_result, words, dset_name='val_val'):
     save_json(gen_train, 'tmp_gen_train.json')
 
     print "Word: %s.  Novel scores:" %word
-    score_generation(gt_novel_json, 'tmp_gen_novel.json')
+    score_generation(gt_novel_file, 'tmp_gen_novel.json')
     print "Word: %s.  Train scores:" %word
-    score_generation(gt_train_json, 'tmp_gen_train.json')
+    score_generation(gt_train_file, 'tmp_gen_train.json')
     f1 =  F1(generation_sentences, gt_novel_ids, gt_train_ids, word)
     print "Word: %s.  F1 score: %.04f\n" %(word, f1)
 

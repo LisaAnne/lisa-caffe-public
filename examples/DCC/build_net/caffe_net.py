@@ -1,5 +1,5 @@
 from __future__ import print_function
-from init import *
+from utils.config import *
 import sys
 sys.path.insert(0, caffe_dir + 'python/')
 import caffe
@@ -262,9 +262,9 @@ def make_solver(save_name, train_nets, test_nets, **kwargs):
   if 'base_lr' not in parameter_dict.keys(): parameter_dict['base_lr'] = 0.01
   if 'lr_policy' not in parameter_dict.keys(): parameter_dict['lr_policy'] = '"step"' 
   if 'display' not in parameter_dict.keys(): parameter_dict['display'] = 10
-  if 'max_iter' not in parameter_dict.keys(): parameter_dict['max_iter'] = 30000
+  if 'max_iter' not in parameter_dict.keys(): parameter_dict['max_iter'] = 110000
   if 'gamma' not in parameter_dict.keys(): parameter_dict['gamma'] = 0.5
-  if 'stepsize' not in parameter_dict.keys(): parameter_dict['stepsize'] = 10000
+  if 'stepsize' not in parameter_dict.keys(): parameter_dict['stepsize'] = 20000
   if 'snapshot' not in parameter_dict.keys(): parameter_dict['snapshot'] = 5000
   if 'momentum' not in parameter_dict.keys(): parameter_dict['momentum'] = 0.9
   if 'weight_decay' not in parameter_dict.keys(): parameter_dict['weight_decay'] = 0.0
