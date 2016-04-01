@@ -219,11 +219,12 @@ class caffe_net(object):
     # 4 gates (i, f, o, g), each with dimension dim
     # Add layer to transform all timesteps of x to the hidden state dimension.
     #     x_transform = W_xc * x + b_c
+    cont_reshape = L.Reshape(cont, shape=dict(dim=[1,1,-1]))
     x = L.InnerProduct(x, num_output=gate_dim, axis=2,
         weight_filler=weight_filler, bias_filler=bias_filler,
         param=get_param('W_xc', 'b_c'))
     setattr(self.n, get_name('%d_x_transform' %timestep), x)
-    h_conted = L.Eltwise(h, cont, coeff_blob=True) 
+    h_conted = L.Eltwise(h, cont_reshape, coeff_blob=True) 
     h = L.InnerProduct(h_conted, num_output=gate_dim, axis=2, bias_term=False,
         weight_filler=weight_filler, param=get_param('W_hc'))
     h_name = get_name('%d_h_transform' %timestep)
@@ -234,7 +235,7 @@ class caffe_net(object):
         gate_input_args += (static, )
     gate_input = L.Eltwise(*gate_input_args)
     assert cont is not None
-    c, h = L.LSTMUnit(c, gate_input, cont, ntop=2)
+    c, h = L.LSTMUnit(c, gate_input, cont_reshape, ntop=2)
     return h, c 
 
   def generate_sequence(self, data, markers, top_name='predict', lstm_static=None, weight_filler=None, bias_filler=None, learning_param_lstm=None, learning_param_ip=None, lstm_hidden=1000):
@@ -277,8 +278,7 @@ def make_solver(save_name, train_nets, test_nets, **kwargs):
   parameter_dict['snapshot_prefix'] = '"%s"' %snapshot_prefix
  
   write_txt = open(save_name, 'w')
-  for tn in train_nets:
-    write_txt.writelines('train_net: "%s"\n' %tn)
+  write_txt.writelines('train_net: "%s"\n' %train_nets)
   for tn in test_nets:
     write_txt.writelines('test_net: "%s"\n' %tn)
     write_txt.writelines('test_iter: %d\n' %parameter_dict['test_iter'])
@@ -302,7 +302,7 @@ def make_bash_script(save_bash, solver, weights=None, gpu=2):
   write_txt.writelines('GPU_ID=%d\n' %gpu)
   if weights:
     write_txt.writelines('WEIGHTS=%s\n\n' %weights)
-  write_txt.writelines("export PYTHONPATH='../../python_layers/:python_layers/:$PYTHONPATH'\n\n")
+  write_txt.writelines("export PYTHONPATH='utils/:$PYTHONPATH'\n\n")
   if weights:
     write_txt.writelines("../../build/tools/caffe train -solver %s -weights %s -gpu %d" %(solver, weights, gpu))
   else:

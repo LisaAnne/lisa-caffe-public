@@ -14,6 +14,7 @@ class dcc(caffe_net):
   def __init__(self, vocab='', num_features=471):
     self.len_vocab = len(open_txt(vocab)) + 1 
     self.num_features = num_features
+    self.gate_dim = 512*4
 
   def init_net(self):
     self.n = caffe.NetSpec()
@@ -37,20 +38,21 @@ class dcc(caffe_net):
     self.n.tops['predict-im'] = L.InnerProduct(self.n.tops['tile-data'], num_output=self.len_vocab, param=l_w, axis=2, weight_filler=self.uniform_weight_filler(-0.08, 0.08), bias_term=False) 
     self.n.tops['predict-multimodal'] = L.Eltwise(self.n.tops['predict-lm'], self.n.tops['predict-im'], operation=1) 
 
-  def build_caption_unroll(self, input_sentence='input_sentence', image_data='data', T=20):
+  def build_caption_unroll(self, input_sentence='input_sentence', image_data='reshape-data', T=20):
     #split input and cont
-    input_slices = L.Slice(self.n.inputs[input_sentence], axis=0, ntop=20)
-    cont_slices = L.Slice(self.n.inputs['cont_sentence'], axis=0, ntop=20)
+    input_slices = L.Slice(self.n.tops[input_sentence], axis=0, ntop=20)
+    cont_slices = L.Slice(self.n.tops['cont_sentence'], axis=0, ntop=20)
     self.rename_tops(input_slices, ['%s_%d' %(input_sentence, t) for t in range(T)])
     self.rename_tops(cont_slices, ['cont_sentence_%d' %t for t in range(T)])
 
     #init hidden units
-    self.n.tops['lstm1_h0'] = self.dummy_data_layer([1, 1000, 512], 0)
-    self.n.tops['lstm1_c0'] = self.dummy_data_layer([1, 1000, 512], 0)
+    self.n.tops['lstm1_h0'] = self.dummy_data_layer([1, self.N, 512], 0)
+    self.n.tops['lstm1_c0'] = self.dummy_data_layer([1, self.N, 512], 0)
 
-    embedding_lp = self.named_params(['embed_w'], [[0,0]])
-    embedding2_lp = self.named_params(['embed_w'], [[0,0], [0,0]])
-    predict_lm_lp = self.named_params(['predict-lm_w'], [[1,1], [1,2]])
+    embedding_lp = self.named_params(['embed1_w'], [[0,0]])
+    embedding2_lp = self.named_params(['embed2_w', 'embed2_b'], [[0,0], [0,0]])
+    predict_lm_lp = self.named_params(['predict-lm_w', 'predict-lm_b'], [[1,1], [1,2]])
+    l_w = self.learning_params([[1, 1]])
 
     self.n.tops['predict-im'] = L.InnerProduct(self.n.tops[image_data], num_output=self.len_vocab, param=l_w, axis=2, weight_filler=self.uniform_weight_filler(-0.08, 0.08), bias_term=False) 
 
@@ -58,7 +60,7 @@ class dcc(caffe_net):
       input_sentence_t = '%s_%d' %(input_sentence, t)
       cont_sentence_t = 'cont_sentence_%d' %t
       embedding1_t = 'embedding1_%d' %t   
-      embedding2_t = 'embedding1_%d' %t   
+      embedding2_t = 'embedding2_%d' %t   
       prev_hidden_unit = 'lstm1_h%d' %t
       prev_cell_unit = 'lstm1_c%d' %t
       hidden_unit = 'lstm1_h%d' %(t+1)
@@ -68,7 +70,7 @@ class dcc(caffe_net):
       predict_multimodal_t = 'predict-multimodal_%d' %t
 
       self.n.tops[embedding1_t] = self.embed(self.n.tops[input_sentence_t], 512, input_dim=self.len_vocab, bias_term=False, learning_param=embedding_lp)
-      self.n.tops[embedding2_t] = L.InnerProduct(self.n.tops['embedding'], num_output=512, param=embedding2_lp, axis=2)
+      self.n.tops[embedding2_t] = L.InnerProduct(self.n.tops[embedding1_t], num_output=512, param=embedding2_lp, axis=2)
       self.n.tops[hidden_unit], self.n.tops[cell_unit] = self.lstm_unit('lstm1', 
                                              self.n.tops[embedding2_t],
                                              self.n.tops[cont_sentence_t],
@@ -76,13 +78,13 @@ class dcc(caffe_net):
                                              c = self.n.tops[prev_cell_unit],
                                              batch_size = self.N, timestep=t,
                                              weight_lr_mult=0, bias_lr_mult=0,
-                                             weigth_decay_mult=0, bias_decay_mult=0)
-      self.n.tops[concat_lm_t] = L.Concat(self.n.tops[embedding2], 
+                                             weight_decay_mult=0, bias_decay_mult=0)
+      self.n.tops[concat_lm_t] = L.Concat(self.n.tops[embedding2_t], 
                                           self.n.tops[hidden_unit], axis=2)
       self.n.tops[predict_lm_t] = L.InnerProduct(self.n.tops[concat_lm_t], num_output=self.len_vocab, param=predict_lm_lp, axis=2, weight_filler=self.uniform_weight_filler(-0.08, 0.08), bias_filler=self.constant_filler(0)) 
       self.n.tops[predict_multimodal_t] = L.Eltwise(self.n.tops[predict_lm_t], self.n.tops['predict-im'], operation=1) 
 
-    self.n.tops['predict-multimodal'] = L.Concat([self.n.tops['predict-multimodal_%t'] for t in range(T)], axis=0)
+    self.n.tops['predict-multimodal'] = L.Concat(*[self.n.tops['predict-multimodal_%d' %t] for t in range(T)], axis=0)
 
   def build_train_caption_net(self, feature_param_str, hdf_source, save_name='', unroll=False):
     self.init_net()
@@ -95,7 +97,10 @@ class dcc(caffe_net):
     self.silence(self.n.tops['labels'])
     
     self.build_image()
-    self.build_caption() 
+    if not unroll:
+      self.build_caption() 
+    else:
+      self.build_caption_unroll()
 
     self.n.tops['cross-entropy-loss'] = self.softmax_loss(self.n.tops['predict-multimodal'], self.n.tops['target_sentence'], axis=2, loss_weight=20) 
 
@@ -108,12 +113,16 @@ class dcc(caffe_net):
     
     self.write_net(models_root+save_name)
 
-  def build_wtd_caption_net(self, save_name=''):
+  def build_wtd_caption_net(self, save_name='', unroll=False):
     self.init_net()
-    self.n.tops['cont_sentence'] = self.dummy_data_layer([1, 1000])
-    self.n.tops['input_sentence'] = self.dummy_data_layer([1, 1000])
-    self.n.tops['image_features'] = self.dummy_data_layer([1, 1000, self.num_features])
-    self.build_caption(image_data='image_features', t=1)
+    self.n.tops['cont_sentence'] = self.dummy_data_layer([1, self.N])
+    self.n.tops['input_sentence'] = self.dummy_data_layer([1, self.N])
+    self.n.tops['image_features'] = self.dummy_data_layer([1, self.N, self.num_features])
+    if not unroll:
+      self.build_caption(image_data='image_features', t=1)
+    else:
+      self.build_caption_unroll(image_data='image_features', T=1)
+
     self.n.tops['predict'] = self.softmax(self.n.tops['predict-multimodal'], axis=2) 
     
     self.write_net(models_root+save_name)

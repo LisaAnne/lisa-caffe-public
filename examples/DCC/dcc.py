@@ -1,6 +1,7 @@
 import sys
 from train_lexical import extract_classifiers 
 from train_captions import transfer_weights
+from train_captions import init_net 
 from eval.captioner import * 
 from eval import eval_sentences
 import argparse
@@ -55,6 +56,9 @@ def eval_imagenet(args):
 
   eval_sentences.make_imagenet_html(result_transfer, result_baseline)
 
+def init_unroll(args):
+  init_net.transfer_unrolled_net(args.orig_model, args.model_weights, args.new_model)  
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument("--image_model",type=str)
@@ -75,6 +79,9 @@ if __name__ == "__main__":
   parser.add_argument("--caps_baseline", type=str, default='')
   parser.add_argument("--caps_transfer", type=str, default='')
 
+  parser.add_argument("--orig_model", type=str, default='')
+  parser.add_argument("--new_model", type=str, default='')
+
   parser.add_argument("--device",type=int, default=0)
   parser.add_argument("--image_dim",type=int, default=227)
   parser.add_argument("--batch_size",type=int, default=10)
@@ -89,6 +96,8 @@ if __name__ == "__main__":
   parser.set_defaults(eval_imagenet=False)
   parser.add_argument('--transfer', dest='transfer', action='store_true')
   parser.set_defaults(transfer=False)
+  parser.add_argument('--init_unroll', dest='init_unroll', action='store_true')
+  parser.set_defaults(init_unroll=False)
   parser.add_argument('--log', dest='log', action='store_true')
   parser.set_defaults(log=False)
 
@@ -108,4 +117,7 @@ if __name__ == "__main__":
   
   if args.eval_imagenet:
     eval_imagenet(args)
+
+  if args.init_unroll:
+    init_unroll(args)
 
