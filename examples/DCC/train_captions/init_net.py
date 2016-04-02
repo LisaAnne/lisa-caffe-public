@@ -26,6 +26,6 @@ def transfer_unrolled_net(orig_model_name, orig_weights, new_model_name):
                                                  np.min(new_model.params[layer][i].data), 
                                                  np.max(new_model.params[layer][i].data))
   
-  save_name = '%s.%s.caffemodel' %(new_model_name.split('.prototxt')[0], orig_weights)
+  save_name = '/yy2/lisaanne/mrnn_direct/snapshots_final/%s.%s.caffemodel' %(new_model_name.split('.prototxt')[0], orig_weights)
   new_model.save(save_name)
   print "Saved unrolled model to %s\n" %save_name

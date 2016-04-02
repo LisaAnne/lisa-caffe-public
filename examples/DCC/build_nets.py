@@ -22,7 +22,7 @@ def build_dcc_net(num_features):
 
   if num_features == 471:
     precomputed_coco_baseline = lexical_features_root + 'vgg_feats.attributes_JJ100_NN300_VB100_allObjects_coco_vgg_0111_iter_80000.train.h5' 
-    precomputed_coco_rm1 = lexical_features_root + 'vgg_feats.attributes_JJ100_NN300_VB100_coco_471_eightCluster_0223_iter_80000.train.h5' 
+    precomputed_coco_rm1 = lexical_features_root + 'vgg_feats.attributes_JJ100_NN300_VB100_coco_471_eightCluster_0223_iter_80000.caffemodel.train.h5' 
     precomputed_imagenet_rm1 = lexical_features_root + 'vgg_feats.attributes_JJ100_NN300_VB100_clusterEight_imagenet_vgg_0112_iter_80000.train.h5'
 
   if num_features == 715:
@@ -66,7 +66,7 @@ def build_dcc_net(num_features):
   rm_oodLM = dcc_net.dcc(eightyk_vocab, num_features)  
   oodLM_base = 'dcc_oodLM_rm1_vgg' 
   rm_oodLM_param_str = build_dcc_net_param_str(eightyk_batch_size, precomputed_imagenet_rm1, eightyk_image_list_rm1, num_features)
-  rm_oodLM.build_train_caption_net(rm_oodLM_param_str, eightyk_hdf5_list_rm1, 'dcc_%s.%d.train.prototxt' %(oodLM_base, num_features)) 
+  rm_oodLM.build_train_caption_net(rm_oodLM_param_str, eightyk_hdf5_list_rm1, '%s.%d.train.prototxt' %(oodLM_base, num_features)) 
   rm_oodLM.build_deploy_caption_net('dcc_vgg.80k.%d.deploy.prototxt' %num_features) 
   rm_oodLM.build_wtd_caption_net('dcc_vgg.80k.%d.wtd.prototxt' %num_features) 
 

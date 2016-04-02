@@ -86,7 +86,7 @@ class Captioner():
   def set_image_batch_size(self, batch_size):
     self.image_net.blobs['data'].reshape(batch_size, *self.image_net.blobs['data'].data.shape[1:])
 
-  def set_caption_batch_size(self, batch_size):
+  def set_caption_batch_size(self, batch_size, unroll=False):
     dim = len(self.lstm_net.blobs['image_features'].data.shape)
     self.lstm_net.blobs['cont_sentence'].reshape(1, batch_size)
     self.lstm_net.blobs['input_sentence'].reshape(1, batch_size)
@@ -97,7 +97,11 @@ class Captioner():
     elif dim == 3:
       self.lstm_net.blobs['image_features'].reshape(1, batch_size,
           *self.lstm_net.blobs['image_features'].data.shape[2:])
-   
+  
+    if unroll:
+      self.lstm_net.blobs['lstm1_h0'].reshape(1, batch_size, self.lstm_net.blobs['lstm1_h0'].shape[2]) 
+      self.lstm_net.blobs['lstm1_c0'].reshape(1, batch_size, self.lstm_net.blobs['lstm1_c0'].shape[2]) 
+ 
     self.lstm_net.reshape()
  
   def compute_descriptors(self, image_root, image_list, batch_size):
@@ -141,17 +145,24 @@ class Captioner():
 
   def sample_captions(self, descriptor, 
                       temp=1, max_length=50, min_length=2):
+    net = self.lstm_net
     prob_output_name = self.language_feature
+    unroll = False
+    if 'lstm1_h0' in net.blobs.keys(): unroll=True
 
     descriptor = np.array(descriptor)
     batch_size = descriptor.shape[0]
-    self.set_caption_batch_size(batch_size)
-    net = self.lstm_net
+    self.set_caption_batch_size(batch_size, unroll)
     prev_word_bool = self.prev_word_bool
 
     cont_input = np.zeros_like(net.blobs['cont_sentence'].data)
     word_input = np.zeros_like(net.blobs['input_sentence'].data)
     image_features = np.zeros_like(net.blobs['image_features'].data)
+    if unroll:
+      hidden_unit = np.zeros_like(net.blobs['lstm1_h0'].data)
+      cell_unit = np.zeros_like(net.blobs['lstm1_c0'].data)
+      hidden_unit[:] = 0
+      cell_unit[:] = 0
 
     image_features[:] = descriptor
     outputs = []
@@ -159,6 +170,7 @@ class Captioner():
     output_probs = [[] for b in range(batch_size)]
     caption_index = 0
     num_done = 0
+
     while num_done < batch_size and caption_index < max_length:
       if caption_index == 0:
         cont_input[:] = 0
@@ -174,8 +186,15 @@ class Captioner():
       net.blobs['image_features'].data[...] = image_features
       net.blobs['cont_sentence'].data[...] = cont_input
       net.blobs['input_sentence'].data[...] = word_input
+      if unroll:
+        net.blobs['lstm1_h0'].data[...] = hidden_unit 
+        net.blobs['lstm1_c0'].data[...] = cell_unit
+
       net.forward()
       net_output_probs = net.blobs[prob_output_name].data[0]
+      if unroll:
+        hidden_unit = net.blobs['lstm1_h1'].data[...]
+        cell_unit = net.blobs['lstm1_c1'].data[...]
  
       #generation tracking stuff
       if temp == 1.0 or temp == float('inf'):
