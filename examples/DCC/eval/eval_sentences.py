@@ -118,8 +118,8 @@ def make_imagenet_html(imagenet_result_dict, imagenet_result_dict_baseline, base
       message += '</tr>'
     message += '</table>'
     message += '<br/><br/>'
-    f.write(message)
-    print "Wrote %s." %message
+    f.writelines(message)
+    print "Wrote %s." %('%s%s_%s.html' %(webpage_base, base, o))
     f.close()
 
 def find_successful_classes(imagenet_result_dict):

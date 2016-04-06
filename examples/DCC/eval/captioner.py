@@ -35,7 +35,7 @@ template = {'coco': coco_fill, 'imagenet': imagenet_fill}
 class Captioner():
   def __init__(self, weights_path, image_net_proto, lstm_net_proto, 
                vocab_path, device_id=0, precomputed_feats=None, 
-	       prev_word_restriction=False, image_feature='probs', language_feature='probs'):
+	       prev_word_restriction=True, image_feature='probs', language_feature='probs'):
     if device_id >= 0:
       caffe.set_mode_gpu()
       caffe.set_device(device_id)
