@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
-GPU_ID=0
+GPU_ID=2
 WEIGHTS=\
-./examples/coco_caption/lrcn_vgg_iter_90000.caffemodel
-DATA_DIR=./examples/coco_caption/h5_data/
+snapshots/lrcn_vgg_fromImages_rm1_lr0p01_iter_90000.caffemodel
+#snapshots/lrcn_vgg_fromImages_rm1_iter_90000.caffemodel
+DATA_DIR=h5_data/
 if [ ! -d $DATA_DIR ]; then
     echo "Data directory not found: $DATA_DIR"
     echo "First, download the COCO dataset (follow instructions in data/coco)"
@@ -11,7 +12,7 @@ if [ ! -d $DATA_DIR ]; then
     exit 1
 fi
 
-./build/tools/caffe train \
-    -solver ./examples/coco_caption/lrcn_finetune_solver.vgg.prototxt \
+../../build/tools/caffe train \
+    -solver lrcn_finetune_solver.vgg.prototxt \
     -weights $WEIGHTS \
     -gpu $GPU_ID

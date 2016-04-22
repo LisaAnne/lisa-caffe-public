@@ -117,7 +117,7 @@ def build_dcc_net_reinforce(num_features):
   solver_name = models_root + '%s.%d.solver.prototxt' %(rm_coco_base, num_features)
   caffe_net.make_solver(solver_name, models_root + '%s.%d.train.prototxt' %(rm_coco_base, num_features), [], 
              **{'base_lr': 0.001})
-  caffe_net.make_bash_script('run_%s.sh' %rm_coco_base, solver_name, weights=caption_weights_root+'dcc_unroll_coco_baseline_vgg.471.train.dcc_coco_rm1_vgg.471.solver.prototxt_iter_110000.caffemodel', gpu=0)
+  caffe_net.make_bash_script('run_%s.sh' %rm_coco_base, solver_name, weights=caption_weights_root+'dcc_unroll_coco_baseline_vgg.471.train.dcc_coco_rm1_vgg.471.solver.prototxt_iter_110000.transfer_words_coco1.txt_closeness_embedding.caffemodel', gpu=0)
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()

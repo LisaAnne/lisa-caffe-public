@@ -19,7 +19,7 @@ rm_word_dict = {'bus': ['bus', 'busses'],
                 'couch': ['couch', 'couches', 'sofa', 'sofas'],
                 'microwave': ['microwave', 'microwaves'],
                 'pizza': ['pizza', 'pizzas'],
-                'racket': ['racket', 'rackets'],
+                'racket': ['racket', 'rackets', 'racquet', 'racquets'],
                 'suitcase': ['luggage', 'luggages', 'suitcase', 'suitcases'],
                 'zebra': ['zebra', 'zebras']} 
 
@@ -29,9 +29,12 @@ def split_sent(sent):
   return sent.split()
 
 def score_generation(gt_filename=None, generation_result=None):
+
+  coco_dict = read_json(generation_result)
+
+
   coco = COCO(gt_filename)
   generation_coco = coco.loadRes(generation_result)
-  coco_dict = read_json(generation_result)
   coco_evaluator = COCOEvalCap(coco, generation_coco)
   #coco_image_ids = [self.sg.image_path_to_id[image_path]
   #                  for image_path in self.images]
@@ -70,7 +73,7 @@ def score_result_subset(result, ids, metrics=['Bleu_1', 'Bleu_2', 'Bleu_3', 'Ble
 
   for id in ids:
     for m in metrics:
-      metric_dict[m] .append(result[id][m])
+      metric_dict[m].append(result[id][m])
   for m in metric_dict: metric_dict[m] = np.mean(metric_dict[m])
 
   for m in metrics:
@@ -122,17 +125,32 @@ def make_imagenet_html(imagenet_result_dict, imagenet_result_dict_baseline, base
     print "Wrote %s." %('%s%s_%s.html' %(webpage_base, base, o))
     f.close()
 
-def find_successful_classes(imagenet_result_dict):
+def find_successful_classes(imagenet_result_dict, num_train_examples=100):
+
+  #build num_train_examples dict
+  train_images = open_txt('utils/imageList/train_images_rebuttal.txt')
+  train_count = {}
+  for line in train_images:
+    o = line.split('/')[0]
+    if o not in train_count.keys():
+      train_count[o] = 0
+    train_count[o] += 1
+
   successful_class = 0
-  for o in imagenet_result_dict.keys():
-    count_caps = 0
-    for im_id in imagenet_result_dict[o].keys():
-      sent = split_sent(imagenet_result_dict[o][im_id])
-      if o in sent:
-        count_caps += 1
-    if count_caps > 0:
-      successful_class += 1
-  print "Percent successful classes: %f" %(float(successful_class)/len(imagenet_result_dict.keys()))
+  total_class = 0
+  for o in train_count.keys():
+    if train_count[o] >= num_train_examples:
+      count_caps = 0
+      total_class += 1
+      for im_id in imagenet_result_dict[o].keys():
+        sent = split_sent(imagenet_result_dict[o][im_id])
+        if o in sent:
+          count_caps += 1
+      if count_caps > 0:
+        successful_class += 1
+  print "Percent successful classes: %f" %(float(successful_class)/total_class)
+  print "Correct classes: %d" %successful_class
+  print "Total classes: %d" %total_class
 
 def add_new_word(gt_filename, generation_result, words, dset_name='val_val'):
   results = score_generation(gt_filename, generation_result)
@@ -167,6 +185,63 @@ def add_new_word(gt_filename, generation_result, words, dset_name='val_val'):
     os.remove('tmp_gen_novel.json')
     os.remove('tmp_gen_train.json')
 
+def make_coco_html(base='coco_examples'):
+  generated_sentences = 'results/generated_sentences/'
+  coco_baseline = read_json(generated_sentences + 'vgg_471Objects_coco_baseline_iter_110000_val_val_beam1_coco.json')
+  coco_noT = read_json(generated_sentences + '_coco_rm1_vgg.471.solver.prototxt_iter_110000_val_val_beam1_coco.json')
+  coco_T = read_json(generated_sentences + '_coco_rm1_vgg.471.solver.prototxt_iter_110000.transfer_words_coco1.txt_closeness_embedding_val_val_beam1_coco.json')
+  coco_ood = read_json(generated_sentences + '_oodLM_rm1_vgg.im2txt.471.solver.prototxt_iter_110000.transfer_words_coco1.txt_closeness_embedding_val_val_beam1_coco.json')
+
+  coco_result_dict = {}
+  for a in coco_baseline:
+    im_id = a['image_id']
+    coco_result_dict[im_id] = {}
+    coco_result_dict[im_id]['baseline'] = a['caption']
+  for a in coco_noT:
+    im_id = a['image_id']
+    coco_result_dict[im_id]['coco_noTransfer'] = a['caption']
+  for a in coco_T:
+    im_id = a['image_id']
+    coco_result_dict[im_id]['coco_transfer'] = a['caption']
+  for a in coco_ood:
+    im_id = a['image_id']
+    coco_result_dict[im_id]['coco_ood'] = a['caption'] 
+
+  webpage_base='../../../output_html/cvpr2016/'
+  real_root='/home/lisaanne/caffe-LSTM/data/coco/coco/images/val2014/COCO_val2014_%012d.jpg'
+  #for ix, im_id in enumerate(coco_result_dict.keys()):
+  for ix in range(0, len(coco_result_dict.keys()),1000):
+    f = open('%s%s_%d.html' %(webpage_base, base, ix), 'w')
+    message = ''
+    message += '<table style="width:100%" table border="1" rules="rows,columns">'
+    for i in range(ix, min(ix+1000, len(coco_result_dict.keys()))):
+      im_id = coco_result_dict.keys()[i]
+      sym_path = '%s/web_images/coco/COCO_val2014_%012d.jpg' %(webpage_base, im_id)
+      sym_folder = '%s/web_images/coco' %webpage_base
+      if not os.path.isdir(sym_folder):
+        os.mkdir(sym_folder)
+      if not os.path.isfile(sym_path):
+        os.symlink(real_root %im_id, sym_path)
+      message += '<tr>'
+      message += '<td>'
+      message += '</br>'
+      message += '<IMG SRC="web_images/coco/COCO_val2014_%012d.jpg" width="250"><br/>\n' %(im_id)
+      message += '</td>'
+      message += '<td>'
+      message += 'Results for image %d (%s) <br/>\n' %(i+1, im_id)
+      message += '</br>'
+      message += 'Pair supervision: %s</br>\n' %coco_result_dict[im_id]['baseline']
+      message += 'No transfer: %s</br>\n' %coco_result_dict[im_id]['coco_noTransfer']
+      message += 'DCC (in): %s</br>\n' %coco_result_dict[im_id]['coco_transfer']
+      message += 'DCC (out): %s</br>\n' %coco_result_dict[im_id]['coco_ood']
+      message += '</br>'
+      message += '</td>'
+      message += '</tr>'
+    message += '</table>'
+    message += '<br/><br/>'
+    f.writelines(message)
+    print "Wrote %s." %('%s%s_%d.html' %(webpage_base, base, ix))
+    f.close()
 
 
 

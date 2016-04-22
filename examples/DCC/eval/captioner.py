@@ -34,7 +34,7 @@ template = {'coco': coco_fill, 'imagenet': imagenet_fill}
 
 class Captioner():
   def __init__(self, weights_path, image_net_proto, lstm_net_proto, 
-               vocab_path, device_id=0, precomputed_feats=None, 
+               vocab_path, device_id=1, precomputed_feats=None, 
 	       prev_word_restriction=True, image_feature='probs', language_feature='probs'):
     if device_id >= 0:
       caffe.set_mode_gpu()
@@ -83,6 +83,9 @@ class Captioner():
         extracted_features = pkl.load(open(self.h5_file, 'r'))
       self.extracted_features = extracted_features 
 
+    else:
+      self.preprocess_image = lambda x: image_processor(self.transformer, x, False)
+
   def set_image_batch_size(self, batch_size):
     self.image_net.blobs['data'].reshape(batch_size, *self.image_net.blobs['data'].data.shape[1:])
 
@@ -129,7 +132,7 @@ class Captioner():
           self.image_net.blobs[output_name].data[:current_batch_size]
     return descriptors
 
-  def compute_all_descriptors(self, image_root=None, image_ids=None, batch_size=100, file_load=True, split='val', dset='coco'):
+  def compute_all_descriptors(self, image_root=None, image_ids=None, batch_size=100, file_load=False, split='val', dset='coco'):
     descriptor_filename = '%s/descriptors_%s.npz' % (image_features, self.weights_name)
     if os.path.exists(descriptor_filename) & file_load:
       self.descriptors = np.load(descriptor_filename)['descriptors']
@@ -142,6 +145,80 @@ class Captioner():
       self.descriptors = self.compute_descriptors(image_root, self.image_list, batch_size)
       np.savez_compressed(descriptor_filename, descriptors=self.descriptors, image_ids=image_ids)
   
+  def debug_generation(self, descriptor, 
+                      temp=1, max_length=50, min_length=2,
+                      blob_im='predict-im', blob_lm='predict-lm', 
+                      blob_multi='predict-multimodal'):
+    net = self.lstm_net
+    prob_output_name = self.language_feature
+
+    descriptor = np.array(descriptor)
+    batch_size = descriptor.shape[0]
+    self.set_caption_batch_size(batch_size, False)
+    prev_word_bool = self.prev_word_bool
+
+    cont_input = np.zeros_like(net.blobs['cont_sentence'].data)
+    word_input = np.zeros_like(net.blobs['input_sentence'].data)
+    image_features = np.zeros_like(net.blobs['image_features'].data)
+
+    image_features[:] = descriptor
+    outputs = []
+    output_captions = [[] for b in range(batch_size)]
+    output_probs = [[] for b in range(batch_size)]
+    caption_index = 0
+    num_done = 0
+
+
+    predict_lm = np.zeros((10,1,len(self.vocab)))
+    predict_multi = np.zeros((10,1,len(self.vocab)))
+
+    while caption_index < 10:
+      if caption_index == 0:
+        cont_input[:] = 0
+      elif caption_index == 1:
+        cont_input[:] = 1
+      if caption_index == 0:
+        word_input[:] = 0
+      else:
+        for index in range(batch_size):
+          word_input[0, index] = \
+              output_captions[index][caption_index - 1] if \
+              caption_index <= len(output_captions[index]) else 0
+      net.blobs['image_features'].data[...] = image_features
+      net.blobs['cont_sentence'].data[...] = cont_input
+      net.blobs['input_sentence'].data[...] = word_input
+      net.forward()
+      predict_lm[caption_index,:,:] = net.blobs[blob_lm].data
+      predict_multi[caption_index,:,:] = net.blobs[blob_multi].data
+      net_output_probs = net.blobs[prob_output_name].data[0]
+ 
+      #generation tracking stuff
+      if temp == 1.0 or temp == float('inf'):
+        no_EOS = False if (caption_index > min_length) else True
+        if prev_word_bool & caption_index > 0:
+          prev_words = [output_caption[-1] for output_caption in output_captions]
+        else: prev_words = [False]*len(output_captions)
+        samples = [
+            random_choice_from_probs(dist, temp=temp, already_softmaxed=True, no_EOS=no_EOS, prev_word=prev_word)
+            for dist, prev_word in zip(net_output_probs, prev_words)
+        ]
+      else:
+        samples = [
+            random_choice_from_probs(preds, temp=temp, already_softmaxed=False)
+            for preds in net_output_probs
+        ]
+      for index, next_word_sample in enumerate(samples):
+        if not output_captions[index] or output_captions[index][-1] != 0:
+          output_captions[index].append(next_word_sample)
+          output_probs[index].append(net_output_probs[index, next_word_sample])
+          if next_word_sample == 0: num_done += 1
+      sys.stdout.write('\r%d/%d done after word %d' %
+          (num_done, batch_size, caption_index))
+      sys.stdout.flush()
+      caption_index += 1
+    sys.stdout.write('\n')
+
+    return net.blobs[blob_im].data.squeeze(), predict_lm.squeeze(), predict_multi.squeeze(), output_captions[0]
 
   def sample_captions(self, descriptor, 
                       temp=1, max_length=50, min_length=2):
@@ -189,8 +266,8 @@ class Captioner():
       if unroll:
         net.blobs['lstm1_h0'].data[...] = hidden_unit 
         net.blobs['lstm1_c0'].data[...] = cell_unit
-
       net.forward()
+      #pdb.set_trace()
       net_output_probs = net.blobs[prob_output_name].data[0]
       if unroll:
         hidden_unit = net.blobs['lstm1_h1'].data[...]
@@ -199,9 +276,9 @@ class Captioner():
       #generation tracking stuff
       if temp == 1.0 or temp == float('inf'):
         no_EOS = False if (caption_index > min_length) else True
-        prev_words = [False]*len(output_captions)
         if prev_word_bool & caption_index > 0:
           prev_words = [output_caption[-1] for output_caption in output_captions]
+        else: prev_words = [False]*len(output_captions)
         samples = [
             random_choice_from_probs(dist, temp=temp, already_softmaxed=True, no_EOS=no_EOS, prev_word=prev_word)
             for dist, prev_word in zip(net_output_probs, prev_words)
@@ -254,7 +331,7 @@ class Captioner():
     if not vocab_indices:
       print "Had issue with image!"
       return ' '
-    sentence = ' '.join([self.vocab[i] for i in vocab_indices])
+    sentence = ' '.join([unicode(self.vocab[i], 'utf-8') for i in vocab_indices])
     if not sentence: return sentence
     sentence = sentence[0].upper() + sentence[1:]
     # If sentence ends with ' <EOS>', remove and replace with '.'

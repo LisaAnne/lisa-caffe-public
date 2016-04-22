@@ -203,7 +203,7 @@ class featureDataLayer(caffe.Layer):
     
     #create dict with all features (will be an issue if there are too many features or if using lower level feature like conv5)
     
-    dataset_path_hash = {'coco': coco_root, 'imagenet': imagenet_root, 'nvc': nvc_root} 
+    dataset_path_hash = {'coco': coco_root, 'imagenet': imagenet_root} 
 
     param_str = eval(self.param_str)
     self.batch_size = param_str['batch_size']

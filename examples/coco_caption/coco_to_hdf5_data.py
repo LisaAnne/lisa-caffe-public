@@ -384,4 +384,4 @@ if __name__ == "__main__":
   if eightyK:
     process_coco('no_caption_rmSecondEightCluster_train', False, False, '/y/lisaanne/pretrained_lm/yt_coco_surface_80k_vocab.txt')
   else:
-    process_coco('basic_caption_rmEightCluster_train', False, False, 'h5_data/buffer_100/vocabulary.txt')
+    process_coco('no_caption_rm_eightCluster_train', False, False, 'h5_data/buffer_100/vocabulary.txt')

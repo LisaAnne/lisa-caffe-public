@@ -1,4 +1,4 @@
-net: "./examples/coco_caption/lrcn.vgg.buffer_50.prototxt"
+net: "lrcn.vgg.prototxt"
 
 # lrcn.prototxt supports three variants of the LRCN architecture:
 # (1) stage: 'factored' stage: '2-layer'
@@ -23,7 +23,7 @@ max_iter: 50000
 momentum: 0.9
 weight_decay: 0.0000
 snapshot: 2500
-snapshot_prefix: "./examples/coco_caption/lrcn_finetune_vgg"
+snapshot_prefix: "snapshots/lrcn_finetune_vgg_lrp01"
 solver_mode: GPU
 random_seed: 1701
 average_loss: 100
