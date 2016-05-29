@@ -14,6 +14,8 @@ include(cmake/Misc.cmake)
 include(cmake/Summary.cmake)
 include(cmake/ConfigGen.cmake)
 
+set(${CMAKE_CXX_FLAGS} "-D_FORCE_INLINES ${CMAKE_CXX_FLAGS}")
+
 # ---[ Options
 caffe_option(CPU_ONLY  "Build Caffe without CUDA support" OFF) # TODO: rename to USE_CUDA
 caffe_option(USE_CUDNN "Build Caffe with cuDNN libary support" ON IF NOT CPU_ONLY)
