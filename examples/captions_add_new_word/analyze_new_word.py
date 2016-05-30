@@ -1,1 +1,0 @@
-../coco_caption/analyze_new_word.py
