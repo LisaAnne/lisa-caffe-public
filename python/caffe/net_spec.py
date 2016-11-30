@@ -76,8 +76,9 @@ def assign_proto(proto, name, val):
         for k, v in six.iteritems(val):
             assign_proto(getattr(proto, name), k, v)
     else:
-        setattr(proto, name, val)
-
+        if val is not None:
+          setattr(proto, name, val)
+       
 
 class Top(object):
     """A Top specifies a single output blob (which could be one of several
@@ -149,13 +150,18 @@ class Function(object):
         for k, v in six.iteritems(self.params):
             # special case to handle generic *params
             if k.endswith('param'):
-                assign_proto(layer, k, v)
+                if v:
+                  assign_proto(layer, k, v)
             else:
                 try:
                     assign_proto(getattr(layer,
                         _param_names[self.type_name] + '_param'), k, v)
                 except (AttributeError, KeyError):
-                    assign_proto(layer, k, v)
+                    if v:
+                      assign_proto(layer, k, v)
+                    else:
+                      print "For layer %s did not assign %s a value." %(layer.name, k)
+                    #assign_proto(layer, k, v)
 
         layers[self] = layer
 
