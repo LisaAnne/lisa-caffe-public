@@ -860,19 +860,19 @@ void Net<Dtype>::ToProto(NetParameter* param, bool write_diff) const {
   DLOG(INFO) << "Serializing " << layers_.size() << " layers";
   vector<string> saved_params;
   for (int i = 0; i < layers_.size(); ++i) {
-    //Check if layer has a parameter with specifid name
+    //Check if layer has a parameter with specified name
     bool save_layer = true;
-    if (layers_[i]->layer_param().param_size() > 0) {
-      save_layer = false;
-      for (int j = 0; j < layers_[i]->layer_param().param_size(); j++) {
-        string param_name = layers_[i]->layer_param().param(j).name();
-        if (!(find(saved_params.begin(), saved_params.end(), param_name) != saved_params.end()) ){
-          save_layer = true;
-        }
-        saved_params.push_back(param_name);
-      }
-    }
-
+//    if (layers_[i]->layer_param().param_size() > 0) {
+//      save_layer = false;
+//      for (int j = 0; j < layers_[i]->layer_param().param_size(); j++) {
+//        string param_name = layers_[i]->layer_param().param(j).name();
+//        if (!(find(saved_params.begin(), saved_params.end(), param_name) != saved_params.end()) ){
+//          save_layer = true;
+//        }
+//        saved_params.push_back(param_name);
+//      }
+//    }
+//
     if (save_layer) {
       LayerParameter* layer_param = param->add_layer();
       layers_[i]->ToProto(layer_param, write_diff);

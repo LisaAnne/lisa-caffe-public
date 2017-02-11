@@ -319,6 +319,8 @@ def resize_image(im, new_dims, interp_order=1):
     """
     if im.shape[-1] == 1 or im.shape[-1] == 3:
         im_min, im_max = im.min(), im.max()
+        if isinstance(im_min, int):
+          raise Exception ("Image inputs need to be array of floats.")
         if im_max > im_min:
             # skimage is fast but only understands {1,3} channel images
             # in [0, 1].
