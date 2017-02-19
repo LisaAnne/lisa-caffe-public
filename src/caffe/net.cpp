@@ -697,7 +697,7 @@ void Net<Dtype>::ShareTrainedLayersWith(const Net* other) {
     vector<shared_ptr<Blob<Dtype> > >& target_blobs =
         layers_[target_layer_id]->blobs();
     CHECK_EQ(target_blobs.size(), source_layer->blobs().size())
-        << "Incompatible number of blobs for layer " << source_layer_name;
+        << "Incompatible number of blobs for layer " << source_layer_name << "(" << target_blobs.size() << "/" << source_layer->blobs().size() << ")";
     for (int j = 0; j < target_blobs.size(); ++j) {
       Blob<Dtype>* source_blob = source_layer->blobs()[j].get();
       CHECK(target_blobs[j]->shape() == source_blob->shape())
@@ -765,7 +765,7 @@ void Net<Dtype>::CopyTrainedLayersFrom(const NetParameter& param) {
     vector<shared_ptr<Blob<Dtype> > >& target_blobs =
         layers_[target_layer_id]->blobs();
     CHECK_EQ(target_blobs.size(), source_layer.blobs_size())
-        << "Incompatible number of blobs for layer " << source_layer_name;
+        << "Incompatible number of blobs for layer " << source_layer_name << "(" << target_blobs.size() << "/" << source_layer.blobs_size() << ")";
     for (int j = 0; j < target_blobs.size(); ++j) {
       if (!target_blobs[j]->ShapeEquals(source_layer.blobs(j))) {
         Blob<Dtype> source_blob;
@@ -827,7 +827,7 @@ void Net<Dtype>::CopyTrainedLayersFromHDF5(const string trained_filename) {
     // Check that source layer doesn't have more params than target layer
     int num_source_params = hdf5_get_num_links(layer_hid);
     CHECK_LE(num_source_params, target_blobs.size())
-        << "Incompatible number of blobs for layer " << source_layer_name;
+        << "Incompatible number of blobs for layer " << source_layer_name << "(" << num_source_params << "/" << target_blobs.size() << ")";
     for (int j = 0; j < target_blobs.size(); ++j) {
       ostringstream oss;
       oss << j;
@@ -839,7 +839,7 @@ void Net<Dtype>::CopyTrainedLayersFromHDF5(const string trained_filename) {
           // ...but it's weight-shared in target, so that's fine.
           continue;
         } else {
-          LOG(FATAL) << "Incompatible number of blobs for layer "
+          LOG(FATAL) << "Incompatible number of blobs for layer"
               << source_layer_name;
         }
       }
