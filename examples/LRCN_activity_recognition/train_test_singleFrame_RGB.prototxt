@@ -12,7 +12,7 @@ layer {
     crop_size: 227
     mean_value: 103.939
     mean_value: 116.779
-    mean_value: 123.68
+    mean_value: 128.68
     flow: false
   }
   image_data_param {
@@ -37,7 +37,7 @@ layer {
     crop_size: 227
     mean_value: 103.939
     mean_value: 116.779
-    mean_value: 123.68
+    mean_value: 128.68
     flow: false
   }
   image_data_param {
