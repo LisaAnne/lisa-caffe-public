@@ -1,3 +1,5 @@
+This branch has been updated to include the [compact bilinear feature](https://people.eecs.berkeley.edu/~yg/papers/compact_bilinear.pdf) from Yang Gao.  I use this branch for my work on generating visual explanations.  The compact bilinear feature is needed for fine-grained bird recognition.
+
 # Caffe
 
 [![Build Status](https://travis-ci.org/BVLC/caffe.svg?branch=master)](https://travis-ci.org/BVLC/caffe)
